@@ -11,7 +11,6 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,18 +21,14 @@ public class Bot {
     @Autowired
     public Bot(BotConfig botConfig) {
         this.bot = new TelegramBot(botConfig.telegramToken());
+        this.bot.setUpdatesListener(updates -> {
+            updates.forEach(this::processMessage);
+            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+        });
     }
 
     public void sendMessage(SendMessage message) {
         bot.execute(message);
-    }
-
-    @PostConstruct
-    public void setUp() {
-        bot.setUpdatesListener(updates -> {
-            updates.forEach(this::processMessage);
-            return UpdatesListener.CONFIRMED_UPDATES_ALL;
-        });
     }
 
     private void processMessage(Update update) {
