@@ -1,0 +1,72 @@
+package backend.academy.clients.github.repository;
+
+import backend.academy.clients.Client;
+import backend.academy.model.Link;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestClient;
+
+public class GitHubRepositoryClient implements Client {
+    private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
+
+    @Override
+    public boolean supportLink(Link link) {
+        String url = link.getUrl();
+        Matcher linkMatchers = supportedUrl.matcher(url);
+        return linkMatchers.matches();
+    }
+
+    @Override
+    public String getUpdates(Link link) {
+        String url = getUrl(link);
+        if (url == null) {
+            return null;
+        }
+        RestClient client = RestClient.create();
+        ResponseEntity<GitHubRepositoryDTO> response = client.method(HttpMethod.GET)
+                .uri(url)
+                .header("Accept", "application/vnd.github+json")
+                .retrieve()
+                .toEntity(GitHubRepositoryDTO.class);
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return generateUpdateText(Objects.requireNonNull(response.getBody()), link);
+        } else {
+            throw new RuntimeException(String.format(
+                    "Не удалось получить обновления по ссылке: %s (%d)",
+                    link.getUrl(), response.getStatusCode().value()));
+        }
+    }
+
+    private String getUrl(Link link) {
+        Matcher matcher = supportedUrl.matcher(link.getUrl());
+        if (matcher.matches()) {
+            return String.format("https://api.github.com/repos/%s/%s", matcher.group(1), matcher.group(2));
+        }
+        return null;
+    }
+
+    private String generateUpdateText(GitHubRepositoryDTO body, Link link) {
+        String updateDescription = null;
+        LocalDateTime previousUpdateTime = link.getLastUpdateTime();
+        if (wasUpdated(previousUpdateTime, body.updatedAt())) {
+            link.setLastUpdateTime(body.updatedAt());
+            updateDescription =
+                    String.format("Обновление репозитория %s по ссылке %s", body.repositoryName(), body.linkValue());
+        }
+        if (wasUpdated(previousUpdateTime, body.pushedAt())) {
+            link.setLastUpdateTime(body.pushedAt());
+            updateDescription = String.format(
+                    "Новый коммит в репозитории %s по ссылке %s", body.repositoryName(), body.linkValue());
+        }
+        return updateDescription;
+    }
+
+    private boolean wasUpdated(LocalDateTime previousUpdateTime, LocalDateTime currentUpdateTime) {
+        return previousUpdateTime == null || previousUpdateTime.isBefore(currentUpdateTime);
+    }
+}

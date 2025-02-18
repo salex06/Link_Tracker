@@ -1,5 +1,6 @@
 package backend.academy.scrapper;
 
+import backend.academy.ScrapperApplication;
 import org.springframework.boot.SpringApplication;
 
 public class TestApplication {
