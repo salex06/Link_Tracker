@@ -39,7 +39,7 @@ public class BotController {
             SendMessage message = new SendMessage(chatId, responseText);
             // TODO: выглядит сомнительным внедрение класса Bot и его использование
             // нужно определить другую сущность для этого
-            bot.sendMessage(message);
+            bot.execute(message);
         }
 
         return ResponseEntity.ok("");
