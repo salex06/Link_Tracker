@@ -31,6 +31,32 @@ public class Bot {
     }
 
     /**
+     * Параметризованный конструктор с аргументом - экземпляром бота
+     *
+     * @param telegramBot экземпляр телеграм бота
+     * @param tgChatProcessor обработчик сообщений пользователя
+     */
+    public Bot(TelegramBot telegramBot, Processor tgChatProcessor) {
+        this.bot = telegramBot;
+        this.bot.setUpdatesListener(updates -> {
+            updates.forEach(update -> {
+                SendMessage message = tgChatProcessor.process(update);
+                execute(message);
+            });
+            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+        });
+    }
+
+    /**
+     * Параметризованный конструктор с одним параметром
+     *
+     * @param telegramBot экземпляр телеграм бота (должен быть установлен UpdatesListener)
+     */
+    public Bot(TelegramBot telegramBot) {
+        this.bot = telegramBot;
+    }
+
+    /**
      * Отправить сообщение пользователю в чат
      *
      * @param message сообщение для пользователя
