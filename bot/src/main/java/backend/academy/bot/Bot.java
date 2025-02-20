@@ -18,7 +18,7 @@ public class Bot {
      * @param botConfig конфигурация бота (токен и имя бота)
      * @param tgChatProcessor обработчик сообщений пользователя
      */
-    @Autowired
+    // @Autowired
     public Bot(BotConfig botConfig, Processor tgChatProcessor) {
         this.bot = new TelegramBot(botConfig.telegramToken());
         this.bot.setUpdatesListener(updates -> {
@@ -36,6 +36,7 @@ public class Bot {
      * @param telegramBot экземпляр телеграм бота
      * @param tgChatProcessor обработчик сообщений пользователя
      */
+    @Autowired
     public Bot(TelegramBot telegramBot, Processor tgChatProcessor) {
         this.bot = telegramBot;
         this.bot.setUpdatesListener(updates -> {
