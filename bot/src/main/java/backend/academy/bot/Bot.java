@@ -7,10 +7,17 @@ import com.pengrad.telegrambot.request.SendMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/** Класс - обёртка для телеграм бота. */
 @Component
 public class Bot {
     private final TelegramBot bot;
 
+    /**
+     * Конструктор с параметрами
+     *
+     * @param botConfig конфигурация бота (токен и имя бота)
+     * @param tgChatProcessor обработчик сообщений пользователя
+     */
     @Autowired
     public Bot(BotConfig botConfig, Processor tgChatProcessor) {
         this.bot = new TelegramBot(botConfig.telegramToken());
@@ -23,6 +30,11 @@ public class Bot {
         });
     }
 
+    /**
+     * Отправить сообщение пользователю в чат
+     *
+     * @param message сообщение для пользователя
+     */
     public void execute(SendMessage message) {
         bot.execute(message);
     }
