@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/** DTO для передачи набора отслеживаемых ссылок */
 public class ListLinksResponse {
+    /** Набор ссылок на ресурсы */
     List<Link> links;
+    /** Количество ссылок в DTO */
     Integer size;
 
     public ListLinksResponse() {

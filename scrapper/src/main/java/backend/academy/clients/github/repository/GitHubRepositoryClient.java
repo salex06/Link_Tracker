@@ -58,11 +58,6 @@ public class GitHubRepositoryClient implements Client {
             updateDescription =
                     String.format("Обновление репозитория %s по ссылке %s", body.repositoryName(), body.linkValue());
         }
-        if (wasUpdated(previousUpdateTime, body.pushedAt())) {
-            link.setLastUpdateTime(body.pushedAt());
-            updateDescription = String.format(
-                    "Новый коммит в репозитории %s по ссылке %s", body.repositoryName(), body.linkValue());
-        }
         return updateDescription;
     }
 
