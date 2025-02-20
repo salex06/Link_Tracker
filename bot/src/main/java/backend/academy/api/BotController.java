@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/** BotController предоставляет методы, обрабатывающие запросы к отдельным эндпоинтам */
 @RestController
 public class BotController {
     private final Bot bot;
@@ -21,8 +22,15 @@ public class BotController {
         this.bot = bot;
     }
 
+    /**
+     * Обработать команду уведомления пользователей об обновлении ресурсов
+     *
+     * @param linkUpdate DTO, хранящий информацию об обновлении ресурса
+     * @return {@code ResponseEntity<?>} - ответ на команду (ApiErrorResponse с кодом 400 при ошибке, иначе - OK с
+     *     пустым телом ответа)
+     */
     @PostMapping("/updates")
-    ResponseEntity<?> update(@RequestBody LinkUpdate linkUpdate) {
+    public ResponseEntity<?> update(@RequestBody LinkUpdate linkUpdate) {
         if (anyFieldIsNull(linkUpdate)) {
             return new ResponseEntity<>(
                     new ApiErrorResponse("Некорректные параметры запроса", "400", null, null, null),
@@ -37,8 +45,6 @@ public class BotController {
         for (Long chatId : tgChatIds) {
             String responseText = String.format("Новое уведомление от ресурса %s (ID: %d): %s", url, id, description);
             SendMessage message = new SendMessage(chatId, responseText);
-            // TODO: выглядит сомнительным внедрение класса Bot и его использование
-            // нужно определить другую сущность для этого
             bot.execute(message);
         }
 
