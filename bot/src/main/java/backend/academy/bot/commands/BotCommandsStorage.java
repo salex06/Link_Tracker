@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/** Хранилище доступных команд бота */
 public class BotCommandsStorage {
     private BotCommandsStorage() {}
 
@@ -17,14 +18,21 @@ public class BotCommandsStorage {
         COMMANDS.add(new Command("/untrack", true));
     }
 
+    /**
+     * Возвращает список доступных команд
+     *
+     * @return {@code List<Command>} - список доступных команд
+     */
     public static List<Command> getCommands() {
         return Collections.unmodifiableList(COMMANDS);
     }
 
-    public static void setCommand(Command command) {
-        COMMANDS.add(command);
-    }
-
+    /**
+     * Возвращает команду по её строковому значению
+     *
+     * @param message название команды
+     * @return объект типа {@code Command}
+     */
     public static Command getCommand(String message) {
         for (Command command : COMMANDS) {
             if (Command.isValidCommand(command, message)) {
