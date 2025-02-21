@@ -10,6 +10,7 @@ import com.pengrad.telegrambot.request.SendMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/** Обработчик сообщений от пользователя в тг чате */
 @Component
 public class TgChatProcessor implements Processor {
     private final HandlerManager handlerManager;
