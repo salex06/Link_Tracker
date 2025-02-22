@@ -9,15 +9,18 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 /** Обработчик сообщений от пользователя в тг чате */
 @Component
 public class TgChatProcessor implements Processor {
+    private final RestClient restClient;
     private final HandlerManager handlerManager;
 
     @Autowired
-    public TgChatProcessor(HandlerManager handlerManager) {
+    public TgChatProcessor(HandlerManager handlerManager, RestClient restClient) {
         this.handlerManager = handlerManager;
+        this.restClient = restClient;
     }
 
     @Override
@@ -27,6 +30,6 @@ public class TgChatProcessor implements Processor {
         Command command = BotCommandsStorage.getCommand(message);
         Handler messageHandler = handlerManager.manageHandler(command);
 
-        return messageHandler.handle(update);
+        return messageHandler.handle(update, restClient);
     }
 }

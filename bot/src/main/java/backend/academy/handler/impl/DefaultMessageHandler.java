@@ -6,12 +6,13 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 @Order(3)
 @Component
 public class DefaultMessageHandler implements Handler {
     @Override
-    public SendMessage handle(Update update) {
+    public SendMessage handle(Update update, RestClient rest) {
         Long chatId = update.message().chat().id();
         String message = update.message().text();
 

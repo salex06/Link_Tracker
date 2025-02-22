@@ -20,8 +20,7 @@ import org.springframework.web.client.RestClient;
 @Component
 public class TrackMessageHandler implements Handler {
     @Override
-    public SendMessage handle(Update update) {
-        RestClient restClient = RestClient.create();
+    public SendMessage handle(Update update, RestClient restClient) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();
@@ -32,12 +31,11 @@ public class TrackMessageHandler implements Handler {
         }
         String linkUrlToTrack = splittedMessage[1];
 
-        String url = "http://localhost:8081/links";
 
         try {
             ResponseEntity<LinkResponse> entity = restClient
                     .post()
-                    .uri(url)
+                    .uri("/links")
                     .body(new AddLinkRequest(linkUrlToTrack))
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .retrieve()

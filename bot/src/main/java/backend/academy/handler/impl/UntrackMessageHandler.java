@@ -21,8 +21,7 @@ import org.springframework.web.client.RestClient;
 @Component
 public class UntrackMessageHandler implements Handler {
     @Override
-    public SendMessage handle(Update update) {
-        RestClient restClient = RestClient.create();
+    public SendMessage handle(Update update, RestClient restClient) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();
@@ -33,12 +32,10 @@ public class UntrackMessageHandler implements Handler {
         }
         String linkUrlToUntrack = splittedMessage[1];
 
-        String url = "http://localhost:8081/links";
-
         try {
             ResponseEntity<LinkResponse> entity = restClient
                     .method(HttpMethod.DELETE)
-                    .uri(url)
+                    .uri("/links")
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .body(new RemoveLinkRequest(linkUrlToUntrack))
                     .retrieve()

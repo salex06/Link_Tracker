@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.RestClient;
 
 @ExtendWith(MockitoExtension.class)
 class TgChatProcessorTest {
@@ -37,6 +38,9 @@ class TgChatProcessorTest {
 
     @Mock
     private static HandlerManager handlerManager;
+
+    @Mock
+    private RestClient restClient;
 
     @InjectMocks
     private TgChatProcessor tgChatProcessor;
@@ -60,19 +64,19 @@ class TgChatProcessorTest {
         listMessageHandler = Mockito.mock(ListMessageHandler.class);
         doReturn(new SendMessage(123, "Неизвестная команда"))
                 .when(defaultMessageHandler)
-                .handle(any(Update.class));
+                .handle(any(Update.class), any(RestClient.class));
         doReturn(new SendMessage(123, "Ссылка добавлена"))
                 .when(trackMessageHandler)
-                .handle(any(Update.class));
+                .handle(any(Update.class), any(RestClient.class));
         doReturn(new SendMessage(123, "Пользователь зарегистрирован"))
                 .when(startMessageHandler)
-                .handle(any(Update.class));
+                .handle(any(Update.class), any(RestClient.class));
         doReturn(new SendMessage(123, "Ссылка удалена"))
                 .when(untrackMessageHandler)
-                .handle(any(Update.class));
+                .handle(any(Update.class), any(RestClient.class));
         doReturn(new SendMessage(123L, "Список ссылок"))
                 .when(listMessageHandler)
-                .handle(any(Update.class));
+                .handle(any(Update.class), any(RestClient.class));
     }
 
     @Test

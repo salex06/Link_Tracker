@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 @Order(2)
 @Component
@@ -20,7 +21,7 @@ public class HelpMessageHandler implements Handler {
             "/list", "Получить список всех отслеживаемых ресурсов");
 
     @Override
-    public SendMessage handle(Update update) {
+    public SendMessage handle(Update update, RestClient restClient) {
         Long chatId = update.message().chat().id();
         String commands = getCommandsAsString();
         return new SendMessage(chatId, commands);
