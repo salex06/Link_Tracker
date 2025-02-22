@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Обработчик команды добавления ресурса на отслеживание */
 @Order(2)
 @Component
 public class TrackMessageHandler implements Handler {
@@ -30,7 +31,6 @@ public class TrackMessageHandler implements Handler {
             return new SendMessage(chatId, "Вы должны указать URL после команды!");
         }
         String linkUrlToTrack = splittedMessage[1];
-
 
         try {
             ResponseEntity<LinkResponse> entity = restClient

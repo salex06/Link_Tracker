@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Обработчик команды получения списка отслеживаемых ресурсов */
 @Order(2)
 @Component
 public class ListMessageHandler implements Handler {

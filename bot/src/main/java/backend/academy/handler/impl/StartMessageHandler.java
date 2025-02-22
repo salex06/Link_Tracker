@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Обработчик команды регистрации пользователя (запуска бота) */
 @Order(2)
 @Component
 public class StartMessageHandler implements Handler {

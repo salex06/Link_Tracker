@@ -8,6 +8,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Обработчик неизвестной команды пользователя */
 @Order(3)
 @Component
 public class DefaultMessageHandler implements Handler {
