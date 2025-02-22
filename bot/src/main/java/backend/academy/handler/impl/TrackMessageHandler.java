@@ -20,8 +20,7 @@ import org.springframework.web.client.RestClient;
 @Component
 public class TrackMessageHandler implements Handler {
     @Override
-    public SendMessage handle(Update update) {
-        RestClient restClient = RestClient.create();
+    public SendMessage handle(Update update, RestClient restClient) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();

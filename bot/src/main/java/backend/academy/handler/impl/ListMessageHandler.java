@@ -20,18 +20,15 @@ import org.springframework.web.client.RestClient;
 @Component
 public class ListMessageHandler implements Handler {
     @Override
-    public SendMessage handle(Update update) {
-        RestClient restClient = RestClient.create();
+    public SendMessage handle(Update update, RestClient restClient) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();
 
-        String url = "http://localhost:8081/links";
-
         try {
             ResponseEntity<ListLinksResponse> entity = restClient
                     .get()
-                    .uri(url)
+                    .uri("/links")
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
@@ -56,9 +53,9 @@ public class ListMessageHandler implements Handler {
         StringBuilder builder = new StringBuilder();
         int counter = 0;
         builder.append("Количество отслеживаемых ресурсов: ")
-                .append(linksResponse.getSize())
+                .append(linksResponse.size())
                 .append('\n');
-        for (Link link : linksResponse.getLinks()) {
+        for (Link link : linksResponse.links()) {
             builder.append(++counter).append(") ").append(link.getUrl()).append('\n');
         }
         return builder.toString();

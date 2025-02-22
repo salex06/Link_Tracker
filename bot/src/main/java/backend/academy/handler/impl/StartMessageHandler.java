@@ -18,9 +18,8 @@ import org.springframework.web.client.RestClient;
 @Component
 public class StartMessageHandler implements Handler {
     @Override
-    public SendMessage handle(Update update) {
+    public SendMessage handle(Update update, RestClient restClient) {
         Long chatId = update.message().chat().id();
-        RestClient restClient = RestClient.create();
         ObjectMapper objectMapper = new ObjectMapper();
 
         String url = "http://localhost:8081/tg-chat/" + chatId.toString();
