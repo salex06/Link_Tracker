@@ -3,12 +3,20 @@ package backend.academy.bot.commands;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /** Хранилище доступных команд бота */
 public class BotCommandsStorage {
     private BotCommandsStorage() {}
 
     private static final List<Command> COMMANDS = new ArrayList<>();
+
+    private static final Map<String, String> COMMAND_DESCRIPTION = Map.of(
+            "/start", "Запустить бота",
+            "/help", "Вывести все команды на экран",
+            "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
+            "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
+            "/list", "Получить список всех отслеживаемых ресурсов");
 
     static {
         COMMANDS.add(new Command("/start", false));
@@ -40,5 +48,9 @@ public class BotCommandsStorage {
             }
         }
         return null;
+    }
+
+    public static Map<String, String> getCommandDescription() {
+        return COMMAND_DESCRIPTION;
     }
 }

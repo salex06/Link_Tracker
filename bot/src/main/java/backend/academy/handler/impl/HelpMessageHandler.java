@@ -6,6 +6,7 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -14,12 +15,12 @@ import org.springframework.web.client.RestClient;
 @Order(2)
 @Component
 public class HelpMessageHandler implements Handler {
-    private final Map<String, String> helpCommands = Map.of(
-            "/start", "Запустить бота",
-            "/help", "Вывести все команды на экран",
-            "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
-            "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
-            "/list", "Получить список всех отслеживаемых ресурсов");
+    private final Map<String, String> helpCommands;
+
+    @Autowired
+    public HelpMessageHandler(Map<String, String> helpCommands) {
+        this.helpCommands = helpCommands;
+    }
 
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
