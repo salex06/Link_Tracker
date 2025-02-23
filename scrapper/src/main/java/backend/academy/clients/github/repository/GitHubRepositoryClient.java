@@ -9,8 +9,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+@Component
 public class GitHubRepositoryClient implements Client {
     private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
 

@@ -1,5 +1,6 @@
 package backend.academy.config;
 
+import backend.academy.clients.ClientManager;
 import backend.academy.scheduler.Scheduler;
 import backend.academy.service.LinkService;
 import org.springframework.context.annotation.Bean;
@@ -10,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Configuration
 public class SchedulerConfig {
     @Bean
-    public Scheduler scheduler(LinkService linkService) {
-        return new Scheduler(linkService);
+    public Scheduler scheduler(LinkService linkService, ClientManager clientManager) {
+        return new Scheduler(linkService, clientManager);
     }
 }

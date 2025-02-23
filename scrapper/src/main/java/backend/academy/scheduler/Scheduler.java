@@ -1,7 +1,7 @@
 package backend.academy.scheduler;
 
-import backend.academy.clients.AvailableClients;
 import backend.academy.clients.Client;
+import backend.academy.clients.ClientManager;
 import backend.academy.dto.LinkUpdate;
 import backend.academy.model.Link;
 import backend.academy.service.LinkService;
@@ -14,15 +14,17 @@ import org.springframework.web.client.RestClient;
 @Service
 public class Scheduler {
     private final LinkService linkService;
+    private final ClientManager clientManager;
 
     @Autowired
-    public Scheduler(LinkService linkService) {
+    public Scheduler(LinkService linkService, ClientManager clientManager) {
         this.linkService = linkService;
+        this.clientManager = clientManager;
     }
 
     @Scheduled(fixedDelay = 10000, initialDelay = 10000)
     public void schedule() {
-        List<Client> clients = AvailableClients.availableClients();
+        List<Client> clients = clientManager.availableClients();
         List<Link> links = linkService.getAllLinks();
         for (Link link : links) {
             Client suitableClient = getSuitableClient(clients, link);
