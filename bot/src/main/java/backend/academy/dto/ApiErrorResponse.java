@@ -9,10 +9,10 @@ import java.util.List;
  * @param code код ошибки
  * @param exceptionName имя сгенерированного исключения
  * @param exceptionMessage сообщение сгенерированного исключения
- * @param stackTrace трассировка стэка
+ * @param trace трассировка стэка
  */
 public record ApiErrorResponse(
-        String description, String code, String exceptionName, String exceptionMessage, List<String> stackTrace) {
+        String description, String code, String exceptionName, String exceptionMessage, List<String> trace) {
     public ApiErrorResponse() {
         this(null, null, null, null, null);
     }

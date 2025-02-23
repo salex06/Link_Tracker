@@ -11,8 +11,7 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -27,18 +26,19 @@ public class ListMessageHandler implements Handler {
         Long chatId = update.message().chat().id();
 
         try {
-            ResponseEntity<ListLinksResponse> entity = restClient
+            ListLinksResponse linksResponse = restClient
                     .get()
                     .uri("/links")
                     .header("Tg-Chat-Id", String.valueOf(chatId))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                        ApiErrorResponse apiErrorResponse =
-                                objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                        throw new ApiErrorException(apiErrorResponse);
-                    })
-                    .toEntity(ListLinksResponse.class);
-            ListLinksResponse linksResponse = entity.getBody();
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                            ApiErrorResponse apiErrorResponse =
+                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                            throw new ApiErrorException(apiErrorResponse);
+                        } else {
+                            return objectMapper.readValue(response.getBody(), ListLinksResponse.class);
+                        }
+                    });
             if (linksResponse == null) {
                 return new SendMessage(chatId, "Ошибка при получении списка ресурсов");
             }
