@@ -7,10 +7,10 @@ import backend.academy.handler.Handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -26,17 +26,16 @@ public class StartMessageHandler implements Handler {
         String url = "/tg-chat/" + chatId.toString();
 
         try {
-            ResponseEntity<String> data = restClient
-                    .post()
-                    .uri(url)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                        ApiErrorResponse apiErrorResponse =
-                                objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                        throw new ApiErrorException(apiErrorResponse);
-                    })
-                    .toEntity(String.class);
-            return new SendMessage(chatId, data.getBody());
+            String data = restClient.post().uri(url).exchange((request, response) -> {
+                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                    ApiErrorResponse apiErrorResponse =
+                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                    throw new ApiErrorException(apiErrorResponse);
+                } else {
+                    return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                }
+            });
+            return new SendMessage(chatId, data);
         } catch (ApiErrorException e) {
             ApiErrorResponse apiErrorResponse = e.apiErrorResponse();
             // TODO: добавить логирование
