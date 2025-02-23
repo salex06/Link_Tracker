@@ -3,6 +3,7 @@ package backend.academy.clients.github.repository;
 import backend.academy.clients.Client;
 import backend.academy.model.Link;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,7 +22,7 @@ public class GitHubRepositoryClient implements Client {
     }
 
     @Override
-    public String getUpdates(Link link) {
+    public List<String> getUpdates(Link link) {
         String url = getUrl(link);
         if (url == null) {
             return null;
@@ -34,7 +35,7 @@ public class GitHubRepositoryClient implements Client {
                 .toEntity(GitHubRepositoryDTO.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return generateUpdateText(Objects.requireNonNull(response.getBody()), link);
+            return List.of(generateUpdateText(Objects.requireNonNull(response.getBody()), link));
         } else {
             throw new RuntimeException(String.format(
                     "Не удалось получить обновления по ссылке: %s (%d)",
@@ -51,7 +52,7 @@ public class GitHubRepositoryClient implements Client {
     }
 
     private String generateUpdateText(GitHubRepositoryDTO body, Link link) {
-        String updateDescription = null;
+        String updateDescription = "";
         LocalDateTime previousUpdateTime = link.getLastUpdateTime();
         if (wasUpdated(previousUpdateTime, body.updatedAt())) {
             link.setLastUpdateTime(body.updatedAt());

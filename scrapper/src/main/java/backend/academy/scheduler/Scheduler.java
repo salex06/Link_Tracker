@@ -26,7 +26,7 @@ public class Scheduler {
         List<Link> links = linkService.getAllLinks();
         for (Link link : links) {
             Client suitableClient = getSuitableClient(clients, link);
-            String updateDescription = getUpdateDescription(suitableClient, link);
+            List<String> updateDescription = suitableClient.getUpdates(link);
             if (!updateDescription.isEmpty()) {
                 sendUpdates(updateDescription, link);
             }
@@ -42,20 +42,17 @@ public class Scheduler {
         throw new RuntimeException("No suitable clients for link: " + link.getUrl());
     }
 
-    private String getUpdateDescription(Client client, Link link) {
-        String update = client.getUpdates(link);
-        if (update == null) {
-            return "";
-        }
-        return update;
-    }
-
-    private void sendUpdates(String updateDescription, Link link) {
+    private void sendUpdates(List<String> updatesList, Link link) {
         // TODO: централизовать логику отправления сообщений
-        LinkUpdate linkUpdate = new LinkUpdate(link.getId(), link.getUrl(), updateDescription, link.getTgChatIds());
-        String url = "http://localhost:8080/updates";
-        RestClient client = RestClient.create();
+        for (String updateDescription : updatesList) {
+            if (updateDescription.isEmpty()) {
+                continue;
+            }
+            LinkUpdate linkUpdate = new LinkUpdate(link.getId(), link.getUrl(), updateDescription, link.getTgChatIds());
+            String url = "http://localhost:8080/updates";
+            RestClient client = RestClient.create();
 
-        client.post().uri(url).body(linkUpdate).retrieve().toEntity(String.class);
+            client.post().uri(url).body(linkUpdate).retrieve().toEntity(String.class);
+        }
     }
 }
