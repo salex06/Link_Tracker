@@ -11,8 +11,7 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -33,19 +32,20 @@ public class TrackMessageHandler implements Handler {
         String linkUrlToTrack = splittedMessage[1];
 
         try {
-            ResponseEntity<LinkResponse> entity = restClient
+            LinkResponse linkResponse = restClient
                     .post()
                     .uri("/links")
                     .body(new AddLinkRequest(linkUrlToTrack))
                     .header("Tg-Chat-Id", String.valueOf(chatId))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                        ApiErrorResponse apiErrorResponse =
-                                objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                        throw new ApiErrorException(apiErrorResponse);
-                    })
-                    .toEntity(LinkResponse.class);
-            LinkResponse linkResponse = entity.getBody();
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                            ApiErrorResponse apiErrorResponse =
+                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                            throw new ApiErrorException(apiErrorResponse);
+                        } else {
+                            return objectMapper.readValue(response.getBody(), LinkResponse.class);
+                        }
+                    });
             if (linkResponse == null) {
                 return new SendMessage(chatId, "Ошибка при ответе на запрос отслеживания");
             }
