@@ -12,8 +12,6 @@ import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -34,19 +32,20 @@ public class UntrackMessageHandler implements Handler {
         String linkUrlToUntrack = splittedMessage[1];
 
         try {
-            ResponseEntity<LinkResponse> entity = restClient
+            LinkResponse linkResponse = restClient
                     .method(HttpMethod.DELETE)
                     .uri("/links")
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .body(new RemoveLinkRequest(linkUrlToUntrack))
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                        ApiErrorResponse apiErrorResponse =
-                                objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                        throw new ApiErrorException(apiErrorResponse);
-                    })
-                    .toEntity(LinkResponse.class);
-            LinkResponse linkResponse = entity.getBody();
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().is4xxClientError()) {
+                            ApiErrorResponse apiErrorResponse =
+                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                            throw new ApiErrorException(apiErrorResponse);
+                        } else {
+                            return objectMapper.readValue(response.getBody(), LinkResponse.class);
+                        }
+                    });
             if (linkResponse == null) {
                 return new SendMessage(chatId, "Ошибка при ответе на запрос отслеживания");
             }
