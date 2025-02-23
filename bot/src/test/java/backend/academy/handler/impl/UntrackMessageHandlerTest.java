@@ -1,7 +1,7 @@
 package backend.academy.handler.impl;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,13 +23,13 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
 
-class TrackMessageHandlerTest {
+class UntrackMessageHandlerTest {
     private int port = 8089;
 
     @Autowired
     private static RestClient restClient;
 
-    private static TrackMessageHandler trackMessageHandler;
+    private static UntrackMessageHandler untrackMessageHandler;
 
     private WireMockServer wireMockServer;
 
@@ -47,23 +47,23 @@ class TrackMessageHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        trackMessageHandler = new TrackMessageHandler();
+        untrackMessageHandler = new UntrackMessageHandler();
     }
 
     @Test
     public void supportCommand_WhenCorrectCommand_ThenReturnTrue() {
-        Command command = new Command("/track", true);
+        Command command = new Command("/untrack", true);
 
-        boolean result = trackMessageHandler.supportCommand(command);
+        boolean result = untrackMessageHandler.supportCommand(command);
 
         assertThat(result).isTrue();
     }
 
     @Test
     public void supportCommand_WhenWrongCommand_ThenReturnFalse() {
-        Command command = new Command("/anyCommand", true);
+        Command command = new Command("/somethingElse", true);
 
-        boolean result = trackMessageHandler.supportCommand(command);
+        boolean result = untrackMessageHandler.supportCommand(command);
 
         assertThat(result).isFalse();
     }
@@ -80,7 +80,7 @@ class TrackMessageHandlerTest {
         when(message.text()).thenReturn("somethingWrong");
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        SendMessage sendMessage = trackMessageHandler.handle(update, restClient);
+        SendMessage sendMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, sendMessage.getParameters().get("text"));
     }
@@ -94,10 +94,10 @@ class TrackMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(null);
-        when(message.text()).thenReturn("/track linkExample");
+        when(message.text()).thenReturn("/untrack linkExample");
 
         stubFor(
-                post("/links")
+                delete("/links")
                         .willReturn(
                                 aResponse()
                                         .withStatus(400)
@@ -107,7 +107,7 @@ class TrackMessageHandlerTest {
                                                         + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"trace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
     }
@@ -121,9 +121,9 @@ class TrackMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
-        when(message.text()).thenReturn("/track linkExample");
+        when(message.text()).thenReturn("/untrack linkExample");
 
-        stubFor(post("/links")
+        stubFor(delete("/links")
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
@@ -131,30 +131,54 @@ class TrackMessageHandlerTest {
                                 + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"trace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
     }
 
     @Test
     public void handle_WhenCorrectRequest_ThenReturnLinkResponse() {
-        String expectedMessage = String.format("Ресурс %s добавлен для отслеживания. ID: %d", "linkExample", 1);
+        String expectedMessage = String.format("Ресурс %s удален из отслеживаемых. ID: %d", "linkExample", 1);
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
-        when(message.text()).thenReturn("/start linkExample");
+        when(message.text()).thenReturn("/untrack linkExample");
 
-        stubFor(post("/links")
+        stubFor(delete("/links")
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\": 1,\"url\":\"linkExample\"}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+    }
+
+    @Test
+    public void handle_WhenWrongLink_ThenReturnNotFoundMessage() {
+        String expectedMessage = "Ссылка не найдена";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(50L);
+        when(message.text()).thenReturn("/untrack linkExample");
+
+        stubFor(delete("/links")
+                .willReturn(aResponse()
+                        .withStatus(404)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"description\":\"Ссылка не найдена\",\"code\":\"404\", "
+                                + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"trace\": []}")));
+
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
     }
