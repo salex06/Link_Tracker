@@ -6,12 +6,18 @@ import backend.academy.service.LinkService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.client.RestClient;
 
 @EnableScheduling
 @Configuration
 public class SchedulerConfig {
     @Bean
-    public Scheduler scheduler(LinkService linkService, ClientManager clientManager) {
-        return new Scheduler(linkService, clientManager);
+    public RestClient restClient() {
+        return RestClient.create();
+    }
+
+    @Bean
+    public Scheduler scheduler(LinkService linkService, ClientManager clientManager, RestClient restClient) {
+        return new Scheduler(linkService, clientManager, restClient);
     }
 }

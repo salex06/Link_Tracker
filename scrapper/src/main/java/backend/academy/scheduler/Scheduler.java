@@ -15,11 +15,13 @@ import org.springframework.web.client.RestClient;
 public class Scheduler {
     private final LinkService linkService;
     private final ClientManager clientManager;
+    private final RestClient restClient;
 
     @Autowired
-    public Scheduler(LinkService linkService, ClientManager clientManager) {
+    public Scheduler(LinkService linkService, ClientManager clientManager, RestClient client) {
         this.linkService = linkService;
         this.clientManager = clientManager;
+        this.restClient = client;
     }
 
     @Scheduled(fixedDelay = 10000, initialDelay = 10000)
@@ -28,7 +30,7 @@ public class Scheduler {
         List<Link> links = linkService.getAllLinks();
         for (Link link : links) {
             Client suitableClient = getSuitableClient(clients, link);
-            List<String> updateDescription = suitableClient.getUpdates(link);
+            List<String> updateDescription = suitableClient.getUpdates(link, restClient);
             if (!updateDescription.isEmpty()) {
                 sendUpdates(updateDescription, link);
             }

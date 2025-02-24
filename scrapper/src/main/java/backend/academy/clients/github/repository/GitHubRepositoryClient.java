@@ -24,12 +24,12 @@ public class GitHubRepositoryClient implements Client {
     }
 
     @Override
-    public List<String> getUpdates(Link link) {
+    public List<String> getUpdates(Link link, RestClient client) {
         String url = getUrl(link);
         if (url == null) {
             return null;
         }
-        RestClient client = RestClient.create();
+
         ResponseEntity<GitHubRepositoryDTO> response = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/vnd.github+json")

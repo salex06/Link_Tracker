@@ -26,13 +26,12 @@ public class GitHubSingleIssueClient implements Client {
     }
 
     @Override
-    public List<String> getUpdates(Link link) {
+    public List<String> getUpdates(Link link, RestClient client) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
         String url = getUrl(link);
         if (url == null) return new ArrayList<>();
 
-        RestClient client = RestClient.create();
         GitHubIssue issuesList = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/vnd.github+json")
