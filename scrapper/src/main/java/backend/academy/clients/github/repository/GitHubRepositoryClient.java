@@ -1,12 +1,13 @@
 package backend.academy.clients.github.repository;
 
 import backend.academy.clients.Client;
+import backend.academy.clients.converter.LinkToApiLinkConverter;
 import backend.academy.model.Link;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -16,20 +17,13 @@ import org.springframework.web.client.RestClient;
 public class GitHubRepositoryClient extends Client {
     private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
 
-    public GitHubRepositoryClient() {
-        super(supportedUrl, null);
-    }
-
-    @Override
-    public boolean supportLink(Link link) {
-        String url = link.getUrl();
-        Matcher linkMatchers = supportedUrl.matcher(url);
-        return linkMatchers.matches();
+    public GitHubRepositoryClient(@Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter) {
+        super(supportedUrl, converter);
     }
 
     @Override
     public List<String> getUpdates(Link link, RestClient client) {
-        String url = getUrl(link);
+        String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return null;
         }
@@ -47,14 +41,6 @@ public class GitHubRepositoryClient extends Client {
                     "Не удалось получить обновления по ссылке: %s (%d)",
                     link.getUrl(), response.getStatusCode().value()));
         }
-    }
-
-    private String getUrl(Link link) {
-        Matcher matcher = supportedUrl.matcher(link.getUrl());
-        if (matcher.matches()) {
-            return String.format("https://api.github.com/repos/%s/%s", matcher.group(1), matcher.group(2));
-        }
-        return null;
     }
 
     private String generateUpdateText(GitHubRepositoryDTO body, Link link) {
