@@ -13,8 +13,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
-public class GitHubRepositoryClient implements Client {
+public class GitHubRepositoryClient extends Client {
     private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
+
+    public GitHubRepositoryClient() {
+        super(supportedUrl, null);
+    }
 
     @Override
     public boolean supportLink(Link link) {

@@ -15,8 +15,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
-public class GitHubSingleIssueClient implements Client {
+public class GitHubSingleIssueClient extends Client {
     private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
+
+    public GitHubSingleIssueClient() {
+        super(SUPPORTED_URL, null);
+    }
 
     @Override
     public boolean supportLink(Link link) {

@@ -9,32 +9,25 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
-public class SoQuestionClient implements Client {
+public class SoQuestionClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
-    private final LinkToApiLinkConverter converter;
 
     @Autowired
-    public SoQuestionClient(LinkToApiLinkConverter converter) {
-        this.converter = converter;
-    }
-
-    @Override
-    public boolean supportLink(Link link) {
-        Matcher matcher = SUPPORTED_LINK.matcher(link.getUrl());
-        return matcher.matches();
+    public SoQuestionClient(@Qualifier("soQuestionLinkConverter") LinkToApiLinkConverter converter) {
+        super(SUPPORTED_LINK, converter);
     }
 
     @Override
     public List<String> getUpdates(Link link, RestClient client) {
-        String url = converter.convert(link.getUrl());
+        String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return null;
         }
