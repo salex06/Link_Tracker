@@ -1,5 +1,6 @@
 package backend.academy.processor.impl;
 
+import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.UNDEFINED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -9,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.BotCommandsStorage;
 import backend.academy.bot.commands.Command;
+import backend.academy.crawler.DialogStateDTO;
+import backend.academy.crawler.impl.TrackMessageCrawler;
 import backend.academy.handler.HandlerManager;
 import backend.academy.handler.impl.DefaultMessageHandler;
 import backend.academy.handler.impl.ListMessageHandler;
@@ -35,6 +38,7 @@ class TgChatProcessorTest {
     private static TrackMessageHandler trackMessageHandler;
     private static UntrackMessageHandler untrackMessageHandler;
     private static ListMessageHandler listMessageHandler;
+    private static TrackMessageCrawler trackMessageCrawler;
 
     @Mock
     private static HandlerManager handlerManager;
@@ -53,6 +57,7 @@ class TgChatProcessorTest {
 
     @BeforeAll
     static void setUp() {
+        trackMessageCrawler = Mockito.mock(TrackMessageCrawler.class);
         update = Mockito.mock(Update.class);
         message = Mockito.mock(Message.class);
         when(update.message()).thenReturn(message);
@@ -82,6 +87,7 @@ class TgChatProcessorTest {
     @Test
     void processStartMessage() {
         try (MockedStatic<BotCommandsStorage> botCommandsStorageMockedStatic = mockStatic(BotCommandsStorage.class)) {
+            when(trackMessageCrawler.crawl(any(Update.class))).thenReturn(new DialogStateDTO(null, UNDEFINED));
             botCommandsStorageMockedStatic
                     .when(() -> BotCommandsStorage.getCommand(anyString()))
                     .thenReturn(command);
@@ -98,12 +104,15 @@ class TgChatProcessorTest {
     @Test
     void processTrackMessage() {
         try (MockedStatic<BotCommandsStorage> botCommandsStorageMockedStatic = mockStatic(BotCommandsStorage.class)) {
+            DialogStateDTO dialogStateDTO = Mockito.mock(DialogStateDTO.class);
+            when(dialogStateDTO.message()).thenReturn(new SendMessage(1, "Введите ссылку:"));
+            when(trackMessageCrawler.crawl(any(Update.class))).thenReturn(dialogStateDTO);
+
             botCommandsStorageMockedStatic
                     .when(() -> BotCommandsStorage.getCommand(anyString()))
                     .thenReturn(command);
-            String expectedMessage = "Ссылка добавлена";
-            when(message.text()).thenReturn("/track abc");
-            when(handlerManager.manageHandler(any())).thenReturn(trackMessageHandler);
+            String expectedMessage = "Введите ссылку:";
+            when(message.text()).thenReturn("/track");
 
             SendMessage actualSendMessage = tgChatProcessor.process(update);
 
@@ -114,6 +123,7 @@ class TgChatProcessorTest {
     @Test
     void processUndefinedMessage() {
         try (MockedStatic<BotCommandsStorage> botCommandsStorageMockedStatic = mockStatic(BotCommandsStorage.class)) {
+            when(trackMessageCrawler.crawl(any(Update.class))).thenReturn(new DialogStateDTO(null, UNDEFINED));
             botCommandsStorageMockedStatic
                     .when(() -> BotCommandsStorage.getCommand(anyString()))
                     .thenReturn(command);
@@ -130,6 +140,7 @@ class TgChatProcessorTest {
     @Test
     void processUntrackMessage() {
         try (MockedStatic<BotCommandsStorage> botCommandsStorageMockedStatic = mockStatic(BotCommandsStorage.class)) {
+            when(trackMessageCrawler.crawl(any(Update.class))).thenReturn(new DialogStateDTO(null, UNDEFINED));
             botCommandsStorageMockedStatic
                     .when(() -> BotCommandsStorage.getCommand(anyString()))
                     .thenReturn(command);
@@ -146,6 +157,7 @@ class TgChatProcessorTest {
     @Test
     void processListMessage() {
         try (MockedStatic<BotCommandsStorage> botCommandsStorageMockedStatic = mockStatic(BotCommandsStorage.class)) {
+            when(trackMessageCrawler.crawl(any(Update.class))).thenReturn(new DialogStateDTO(null, UNDEFINED));
             botCommandsStorageMockedStatic
                     .when(() -> BotCommandsStorage.getCommand(anyString()))
                     .thenReturn(command);

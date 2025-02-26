@@ -1,6 +1,7 @@
 package backend.academy.handler.impl;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.crawler.MessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkResponse;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -19,23 +21,28 @@ import org.springframework.web.client.RestClient;
 @Order(2)
 @Component
 public class TrackMessageHandler implements Handler {
+    private final MessageCrawler crawler;
+
+    @Autowired
+    public TrackMessageHandler(MessageCrawler crawler) {
+        this.crawler = crawler;
+    }
+
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();
-        String message = update.message().text();
-        String[] splittedMessage = message.split(" ", 2);
-        if (splittedMessage.length <= 1) {
-            return new SendMessage(chatId, "Вы должны указать URL после команды!");
+        AddLinkRequest crawlerReport = crawler.terminate(chatId);
+        if (crawlerReport == null) {
+            return new SendMessage(chatId, "Ошибка, попробуйте снова");
         }
-        String linkUrlToTrack = splittedMessage[1];
 
         try {
             LinkResponse linkResponse = restClient
                     .post()
                     .uri("/links")
-                    .body(new AddLinkRequest(linkUrlToTrack))
+                    .body(crawlerReport)
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .exchange((request, response) -> {
                         if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
@@ -61,6 +68,6 @@ public class TrackMessageHandler implements Handler {
 
     @Override
     public boolean supportCommand(Command command) {
-        return command != null && Objects.equals(command.commandName(), "/track") && command.needExtraInfo();
+        return command != null && Objects.equals(command.commandName(), "/track") && !command.needExtraInfo();
     }
 }

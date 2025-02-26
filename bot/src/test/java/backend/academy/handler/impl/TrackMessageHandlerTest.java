@@ -6,15 +6,19 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.crawler.impl.TrackMessageCrawler;
+import backend.academy.dto.AddLinkRequest;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import java.util.ArrayList;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +32,8 @@ class TrackMessageHandlerTest {
 
     @Autowired
     private static RestClient restClient;
+
+    private static TrackMessageCrawler crawler;
 
     private static TrackMessageHandler trackMessageHandler;
 
@@ -47,12 +53,13 @@ class TrackMessageHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        trackMessageHandler = new TrackMessageHandler();
+        crawler = Mockito.mock(TrackMessageCrawler.class);
+        trackMessageHandler = new TrackMessageHandler(crawler);
     }
 
     @Test
     public void supportCommand_WhenCorrectCommand_ThenReturnTrue() {
-        Command command = new Command("/track", true);
+        Command command = new Command("/track", false);
 
         boolean result = trackMessageHandler.supportCommand(command);
 
@@ -69,25 +76,9 @@ class TrackMessageHandlerTest {
     }
 
     @Test
-    public void handle_WhenMessageIsWrong_ThenReturnError() {
-        String expectedMessage = "Вы должны указать URL после команды!";
-        Update update = Mockito.mock(Update.class);
-        Message message = Mockito.mock(Message.class);
-        Chat chat = Mockito.mock(Chat.class);
-        when(update.message()).thenReturn(message);
-        when(message.chat()).thenReturn(chat);
-        when(chat.id()).thenReturn(1L);
-        when(message.text()).thenReturn("somethingWrong");
-
-        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        SendMessage sendMessage = trackMessageHandler.handle(update, restClient);
-
-        assertEquals(expectedMessage, sendMessage.getParameters().get("text"));
-    }
-
-    @Test
     public void handle_WhenHeaderWasNotPassed_ThenReturnError() {
-        String expectedMessage = "Некорректные параметры запроса";
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("link", new ArrayList<>(), new ArrayList<>()));
+        String expectedMessage = "Ошибка, попробуйте снова";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -114,6 +105,7 @@ class TrackMessageHandlerTest {
 
     @Test
     public void handle_WhenWrongTgChatId_ThenReturnError() {
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("link", null, null));
         String expectedMessage = "Некорректные параметры запроса";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
@@ -138,6 +130,7 @@ class TrackMessageHandlerTest {
 
     @Test
     public void handle_WhenCorrectRequest_ThenReturnLinkResponse() {
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", null, null));
         String expectedMessage = String.format("Ресурс %s добавлен для отслеживания. ID: %d", "linkExample", 1);
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);

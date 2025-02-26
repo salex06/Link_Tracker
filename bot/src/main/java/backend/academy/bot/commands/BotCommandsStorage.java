@@ -22,7 +22,7 @@ public class BotCommandsStorage {
         COMMANDS.add(new Command("/start", false));
         COMMANDS.add(new Command("/help", false));
         COMMANDS.add(new Command("/list", false));
-        COMMANDS.add(new Command("/track", true));
+        COMMANDS.add(new Command("/track", false));
         COMMANDS.add(new Command("/untrack", true));
     }
 

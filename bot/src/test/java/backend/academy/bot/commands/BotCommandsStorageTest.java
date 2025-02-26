@@ -25,7 +25,7 @@ class BotCommandsStorageTest {
         commandList.add(new Command("/start", false));
         commandList.add(new Command("/help", false));
         commandList.add(new Command("/list", false));
-        commandList.add(new Command("/track", true));
+        commandList.add(new Command("/track", false));
         commandList.add(new Command("/untrack", true));
         return commandList;
     }
@@ -43,7 +43,7 @@ class BotCommandsStorageTest {
                 Arguments.of("/start", new Command("/start", false)),
                 Arguments.of("/help", new Command("/help", false)),
                 Arguments.of("/list", new Command("/list", false)),
-                Arguments.of("/track linkExample", new Command("/track", true)),
+                Arguments.of("/track", new Command("/track", false)),
                 Arguments.of("/untrack linkExample", new Command("/untrack", true)));
     }
 
