@@ -14,23 +14,19 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/**
- * Класс для перехвата и обработки исключений, возникающих в контроллере BotController
- */
+/** Класс для перехвата и обработки исключений, возникающих в контроллере BotController */
 @Slf4j
 @RestControllerAdvice
 public class BotControllerAdvice {
     /**
-     * Обрабатывает генерируемое внутри контроллера исключение,
-     * обозначающее, что переданный запрос некорректен
-     * (нет необходимых полей, неправильные значения полей и т.д.)
+     * Обрабатывает генерируемое внутри контроллера исключение, обозначающее, что переданный запрос некорректен (нет
+     * необходимых полей, неправильные значения полей и т.д.)
      *
      * @param ex объект класса исключения
      * @return {@code ResponseEntity<ApiErrorResponse>} - форматированный ответ на некорректный запрос
      */
     @ExceptionHandler(ApiErrorException.class)
-    public ResponseEntity<ApiErrorResponse> handleApiErrorException(
-        @NotNull ApiErrorException ex) {
+    public ResponseEntity<ApiErrorResponse> handleApiErrorException(@NotNull ApiErrorException ex) {
         return handleIncorrectRequest("Некорректные параметры запроса", ex, HttpStatus.BAD_REQUEST);
     }
 
@@ -42,7 +38,7 @@ public class BotControllerAdvice {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpRequestMethodNotSupportedException(
-        @NotNull HttpRequestMethodNotSupportedException ex) {
+            @NotNull HttpRequestMethodNotSupportedException ex) {
         return handleIncorrectRequest("HTTP метод не поддерживается", ex, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
@@ -65,27 +61,27 @@ public class BotControllerAdvice {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleMessageNotReadableException(
-        @NotNull HttpMessageNotReadableException ex) {
+            @NotNull HttpMessageNotReadableException ex) {
         return handleIncorrectRequest("Не переданы необходимые данные", ex, HttpStatus.BAD_REQUEST);
     }
 
     private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(
-        String message, Exception ex, HttpStatusCode status) {
+            String message, Exception ex, HttpStatusCode status) {
         log.atError()
-            .setMessage(message)
-            .addKeyValue("status", status.value())
-            .addKeyValue("error", ex)
-            .log();
+                .setMessage(message)
+                .addKeyValue("status", status.value())
+                .addKeyValue("error", ex)
+                .log();
 
         return new ResponseEntity<>(
-            new ApiErrorResponse(
-                "Некорректные параметры запроса",
-                String.valueOf(status.value()),
-                ex.getClass().getSimpleName(),
-                ex.getMessage(),
-                Arrays.stream(ex.getStackTrace())
-                    .map(StackTraceElement::toString)
-                    .toList()),
-            status);
+                new ApiErrorResponse(
+                        "Некорректные параметры запроса",
+                        String.valueOf(status.value()),
+                        ex.getClass().getSimpleName(),
+                        ex.getMessage(),
+                        Arrays.stream(ex.getStackTrace())
+                                .map(StackTraceElement::toString)
+                                .toList()),
+                status);
     }
 }
