@@ -1,12 +1,9 @@
 package backend.academy.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import backend.academy.api.BotController;
 import backend.academy.bot.Bot;
-import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkUpdate;
+import backend.academy.exceptions.ApiErrorException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,6 +14,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 public class BotControllerTest {
@@ -47,14 +47,7 @@ public class BotControllerTest {
     }
 
     @Test
-    public void updates_WhenLinkUpdateDTOIsValid_thenReturnBadRequest() {
-        String expectedDescription = "Некорректные параметры запроса";
-
-        ResponseEntity<?> response = botController.update(linkUpdate);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
-        assertThat((ApiErrorResponse) response.getBody()).isNotNull();
-        assertEquals(expectedDescription, ((ApiErrorResponse) response.getBody()).description());
+    public void updates_WhenLinkUpdateDTOIsValid_thenThrowsApiErrorException() {
+        assertThrows(ApiErrorException.class, () -> botController.update(linkUpdate));
     }
 }
