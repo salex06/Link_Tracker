@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.Getter;
 
+/** Класс предоставляет возможность обрабатывать составную команду регистрации ресурса в качестве отслеживаемого. */
 public class TrackMessageCrawler implements MessageCrawler {
     private static final String START_DIALOG_COMMAND = "/track";
     private static final String RESTART_MESSAGE = "Сбросить";
