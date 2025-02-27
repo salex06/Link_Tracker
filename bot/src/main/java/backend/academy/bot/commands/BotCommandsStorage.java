@@ -39,7 +39,7 @@ public class BotCommandsStorage {
      * Возвращает команду по её строковому значению
      *
      * @param message название команды
-     * @return объект типа {@code Command}
+     * @return объект типа {@code Command}. Если сообщение не соответствует ни одной команде, возвращается {@code null}
      */
     public static Command getCommand(String message) {
         for (Command command : COMMANDS) {
@@ -50,6 +50,11 @@ public class BotCommandsStorage {
         return null;
     }
 
+    /**
+     * Возвращает таблицу пар "значение команды - описание команды"
+     *
+     * @return {@code Map<String, String>} - набор пар "значение комманды - описание команды"
+     */
     public static Map<String, String> getCommandDescription() {
         return COMMAND_DESCRIPTION;
     }
