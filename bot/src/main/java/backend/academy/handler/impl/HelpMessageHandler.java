@@ -6,12 +6,14 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Map;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Обработчик запроса помощи. Предоставляет список доступных команд */
+@Slf4j
 @Order(2)
 @Component
 public class HelpMessageHandler implements Handler {
@@ -26,6 +28,12 @@ public class HelpMessageHandler implements Handler {
     public SendMessage handle(Update update, RestClient restClient) {
         Long chatId = update.message().chat().id();
         String commands = getCommandsAsString();
+
+        log.atInfo()
+                .setMessage("Команда вывода справки")
+                .addKeyValue("chat-id", chatId)
+                .log();
+
         return new SendMessage(chatId, commands);
     }
 
