@@ -9,12 +9,14 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Обработчик команды регистрации пользователя (запуска бота) */
+@Slf4j
 @Order(2)
 @Component
 public class StartMessageHandler implements Handler {
@@ -24,6 +26,11 @@ public class StartMessageHandler implements Handler {
         ObjectMapper objectMapper = new ObjectMapper();
 
         String url = "/tg-chat/" + chatId.toString();
+
+        log.atInfo()
+                .setMessage("Запрос на старт диалога")
+                .addKeyValue("chat-id", chatId)
+                .log();
 
         try {
             String data = restClient.post().uri(url).exchange((request, response) -> {
@@ -38,7 +45,13 @@ public class StartMessageHandler implements Handler {
             return new SendMessage(chatId, data);
         } catch (ApiErrorException e) {
             ApiErrorResponse apiErrorResponse = e.apiErrorResponse();
-            // TODO: добавить логирование
+            log.atError()
+                    .setMessage("Некорректные параметры запроса")
+                    .addKeyValue("error", e)
+                    .addKeyValue("error-description", apiErrorResponse.description())
+                    .addKeyValue("url", url)
+                    .addKeyValue("chat-id", chatId)
+                    .log();
             return new SendMessage(chatId, apiErrorResponse.description());
         }
     }
