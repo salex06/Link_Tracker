@@ -10,12 +10,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Обработчик команды прекращения отслеживания ресурсов */
+@Slf4j
 @Order(2)
 @Component
 public class UntrackMessageHandler implements Handler {
@@ -27,9 +29,21 @@ public class UntrackMessageHandler implements Handler {
         String message = update.message().text();
         String[] splittedMessage = message.split(" ", 2);
         if (splittedMessage.length <= 1) {
+            log.atError()
+                    .setMessage("Некорректная команда")
+                    .addKeyValue("command", message)
+                    .addKeyValue("chat-id", chatId)
+                    .log();
+
             return new SendMessage(chatId, "Вы должны указать URL после команды!");
         }
         String linkUrlToUntrack = splittedMessage[1];
+
+        log.atInfo()
+                .setMessage("Запрос на прекращение отслеживания ресурса")
+                .addKeyValue("url", linkUrlToUntrack)
+                .addKeyValue("chat-id", chatId)
+                .log();
 
         try {
             LinkResponse linkResponse = restClient
@@ -53,7 +67,10 @@ public class UntrackMessageHandler implements Handler {
                     chatId,
                     String.format("Ресурс %s удален из отслеживаемых. ID: %d", linkResponse.url(), linkResponse.id()));
         } catch (ApiErrorException e) {
-            // TODO: добавить логирование
+            log.atError()
+                    .setMessage("Некорректные параметры при запросе на прекращение отслеживания ссылки")
+                    .addKeyValue("chat-id", chatId)
+                    .log();
             return new SendMessage(chatId, e.apiErrorResponse().description());
         }
     }
