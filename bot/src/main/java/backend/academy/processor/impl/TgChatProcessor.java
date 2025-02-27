@@ -1,6 +1,6 @@
 package backend.academy.processor.impl;
 
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.UNDEFINED;
+import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.COMPLETED;
 
 import backend.academy.bot.commands.BotCommandsStorage;
 import backend.academy.bot.commands.Command;
@@ -44,7 +44,7 @@ public class TgChatProcessor implements Processor {
         }
 
         Handler messageHandler = trackMessageHandler;
-        if (dialogStateDTO.state() == UNDEFINED) {
+        if (dialogStateDTO.state() != COMPLETED) {
             Command command = BotCommandsStorage.getCommand(update.message().text());
             messageHandler = handlerManager.manageHandler(command);
         }
