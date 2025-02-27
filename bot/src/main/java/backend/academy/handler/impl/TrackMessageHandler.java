@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Обработчик команды добавления ресурса на отслеживание */
+@Slf4j
 @Order(2)
 @Component
 public class TrackMessageHandler implements Handler {
@@ -35,8 +37,20 @@ public class TrackMessageHandler implements Handler {
         Long chatId = update.message().chat().id();
         AddLinkRequest crawlerReport = crawler.terminate(chatId);
         if (crawlerReport == null) {
+            log.atError()
+                    .setMessage("Отсутствуют данные о ресурсе для передачи")
+                    .addKeyValue("chat-id", chatId)
+                    .log();
             return new SendMessage(chatId, "Ошибка, попробуйте снова");
         }
+
+        log.atInfo()
+                .setMessage("Запрос на отслеживание ссылки")
+                .addKeyValue("chat-id", chatId)
+                .addKeyValue("url", crawlerReport.url())
+                .addKeyValue("tags", crawlerReport.tags())
+                .addKeyValue("filters", crawlerReport.filters())
+                .log();
 
         try {
             LinkResponse linkResponse = restClient
@@ -61,7 +75,13 @@ public class TrackMessageHandler implements Handler {
                     String.format(
                             "Ресурс %s добавлен для отслеживания. ID: %d", linkResponse.url(), linkResponse.id()));
         } catch (ApiErrorException e) {
-            // TODO: добавить логирование
+            log.atError()
+                    .setMessage("Некорректные параметры при запросе на остлеживание ссылки")
+                    .addKeyValue("chat-id", chatId)
+                    .addKeyValue("url", crawlerReport.url())
+                    .addKeyValue("tags", crawlerReport.tags())
+                    .addKeyValue("filters", crawlerReport.filters())
+                    .log();
             return new SendMessage(chatId, e.apiErrorResponse().description());
         }
     }
