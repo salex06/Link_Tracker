@@ -10,12 +10,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Обработчик команды получения списка отслеживаемых ресурсов */
+@Slf4j
 @Order(2)
 @Component
 public class ListMessageHandler implements Handler {
@@ -24,6 +26,11 @@ public class ListMessageHandler implements Handler {
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();
+
+        log.atInfo()
+                .setMessage("Запрос списка отслеживаемых ресурсов")
+                .addKeyValue("chat-id", chatId)
+                .log();
 
         try {
             ListLinksResponse linksResponse = restClient
@@ -45,7 +52,11 @@ public class ListMessageHandler implements Handler {
             String trackedLinks = getTrackedLinksAsString(linksResponse);
             return new SendMessage(chatId, trackedLinks);
         } catch (ApiErrorException e) {
-            // TODO: добавить логирование
+            log.atError()
+                    .setMessage("Некорректные параметры запроса списка ресурсов")
+                    .addKeyValue("error", e)
+                    .addKeyValue("chat-id", chatId)
+                    .log();
             return new SendMessage(chatId, e.apiErrorResponse().description());
         }
     }
