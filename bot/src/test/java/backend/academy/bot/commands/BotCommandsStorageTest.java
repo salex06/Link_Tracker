@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -54,5 +55,19 @@ class BotCommandsStorageTest {
         Command command = BotCommandsStorage.getCommand(message);
 
         assertNull(command);
+    }
+
+    @Test
+    void getCommandDescriptionReturnsCorrectMap() {
+        Map<String, String> expectedMap = Map.of(
+                "/start", "Запустить бота",
+                "/help", "Вывести все команды на экран",
+                "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
+                "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
+                "/list", "Получить список всех отслеживаемых ресурсов");
+
+        Map<String, String> actualMap = BotCommandsStorage.getCommandDescription();
+
+        assertEquals(expectedMap, actualMap);
     }
 }
