@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** Контроллер, обрабатывающий запросы на регистрацию/удаление пользователей бота в телеграмме */
 @RestController
 public class ChatController {
     private final ChatService chatService;
@@ -21,6 +22,13 @@ public class ChatController {
         this.chatService = chatService;
     }
 
+    /**
+     * Эндпоинт для регистрации чата в БД
+     *
+     * @param id идентификатор телеграмм чата
+     * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
+     *     {@code ResponseEntity<ApiErrorResponse>}
+     */
     @PostMapping("/tg-chat/{id}")
     ResponseEntity<?> registerChat(@PathVariable Long id) {
         if (chatService.saveChat(id)) {
@@ -31,6 +39,12 @@ public class ChatController {
                 HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Эндпоинт для удаления чата из БД
+     *
+     * @param id идентификатор чата
+     * @return NOT_FOUND, если чат не найден в БД, OK, если чат успешно удален
+     */
     @DeleteMapping("/tg-chat/{id}")
     ResponseEntity<?> deleteChat(@PathVariable Long id) {
         if (!chatService.deleteChat(id)) {
