@@ -5,10 +5,13 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.request.SetMyCommands;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 
 /** Класс - обёртка для телеграм бота. */
+@Slf4j
 @Component
 public class Bot {
     private final SetMyCommands commands;
@@ -43,13 +46,34 @@ public class Bot {
     @Autowired
     public Bot(TelegramBot telegramBot, Processor tgChatProcessor, SetMyCommands setMyCommands) {
         this.bot = telegramBot;
-        this.bot.setUpdatesListener(updates -> {
-            updates.forEach(update -> {
-                SendMessage message = tgChatProcessor.process(update);
-                execute(message);
-            });
-            return UpdatesListener.CONFIRMED_UPDATES_ALL;
-        });
+        this.bot.setUpdatesListener(
+                updates -> {
+                    updates.forEach(update -> {
+                        try {
+                            SendMessage message = tgChatProcessor.process(update);
+                            execute(message);
+                        } catch (ResourceAccessException e) {
+                            log.atError()
+                                    .setMessage("Сервис scrapper недоступен")
+                                    .log();
+                        }
+                    });
+                    return UpdatesListener.CONFIRMED_UPDATES_ALL;
+                },
+                e -> {
+                    if (e.response() != null) {
+                        log.atError()
+                                .setMessage("Ошибка Telegram API")
+                                .addKeyValue("error-code", e.response().errorCode())
+                                .addKeyValue("description", e.response().description())
+                                .log();
+                    } else {
+                        log.atError()
+                                .setMessage("Проблемы с сетью")
+                                .addKeyValue("stack-trace", e.getStackTrace())
+                                .log();
+                    }
+                });
         this.commands = setMyCommands;
         bot.execute(commands);
     }
