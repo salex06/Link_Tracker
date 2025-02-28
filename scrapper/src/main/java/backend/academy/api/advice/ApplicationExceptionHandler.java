@@ -3,6 +3,7 @@ package backend.academy.api.advice;
 import backend.academy.dto.ApiErrorResponse;
 import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  * Класс предоставляет набор метоодов, которые перехватывают и обрабатывают исключения, сгенерированные в контроллере
  * ChatController
  */
+@Slf4j
 @ControllerAdvice
 public class ApplicationExceptionHandler {
     /**
@@ -29,7 +31,7 @@ public class ApplicationExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadableException(
             @NotNull HttpMessageNotReadableException ex) {
-        return handleIncorrectRequest(ex, HttpStatus.BAD_REQUEST);
+        return handleIncorrectRequest("Ошибка чтения тела запроса", ex, HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -41,7 +43,7 @@ public class ApplicationExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentTypeMismatchException(
             @NotNull MethodArgumentTypeMismatchException ex) {
-        return handleIncorrectRequest(ex, HttpStatus.BAD_REQUEST);
+        return handleIncorrectRequest("Ошибка преобразования типов", ex, HttpStatus.BAD_REQUEST);
     }
 
     /**
@@ -53,7 +55,7 @@ public class ApplicationExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpRequestMethodNotSupportedException(
             @NotNull HttpRequestMethodNotSupportedException ex) {
-        return handleIncorrectRequest(ex, HttpStatus.METHOD_NOT_ALLOWED);
+        return handleIncorrectRequest("HTTP метод не поддерживается", ex, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
     /**
@@ -64,7 +66,7 @@ public class ApplicationExceptionHandler {
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNoResourceFoundException(@NotNull NoResourceFoundException ex) {
-        return handleIncorrectRequest(ex, HttpStatus.NOT_FOUND);
+        return handleIncorrectRequest("Не найден подходящий эндпоинт", ex, HttpStatus.NOT_FOUND);
     }
 
     /**
@@ -76,10 +78,16 @@ public class ApplicationExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingRequestHeaderException(
             @NotNull MissingRequestHeaderException ex) {
-        return handleIncorrectRequest(ex, HttpStatus.BAD_REQUEST);
+        return handleIncorrectRequest("Ошибка передачи заголовков", ex, HttpStatus.BAD_REQUEST);
     }
 
-    private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(Exception ex, HttpStatusCode status) {
+    private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(
+            String errorMessage, Exception ex, HttpStatusCode status) {
+        log.atError()
+                .setMessage(errorMessage)
+                .addKeyValue("error-message", ex.getMessage())
+                .addKeyValue("status", status)
+                .log();
         return new ResponseEntity<>(
                 new ApiErrorResponse(
                         "Некорректные параметры запроса",
