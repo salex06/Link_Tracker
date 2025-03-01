@@ -33,7 +33,7 @@ public class LinkService {
     }
 
     /**
-     * Получить ссылку по Iв
+     * Получить ссылку по Id
      *
      * @param id идентификатор ссылки
      * @return {@code Optional<Link>} - если ссылка найдена, иначе - {@code Optional.empty()}
@@ -62,7 +62,7 @@ public class LinkService {
      * Добавить ссылку в хранилище
      *
      * @param link ссылка, которую требуется сохранить
-     * @return объект класса Link - сохраненная ссылка
+     * @return объект класса Link, который уже был в хранилище. Если ссылка добавлена впервые - null
      */
     public Link saveLink(Link link) {
         return linkRepository.save(link);
