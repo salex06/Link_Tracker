@@ -80,7 +80,7 @@ class ListMessageHandlerTest {
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                "{\"links\":[{\"id\":1,\"url\":\"https://example1.com/\"},{\"id\":2,\"url\":\"https://example2.com/\"}],\"size\":2}")));
+                                                "{\"links\":[{\"id\":1,\"url\":\"https://example1.com/\", \"tags\":[], \"filters\":[]},{\"id\":2,\"url\":\"https://example2.com/\", \"tags\":[], \"filters\":[]}],\"size\":2}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);

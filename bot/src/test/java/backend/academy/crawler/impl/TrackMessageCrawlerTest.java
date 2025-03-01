@@ -391,7 +391,7 @@ class TrackMessageCrawlerTest {
 
         AddLinkRequest actual = trackMessageCrawler.terminate(chat.id());
 
-        assertEquals(expectedURL, actual.url());
+        assertEquals(expectedURL, actual.link());
         assertEquals(expectedTags, actual.tags());
         assertEquals(expectedFilters, actual.filters());
     }
