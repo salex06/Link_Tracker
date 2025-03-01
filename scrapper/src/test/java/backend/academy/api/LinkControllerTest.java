@@ -80,7 +80,7 @@ class LinkControllerTest {
         String expectedMessage = "Некорректные параметры запроса";
         when(chatService.getChat(anyLong())).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = linkController.addLink(1L, new AddLinkRequest("test"));
+        ResponseEntity<?> response = linkController.addLink(1L, new AddLinkRequest("test", null, null));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
@@ -89,12 +89,12 @@ class LinkControllerTest {
 
     @Test
     public void addLink_WhenCorrectRequest_ThenReturnSuccessMessage() {
-        LinkResponse expectedResponse = new LinkResponse(1L, "test");
+        LinkResponse expectedResponse = new LinkResponse(1L, "test", null, null);
         when(chatService.getChat(1L)).thenReturn(Optional.of(new TgChat(1L, new HashSet<>())));
         when(linkService.saveOrGetLink(any(Link.class))).thenReturn(new Link(1L, "test"));
         when(linkService.validateLink(anyString())).thenReturn(true);
 
-        ResponseEntity<?> actual = linkController.addLink(1L, new AddLinkRequest("test"));
+        ResponseEntity<?> actual = linkController.addLink(1L, new AddLinkRequest("test", null, null));
 
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(actual.getBody()).isInstanceOf(LinkResponse.class);
@@ -110,7 +110,7 @@ class LinkControllerTest {
         linkController =
                 new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         Long chatId = 1L;
-        AddLinkRequest addLinkRequest = new AddLinkRequest("test");
+        AddLinkRequest addLinkRequest = new AddLinkRequest("test", null, null);
 
         linkController.addLink(chatId, addLinkRequest);
         Optional<TgChat> chat = tgChatRepository.getById(chatId);
@@ -127,7 +127,7 @@ class LinkControllerTest {
     @Test
     public void addLink_WhenTheLinkHasBeenAlreadyAddedByOneUser_ThenReturnTheOldLink() {
         Long chatId = 1L;
-        AddLinkRequest request = new AddLinkRequest("test");
+        AddLinkRequest request = new AddLinkRequest("test", null, null);
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
@@ -156,7 +156,7 @@ class LinkControllerTest {
     public void addLink_WhenTheLinkHasBeenAlreadyAddedByAnotherPeople_ThenReturnTheOldLink() {
         Long chat1Id = 1L;
         Long chat2Id = 2L;
-        AddLinkRequest request = new AddLinkRequest("test");
+        AddLinkRequest request = new AddLinkRequest("test", null, null);
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
@@ -193,8 +193,8 @@ class LinkControllerTest {
     @Test
     public void addLink_WhenAddTwoLinks_ThenSaveTheseLinks() {
         Long chat1Id = 1L;
-        AddLinkRequest request1 = new AddLinkRequest("test1");
-        AddLinkRequest request2 = new AddLinkRequest("test2");
+        AddLinkRequest request1 = new AddLinkRequest("test1", null, null);
+        AddLinkRequest request2 = new AddLinkRequest("test2", null, null);
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
@@ -225,8 +225,8 @@ class LinkControllerTest {
     public void addLink_WhenAddLinksByDifferentUsers_ThenReturnCorrectSetOfLinks() {
         Long chat1Id = 1L;
         Long chat2Id = 2L;
-        AddLinkRequest request1 = new AddLinkRequest("test1");
-        AddLinkRequest request2 = new AddLinkRequest("test2");
+        AddLinkRequest request1 = new AddLinkRequest("test1", null, null);
+        AddLinkRequest request2 = new AddLinkRequest("test2", null, null);
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
@@ -285,7 +285,7 @@ class LinkControllerTest {
         linkController =
                 new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(1L);
-        linkController.addLink(1L, new AddLinkRequest("testLink1"));
+        linkController.addLink(1L, new AddLinkRequest("testLink1", null, null));
 
         ResponseEntity<?> response = linkController.removeLink(1L, new RemoveLinkRequest("testLink"));
 
@@ -302,7 +302,7 @@ class LinkControllerTest {
         linkController =
                 new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(1L);
-        linkController.addLink(1L, new AddLinkRequest("testLink"));
+        linkController.addLink(1L, new AddLinkRequest("testLink", null, null));
         tgChatRepository.save(2L);
 
         ResponseEntity<?> response = linkController.removeLink(2L, new RemoveLinkRequest("testLink"));
@@ -321,7 +321,7 @@ class LinkControllerTest {
         linkController =
                 new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(1L);
-        linkController.addLink(1L, new AddLinkRequest("testLink"));
+        linkController.addLink(1L, new AddLinkRequest("testLink", null, null));
 
         ResponseEntity<?> response = linkController.removeLink(1L, new RemoveLinkRequest("testLink"));
 
@@ -340,8 +340,8 @@ class LinkControllerTest {
                 new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(chat1Id);
         tgChatRepository.save(chat2Id);
-        linkController.addLink(chat1Id, new AddLinkRequest("testLink"));
-        linkController.addLink(chat2Id, new AddLinkRequest("testLink"));
+        linkController.addLink(chat1Id, new AddLinkRequest("testLink", null, null));
+        linkController.addLink(chat2Id, new AddLinkRequest("testLink", null, null));
 
         ResponseEntity<?> response = linkController.removeLink(chat1Id, new RemoveLinkRequest("testLink"));
 
