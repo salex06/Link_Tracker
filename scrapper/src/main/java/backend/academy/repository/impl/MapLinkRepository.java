@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/** Класс реализует интерфейс LinkRepository и представляет хранилище ссылок на основе контейнера "Словарь" */
 public class MapLinkRepository implements LinkRepository {
     private final Map<Long, Link> database = new HashMap<>();
 
