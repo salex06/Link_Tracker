@@ -3,6 +3,7 @@ package backend.academy.service;
 import backend.academy.model.Link;
 import backend.academy.model.TgChat;
 import backend.academy.repository.ChatRepository;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +45,7 @@ public class ChatService {
      *
      * @return все сохраненные чаты из базы данных
      */
-    public Iterable<TgChat> getAllChat() {
+    public List<TgChat> getAllChat() {
         return chatRepository.getAll();
     }
 
@@ -110,13 +111,16 @@ public class ChatService {
      *
      * @param chatId идентификатор чата
      * @param link значение ссылки
+     * @return {@code true}, если ссылка успешно добавлена, иначе - {@code false}
      */
-    public void appendLinkToChat(Long chatId, Link link) {
+    public boolean appendLinkToChat(Long chatId, Link link) {
         Optional<TgChat> chatWrapper = getChat(chatId);
         if (chatWrapper.isPresent()) {
             TgChat chat = chatWrapper.orElseThrow();
             chat.addLink(link);
+            saveChat(chatId);
+            return true;
         }
-        saveChat(chatId);
+        return false;
     }
 }

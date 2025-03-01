@@ -4,6 +4,7 @@ import backend.academy.model.TgChat;
 import backend.academy.repository.ChatRepository;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -19,8 +20,8 @@ public class MapTgChatRepository implements ChatRepository {
     }
 
     @Override
-    public Iterable<TgChat> getAll() {
-        return database.values();
+    public List<TgChat> getAll() {
+        return database.values().stream().toList();
     }
 
     @Override
