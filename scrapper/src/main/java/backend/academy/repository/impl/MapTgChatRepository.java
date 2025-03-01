@@ -2,8 +2,8 @@ package backend.academy.repository.impl;
 
 import backend.academy.model.TgChat;
 import backend.academy.repository.ChatRepository;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,7 +28,7 @@ public class MapTgChatRepository implements ChatRepository {
         if (database.containsKey(id)) {
             return false;
         }
-        database.put(id, new TgChat(id, new ArrayList<>()));
+        database.put(id, new TgChat(id, new HashSet<>()));
         return true;
     }
 

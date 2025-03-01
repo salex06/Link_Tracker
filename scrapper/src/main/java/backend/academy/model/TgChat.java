@@ -1,6 +1,6 @@
 package backend.academy.model;
 
-import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +11,7 @@ public class TgChat {
     private final Long id;
 
     @Setter
-    private List<Link> links;
+    private Set<Link> links;
 
     public void addLink(Link link) {
         links.add(link);

@@ -3,9 +3,9 @@ package backend.academy.service;
 import backend.academy.model.Link;
 import backend.academy.model.TgChat;
 import backend.academy.repository.ChatRepository;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ChatService {
@@ -42,7 +42,7 @@ public class ChatService {
             return false;
         }
 
-        List<Link> chatLinks = chat.orElseThrow().links();
+        Set<Link> chatLinks = chat.orElseThrow().links();
         Optional<Link> link = chatLinks.stream()
                 .filter(i -> Objects.equals(i.getUrl(), url))
                 .limit(1)
@@ -53,5 +53,19 @@ public class ChatService {
         chatLinks.remove(link.orElseThrow());
         chat.orElseThrow().links(chatLinks);
         return true;
+    }
+
+    public Set<Link> getChatLinks(Long chatId) {
+        Optional<TgChat> tgChat = chatRepository.getById(chatId);
+        return tgChat.map(TgChat::links).orElse(null);
+    }
+
+    public void appendLinkToChat(Long chatId, Link link) {
+        Optional<TgChat> chatWrapper = getChat(chatId);
+        if (chatWrapper.isPresent()) {
+            TgChat chat = chatWrapper.orElseThrow();
+            chat.addLink(link);
+        }
+        saveChat(chatId);
     }
 }

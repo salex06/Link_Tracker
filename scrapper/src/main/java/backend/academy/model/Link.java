@@ -3,9 +3,9 @@ package backend.academy.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Link {
@@ -15,10 +15,10 @@ public class Link {
     @JsonIgnore
     private LocalDateTime lastUpdateTime = null;
 
-    private List<Long> tgChatIds;
+    private Set<Long> tgChatIds;
     private static final AtomicLong nextId = new AtomicLong();
 
-    public Link(Long id, String url, List<Long> tgChatIds) {
+    public Link(Long id, String url, Set<Long> tgChatIds) {
         this.id = id;
         this.url = url;
         this.tgChatIds = tgChatIds;
@@ -28,21 +28,21 @@ public class Link {
     public Link(Long id, String url) {
         this.id = id;
         this.url = url;
-        this.tgChatIds = new ArrayList<>();
+        this.tgChatIds = new HashSet<>();
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     public Link() {
         this.id = null;
         this.url = null;
-        this.tgChatIds = new ArrayList<>();
+        this.tgChatIds = new HashSet<>();
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     public Link(String url) {
         this.id = nextId.incrementAndGet();
         this.url = url;
-        this.tgChatIds = new ArrayList<>();
+        this.tgChatIds = new HashSet<>();
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
@@ -54,7 +54,7 @@ public class Link {
         return url;
     }
 
-    public List<Long> getTgChatIds() {
+    public Set<Long> getTgChatIds() {
         return tgChatIds;
     }
 
@@ -70,7 +70,7 @@ public class Link {
         this.url = url;
     }
 
-    public void setTgChatIds(List<Long> tgChatIds) {
+    public void setTgChatIds(Set<Long> tgChatIds) {
         this.tgChatIds = tgChatIds;
     }
 

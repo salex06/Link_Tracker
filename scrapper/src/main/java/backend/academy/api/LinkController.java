@@ -10,9 +10,8 @@ import backend.academy.model.TgChat;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,10 +35,10 @@ public class LinkController {
 
     @GetMapping("/links")
     ResponseEntity<?> getLinks(@RequestHeader("Tg-Chat-Id") Long chatId) {
-        Optional<TgChat> chat = chatService.getChat(chatId);
-        if (chat.isPresent()) {
-            List<Link> links = chat.orElseThrow().links();
-            return new ResponseEntity<>(new ListLinksResponse(links, links.size()), HttpStatus.OK);
+        Set<Link> chatLinks = chatService.getChatLinks(chatId);
+        if (chatLinks != null) {
+            return new ResponseEntity<>(
+                    new ListLinksResponse(chatLinks.stream().toList(), chatLinks.size()), HttpStatus.OK);
         }
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
@@ -50,20 +49,9 @@ public class LinkController {
     ResponseEntity<?> addLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest addLinkRequest) {
         Optional<TgChat> chat = chatService.getChat(chatId);
         if (chat.isPresent()) {
-            // TODO: возможно, ссылка уже существует в репо
-            Link link;
-            Link dbLink = linkService.findLink(new Link(0L, addLinkRequest.url()));
-            if (dbLink != null) {
-                link = dbLink;
-            } else {
-                link = new Link(addLinkRequest.url());
-                linkService.saveLink(link);
-            }
-            List<Long> tgChatIds = link.getTgChatIds();
-            tgChatIds.add(chat.orElseThrow().id());
-            link.setTgChatIds(tgChatIds);
-            TgChat tgChat = chat.orElseThrow();
-            tgChat.addLink(link);
+            Link link = linkService.saveOrGetLink(new Link(addLinkRequest.url()));
+            chatService.appendLinkToChat(chatId, link);
+            linkService.appendChatToLink(chatId, link);
             return new ResponseEntity<>(new LinkResponse(link.getId(), link.getUrl()), HttpStatus.OK);
         }
         return new ResponseEntity<>(
@@ -74,29 +62,16 @@ public class LinkController {
     @DeleteMapping("/links")
     ResponseEntity<?> removeLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
         Optional<TgChat> chat = chatService.getChat(chatId);
-        String linkToRemove = request.link();
-
         if (chat.isPresent()) {
-            TgChat tgChat = chat.orElseThrow();
-            List<Link> links = tgChat.links();
-            Optional<Link> foundLink = links.stream()
-                    .filter(link -> Objects.equals(link.getUrl(), linkToRemove))
-                    .findFirst();
-            if (foundLink.isEmpty()) {
+            Link foundLink = linkService.findLink(new Link(0L, request.link()));
+            boolean wasDeleted = chatService.deleteLink(chatId, request.link());
+
+            if (!wasDeleted || foundLink == null || !linkService.deleteChatFromLink(chatId, foundLink)) {
                 return new ResponseEntity<>(
                         new ApiErrorResponse("Ссылка не найдена", "404", "", "", null), HttpStatus.NOT_FOUND);
             }
-            links.remove(foundLink.orElseThrow());
-            List<Long> foundLinkTgChatIds = foundLink.orElseThrow().getTgChatIds();
-            foundLinkTgChatIds.remove(tgChat.id());
-            foundLink.orElseThrow().setTgChatIds(foundLinkTgChatIds);
-            tgChat.links(links);
-            chatService.getAllChat().forEach(i -> System.out.println(i.links()));
-            return new ResponseEntity<>(
-                    new LinkResponse(
-                            foundLink.orElseThrow().getId(),
-                            foundLink.orElseThrow().getUrl()),
-                    HttpStatus.OK);
+
+            return new ResponseEntity<>(new LinkResponse(foundLink.getId(), foundLink.getUrl()), HttpStatus.OK);
         }
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
