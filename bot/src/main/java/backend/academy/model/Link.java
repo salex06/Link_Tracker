@@ -4,19 +4,40 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.Getter;
 
 /**
  * Представление ссылки на ресурс в системе. Объект класса Link имеет идентификатор, значение ссылки, набор чатов,
  * отслеживающих ссылку
  */
+@Getter
 public class Link {
     private Long id;
     private String url;
     private List<Long> tgChatIds;
+    private List<String> tags;
+    private List<String> filters;
     private static final AtomicLong nextId = new AtomicLong();
 
     /**
      * Конструктор со всеми параметрами
+     *
+     * @param id идентификатор ссылки
+     * @param url значение ссылки
+     * @param tgChatIds чаты, отслеживающие ссылку
+     * @param tags теги ссылки
+     * @param filters фильтры ссылки
+     */
+    public Link(Long id, String url, List<Long> tgChatIds, List<String> tags, List<String> filters) {
+        this.id = id;
+        this.url = url;
+        this.tgChatIds = tgChatIds;
+        this.tags = tags;
+        this.filters = filters;
+    }
+
+    /**
+     * Конструктор с тремя основными параметрами
      *
      * @param id идентификатор ссылки
      * @param url значение ссылки
@@ -26,18 +47,8 @@ public class Link {
         this.id = id;
         this.url = url;
         this.tgChatIds = tgChatIds;
-    }
-
-    /**
-     * Конструктор с двумя параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     */
-    public Link(Long id, String url) {
-        this.id = id;
-        this.url = url;
-        this.tgChatIds = new ArrayList<>();
+        this.tags = new ArrayList<>();
+        this.filters = new ArrayList<>();
     }
 
     /** Конструктор по умолчанию */
@@ -45,6 +56,8 @@ public class Link {
         this.id = null;
         this.url = null;
         this.tgChatIds = new ArrayList<>();
+        this.filters = new ArrayList<>();
+        this.tags = new ArrayList<>();
     }
 
     /**
@@ -56,18 +69,24 @@ public class Link {
         this.id = nextId.incrementAndGet();
         this.url = url;
         this.tgChatIds = new ArrayList<>();
+        this.tags = new ArrayList<>();
+        this.filters = new ArrayList<>();
     }
 
-    public Long getId() {
-        return id;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Link link)) return false;
+        return Objects.equals(id, link.id)
+                && Objects.equals(url, link.url)
+                && Objects.equals(tgChatIds, link.tgChatIds)
+                && Objects.equals(tags, link.tags)
+                && Objects.equals(filters, link.filters);
     }
 
-    public String getUrl() {
-        return url;
-    }
-
-    public List<Long> getTgChatIds() {
-        return tgChatIds;
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, url, tgChatIds, tags, filters);
     }
 
     public void setId(Long id) {
@@ -82,15 +101,11 @@ public class Link {
         this.tgChatIds = tgChatIds;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Link link)) return false;
-        return Objects.equals(url, link.url);
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(url);
+    public void setFilters(List<String> filters) {
+        this.filters = filters;
     }
 }
