@@ -10,10 +10,10 @@ import java.util.List;
  * @param code код ошибки
  * @param exceptionName название исключения
  * @param exceptionMessage описание исключения
- * @param trace трассировка стека
+ * @param stacktrace трассировка стека
  */
 public record ApiErrorResponse(
-        String description, String code, String exceptionName, String exceptionMessage, List<String> trace) {
+        String description, String code, String exceptionName, String exceptionMessage, List<String> stacktrace) {
     public ApiErrorResponse() {
         this("", "", "", "", new ArrayList<>());
     }
