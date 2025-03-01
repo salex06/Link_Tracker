@@ -19,12 +19,14 @@ import org.springframework.web.client.RestClient;
 public class GitHubSingleIssueClient extends Client {
     private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
 
-    public GitHubSingleIssueClient(@Qualifier("gitHubSingleIssueConverter") LinkToApiLinkConverter converter) {
-        super(SUPPORTED_URL, converter);
+    public GitHubSingleIssueClient(
+            @Qualifier("gitHubSingleIssueConverter") LinkToApiLinkConverter converter,
+            @Qualifier("gitHubClient") RestClient gitHubRestClient) {
+        super(SUPPORTED_URL, converter, gitHubRestClient);
     }
 
     @Override
-    public List<String> getUpdates(Link link, RestClient client) {
+    public List<String> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
         String url = linkConverter.convert(link.getUrl());

@@ -19,12 +19,14 @@ import org.springframework.web.client.RestClient;
 public class SoAnswerClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/a/(\\w+)$");
 
-    public SoAnswerClient(@Qualifier("soAnswerLinkConverter") LinkToApiLinkConverter converter) {
-        super(SUPPORTED_LINK, converter);
+    public SoAnswerClient(
+            @Qualifier("soAnswerLinkConverter") LinkToApiLinkConverter converter,
+            @Qualifier("stackOverflowClient") RestClient stackOverflowClient) {
+        super(SUPPORTED_LINK, converter, stackOverflowClient);
     }
 
     @Override
-    public List<String> getUpdates(Link link, RestClient client) {
+    public List<String> getUpdates(Link link) {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return null;

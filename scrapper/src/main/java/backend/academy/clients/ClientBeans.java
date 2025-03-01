@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 public class ClientBeans {
@@ -64,5 +65,15 @@ public class ClientBeans {
             }
             return null;
         };
+    }
+
+    @Bean
+    RestClient gitHubClient() {
+        return RestClient.builder().baseUrl("https://api.github.com").build();
+    }
+
+    @Bean
+    RestClient stackOverflowClient() {
+        return RestClient.builder().baseUrl("https://api.stackexchange.com").build();
     }
 }

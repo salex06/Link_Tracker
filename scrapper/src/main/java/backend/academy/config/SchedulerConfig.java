@@ -13,11 +13,6 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class SchedulerConfig {
     @Bean
-    public RestClient restClient() {
-        return RestClient.create();
-    }
-
-    @Bean
     RestClient botConnectionClient() {
         return RestClient.builder().baseUrl("http://localhost:8080").build();
     }
@@ -26,8 +21,7 @@ public class SchedulerConfig {
     public Scheduler scheduler(
             LinkService linkService,
             ClientManager clientManager,
-            @Qualifier("restClient") RestClient restClient,
             @Qualifier("botConnectionClient") RestClient botClient) {
-        return new Scheduler(linkService, clientManager, restClient, botClient);
+        return new Scheduler(linkService, clientManager, botClient);
     }
 }

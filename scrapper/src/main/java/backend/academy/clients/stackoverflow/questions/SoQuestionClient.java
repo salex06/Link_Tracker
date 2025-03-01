@@ -21,12 +21,14 @@ public class SoQuestionClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
 
     @Autowired
-    public SoQuestionClient(@Qualifier("soQuestionLinkConverter") LinkToApiLinkConverter converter) {
-        super(SUPPORTED_LINK, converter);
+    public SoQuestionClient(
+            @Qualifier("soQuestionLinkConverter") LinkToApiLinkConverter converter,
+            @Qualifier("stackOverflowClient") RestClient stackoverflowClient) {
+        super(SUPPORTED_LINK, converter, stackoverflowClient);
     }
 
     @Override
-    public List<String> getUpdates(Link link, RestClient client) {
+    public List<String> getUpdates(Link link) {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return null;

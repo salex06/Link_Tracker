@@ -10,10 +10,12 @@ import org.springframework.web.client.RestClient;
 public abstract class Client {
     protected final Pattern supportedUrl;
     protected final LinkToApiLinkConverter linkConverter;
+    protected final RestClient client;
 
-    public Client(Pattern supportedUrl, LinkToApiLinkConverter linkConverter) {
+    public Client(Pattern supportedUrl, LinkToApiLinkConverter linkConverter, RestClient restClient) {
         this.supportedUrl = supportedUrl;
         this.linkConverter = linkConverter;
+        this.client = restClient;
     }
 
     public boolean supportLink(String link) {
@@ -21,5 +23,5 @@ public abstract class Client {
         return matcher.matches();
     }
 
-    public abstract List<String> getUpdates(Link link, RestClient client);
+    public abstract List<String> getUpdates(Link link);
 }

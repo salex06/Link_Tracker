@@ -17,12 +17,14 @@ import org.springframework.web.client.RestClient;
 public class GitHubRepositoryClient extends Client {
     private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
 
-    public GitHubRepositoryClient(@Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter) {
-        super(supportedUrl, converter);
+    public GitHubRepositoryClient(
+            @Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter,
+            @Qualifier("gitHubClient") RestClient gitHubClient) {
+        super(supportedUrl, converter, gitHubClient);
     }
 
     @Override
-    public List<String> getUpdates(Link link, RestClient client) {
+    public List<String> getUpdates(Link link) {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return null;
