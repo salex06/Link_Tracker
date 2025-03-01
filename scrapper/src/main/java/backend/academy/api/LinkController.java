@@ -12,6 +12,7 @@ import backend.academy.service.LinkService;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 /**
  * Контроллер, обрабатывающий запросы на отслеживание ссылки, прекращение отслеживания и вывод всех отслеживаемых ссылок
  */
+@Slf4j
 @Controller
 public class LinkController {
     private final ChatService chatService;
@@ -46,11 +48,17 @@ public class LinkController {
      */
     @GetMapping("/links")
     ResponseEntity<?> getLinks(@RequestHeader("Tg-Chat-Id") Long chatId) {
+        log.atInfo().setMessage("Запрос на получение отслеживаемых ссылок")
+            .addKeyValue("chat-id", chatId)
+            .log();
         Set<Link> chatLinks = chatService.getChatLinks(chatId);
         if (chatLinks != null) {
             return new ResponseEntity<>(
                     new ListLinksResponse(chatLinks.stream().toList(), chatLinks.size()), HttpStatus.OK);
         }
+        log.atError().setMessage("Чат не найден")
+            .addKeyValue("chat-id", chatId)
+            .log();
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);
@@ -66,6 +74,10 @@ public class LinkController {
      */
     @PostMapping("/links")
     ResponseEntity<?> addLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest addLinkRequest) {
+        log.atInfo().setMessage("Запрос на отслеживание ссылки")
+            .addKeyValue("chat-id", chatId)
+            .addKeyValue("link", addLinkRequest.url())
+            .log();
         Optional<TgChat> chat = chatService.getChat(chatId);
         if (chat.isPresent()) {
             Link link = linkService.saveOrGetLink(new Link(addLinkRequest.url()));
@@ -73,6 +85,9 @@ public class LinkController {
             linkService.appendChatToLink(chatId, link);
             return new ResponseEntity<>(new LinkResponse(link.getId(), link.getUrl()), HttpStatus.OK);
         }
+        log.atError().setMessage("Чат для регистрации на отслеживание ссылки не найден")
+            .addKeyValue("chat-id", chatId)
+            .log();
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);
@@ -88,18 +103,28 @@ public class LinkController {
      */
     @DeleteMapping("/links")
     ResponseEntity<?> removeLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
+        log.atInfo().setMessage("Запрос на удаление ссылки")
+            .addKeyValue("chat-id", chatId)
+            .addKeyValue("link", request.link())
+            .log();
         Optional<TgChat> chat = chatService.getChat(chatId);
         if (chat.isPresent()) {
             Link foundLink = linkService.findLink(new Link(0L, request.link()));
             boolean wasDeleted = chatService.deleteLink(chatId, request.link());
 
             if (!wasDeleted || foundLink == null || !linkService.deleteChatFromLink(chatId, foundLink)) {
+                log.atError().setMessage("Ссылка не найдена")
+                    .addKeyValue("chat-id", chatId)
+                    .addKeyValue("link", request.link())
+                    .log();
                 return new ResponseEntity<>(
                         new ApiErrorResponse("Ссылка не найдена", "404", "", "", null), HttpStatus.NOT_FOUND);
             }
-
             return new ResponseEntity<>(new LinkResponse(foundLink.getId(), foundLink.getUrl()), HttpStatus.OK);
         }
+        log.atError().setMessage("Чат для удаления ссылки не найден")
+            .addKeyValue("chat-id", chatId)
+            .log();
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);
