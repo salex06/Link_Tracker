@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/** Объект передачи данных для запроса списка отслеживаемых ссылок */
 public class ListLinksResponse {
     List<Link> links;
     Integer size;
