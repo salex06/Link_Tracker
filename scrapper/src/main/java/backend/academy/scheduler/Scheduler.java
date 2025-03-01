@@ -15,13 +15,19 @@ import org.springframework.web.client.RestClient;
 public class Scheduler {
     private final LinkService linkService;
     private final ClientManager clientManager;
-    private final RestClient restClient;
+    private final RestClient resourcesClient;
+    private final RestClient botUpdatesClient;
 
     @Autowired
-    public Scheduler(LinkService linkService, ClientManager clientManager, RestClient client) {
+    public Scheduler(
+            LinkService linkService,
+            ClientManager clientManager,
+            RestClient resourcesClient,
+            RestClient botUpdatesClient) {
         this.linkService = linkService;
         this.clientManager = clientManager;
-        this.restClient = client;
+        this.resourcesClient = resourcesClient;
+        this.botUpdatesClient = botUpdatesClient;
     }
 
     @Scheduled(fixedDelay = 10000, initialDelay = 10000)
@@ -30,7 +36,7 @@ public class Scheduler {
         List<Link> links = linkService.getAllLinks();
         for (Link link : links) {
             Client suitableClient = getSuitableClient(clients, link);
-            List<String> updateDescription = suitableClient.getUpdates(link, restClient);
+            List<String> updateDescription = suitableClient.getUpdates(link, resourcesClient);
             if (!updateDescription.isEmpty()) {
                 sendUpdates(updateDescription, link);
             }
@@ -39,7 +45,7 @@ public class Scheduler {
 
     private Client getSuitableClient(List<Client> clients, Link link) {
         for (Client client : clients) {
-            if (client.supportLink(link)) {
+            if (client.supportLink(link.getUrl())) {
                 return client;
             }
         }
@@ -47,16 +53,18 @@ public class Scheduler {
     }
 
     private void sendUpdates(List<String> updatesList, Link link) {
-        // TODO: централизовать логику отправления сообщений
         for (String updateDescription : updatesList) {
             if (updateDescription.isEmpty()) {
                 continue;
             }
-            LinkUpdate linkUpdate = new LinkUpdate(link.getId(), link.getUrl(), updateDescription, link.getTgChatIds());
-            String url = "http://localhost:8080/updates";
-            RestClient client = RestClient.create();
 
-            client.post().uri(url).body(linkUpdate).retrieve().toEntity(String.class);
+            LinkUpdate linkUpdate = new LinkUpdate(
+                    link.getId(),
+                    link.getUrl(),
+                    updateDescription,
+                    link.getTgChatIds().stream().toList());
+
+            botUpdatesClient.post().uri("/updates").body(linkUpdate).retrieve().toEntity(String.class);
         }
     }
 }
