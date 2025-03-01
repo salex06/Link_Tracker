@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+/**
+ * Контроллер, обрабатывающий запросы на отслеживание ссылки, прекращение отслеживания и вывод всех отслеживаемых ссылок
+ */
 @Controller
 public class LinkController {
     private final ChatService chatService;
@@ -33,6 +36,14 @@ public class LinkController {
         this.linkService = linkService;
     }
 
+    /**
+     * Эндпоинт, обрабатывающий запрос на получение всех отслеживаемых ссылок пользователем с идентификатором
+     * {@code chatId}
+     *
+     * @param chatId идентификатор чата
+     * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
+     *     {@code ResponseEntity<ApiErrorResponse>}
+     */
     @GetMapping("/links")
     ResponseEntity<?> getLinks(@RequestHeader("Tg-Chat-Id") Long chatId) {
         Set<Link> chatLinks = chatService.getChatLinks(chatId);
@@ -45,6 +56,14 @@ public class LinkController {
                 HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Эндпоинт, обрабатывающий запрос на добавление (регистрацию) ссылки
+     *
+     * @param chatId идентификатор чата
+     * @param addLinkRequest объект передачи данных, хранящий информацию о ссылке
+     * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
+     *     {@code ResponseEntity<ApiErrorResponse>}
+     */
     @PostMapping("/links")
     ResponseEntity<?> addLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest addLinkRequest) {
         Optional<TgChat> chat = chatService.getChat(chatId);
@@ -59,6 +78,14 @@ public class LinkController {
                 HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Эндпоинт для обработки запросов на прекращение отслеживания ссылки
+     *
+     * @param chatId идентификатор чата
+     * @param request объект передачи данных, хранящий информацию о ссылке
+     * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
+     *     {@code ResponseEntity<ApiErrorResponse>}
+     */
     @DeleteMapping("/links")
     ResponseEntity<?> removeLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
         Optional<TgChat> chat = chatService.getChat(chatId);
