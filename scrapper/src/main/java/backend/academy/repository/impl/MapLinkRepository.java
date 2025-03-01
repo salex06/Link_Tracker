@@ -12,7 +12,7 @@ public class MapLinkRepository implements LinkRepository {
 
     @Override
     public Optional<Link> getById(Long id) {
-        return Optional.of(database.get(id));
+        return database.containsKey(id) ? Optional.of(database.get(id)) : Optional.empty();
     }
 
     @Override
