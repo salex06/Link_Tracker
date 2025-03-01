@@ -47,7 +47,7 @@ public class TrackMessageHandler implements Handler {
         log.atInfo()
                 .setMessage("Запрос на отслеживание ссылки")
                 .addKeyValue("chat-id", chatId)
-                .addKeyValue("url", crawlerReport.url())
+                .addKeyValue("url", crawlerReport.link())
                 .addKeyValue("tags", crawlerReport.tags())
                 .addKeyValue("filters", crawlerReport.filters())
                 .log();
@@ -78,7 +78,7 @@ public class TrackMessageHandler implements Handler {
             log.atError()
                     .setMessage("Некорректные параметры при запросе на остлеживание ссылки")
                     .addKeyValue("chat-id", chatId)
-                    .addKeyValue("url", crawlerReport.url())
+                    .addKeyValue("link", crawlerReport.link())
                     .addKeyValue("tags", crawlerReport.tags())
                     .addKeyValue("filters", crawlerReport.filters())
                     .log();

@@ -68,7 +68,7 @@ public class ListMessageHandler implements Handler {
                 .append(linksResponse.size())
                 .append('\n');
         for (Link link : linksResponse.links()) {
-            builder.append(++counter).append(") ").append(link.getUrl()).append('\n');
+            builder.append(++counter).append(") ").append(link.url()).append('\n');
         }
         return builder.toString();
     }
