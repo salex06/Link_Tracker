@@ -1,5 +1,7 @@
 package backend.academy.service;
 
+import backend.academy.clients.Client;
+import backend.academy.clients.ClientManager;
 import backend.academy.model.Link;
 import backend.academy.repository.LinkRepository;
 import java.util.List;
@@ -10,10 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class LinkService {
     private final LinkRepository linkRepository;
+    private final ClientManager clientManager;
 
     @Autowired
-    public LinkService(LinkRepository linkRepository) {
+    public LinkService(LinkRepository linkRepository, ClientManager clientManager) {
         this.linkRepository = linkRepository;
+        this.clientManager = clientManager;
     }
 
     public List<Link> getAllLinks() {
@@ -71,6 +75,15 @@ public class LinkService {
             link.setTgChatIds(tgChatIds);
             linkRepository.save(link);
             return true;
+        }
+        return false;
+    }
+
+    public boolean validateLink(String link) {
+        for (Client client : clientManager.availableClients()) {
+            if (client.supportLink(link)) {
+                return true;
+            }
         }
         return false;
     }

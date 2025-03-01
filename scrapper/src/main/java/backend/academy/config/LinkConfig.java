@@ -1,5 +1,6 @@
 package backend.academy.config;
 
+import backend.academy.clients.ClientManager;
 import backend.academy.repository.LinkRepository;
 import backend.academy.repository.impl.MapLinkRepository;
 import backend.academy.service.LinkService;
@@ -14,7 +15,7 @@ public class LinkConfig {
     }
 
     @Bean
-    public LinkService linkService(LinkRepository linkRepository) {
-        return new LinkService(linkRepository);
+    public LinkService linkService(LinkRepository linkRepository, ClientManager clientManager) {
+        return new LinkService(linkRepository, clientManager);
     }
 }

@@ -16,8 +16,8 @@ public abstract class Client {
         this.linkConverter = linkConverter;
     }
 
-    public boolean supportLink(Link link) {
-        Matcher matcher = supportedUrl.matcher(link.getUrl());
+    public boolean supportLink(String link) {
+        Matcher matcher = supportedUrl.matcher(link);
         return matcher.matches();
     }
 

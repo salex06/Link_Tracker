@@ -9,7 +9,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
@@ -22,12 +21,6 @@ public class SoAnswerClient extends Client {
 
     public SoAnswerClient(@Qualifier("soAnswerLinkConverter") LinkToApiLinkConverter converter) {
         super(SUPPORTED_LINK, converter);
-    }
-
-    @Override
-    public boolean supportLink(Link link) {
-        Matcher matcher = SUPPORTED_LINK.matcher(link.getUrl());
-        return matcher.matches();
     }
 
     @Override

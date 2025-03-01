@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import backend.academy.clients.Client;
+import backend.academy.clients.ClientManager;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkResponse;
@@ -32,8 +35,15 @@ class LinkControllerTest {
     private LinkService linkService;
     private ChatService chatService;
 
+    private Client mockedClient;
+    private ClientManager clientManager;
+
     @BeforeEach
     public void setup() {
+        mockedClient = Mockito.mock(Client.class);
+        clientManager = Mockito.mock(ClientManager.class);
+        when(clientManager.availableClients()).thenReturn(List.of(mockedClient));
+        when(mockedClient.supportLink(anyString())).thenReturn(true);
         linkService = Mockito.mock(LinkService.class);
         chatService = Mockito.mock(ChatService.class);
 
@@ -82,6 +92,7 @@ class LinkControllerTest {
         LinkResponse expectedResponse = new LinkResponse(1L, "test");
         when(chatService.getChat(1L)).thenReturn(Optional.of(new TgChat(1L, new HashSet<>())));
         when(linkService.saveOrGetLink(any(Link.class))).thenReturn(new Link(1L, "test"));
+        when(linkService.validateLink(anyString())).thenReturn(true);
 
         ResponseEntity<?> actual = linkController.addLink(1L, new AddLinkRequest("test"));
 
@@ -96,7 +107,8 @@ class LinkControllerTest {
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         Long chatId = 1L;
         AddLinkRequest addLinkRequest = new AddLinkRequest("test");
 
@@ -119,7 +131,8 @@ class LinkControllerTest {
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         linkController.addLink(chatId, request);
 
         linkController.addLink(chatId, request);
@@ -148,7 +161,8 @@ class LinkControllerTest {
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
         tgChatRepository.save(2L);
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         linkController.addLink(chat1Id, request);
 
         linkController.addLink(chat2Id, request);
@@ -185,7 +199,8 @@ class LinkControllerTest {
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
         tgChatRepository.save(2L);
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
 
         linkController.addLink(chat1Id, request1);
         linkController.addLink(chat1Id, request2);
@@ -216,7 +231,8 @@ class LinkControllerTest {
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
         tgChatRepository.save(1L);
         tgChatRepository.save(2L);
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
 
         linkController.addLink(chat1Id, request1);
         linkController.addLink(chat1Id, request2);
@@ -251,7 +267,8 @@ class LinkControllerTest {
         String expectedMessage = "Некорректные параметры запроса";
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
 
         ResponseEntity<?> response = linkController.removeLink(1L, new RemoveLinkRequest("test"));
 
@@ -265,7 +282,8 @@ class LinkControllerTest {
         String expectedMessage = "Ссылка не найдена";
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(1L);
         linkController.addLink(1L, new AddLinkRequest("testLink1"));
 
@@ -281,7 +299,8 @@ class LinkControllerTest {
         String expectedMessage = "Ссылка не найдена";
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(1L);
         linkController.addLink(1L, new AddLinkRequest("testLink"));
         tgChatRepository.save(2L);
@@ -299,7 +318,8 @@ class LinkControllerTest {
         Long expectedId = 1L;
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(1L);
         linkController.addLink(1L, new AddLinkRequest("testLink"));
 
@@ -316,7 +336,8 @@ class LinkControllerTest {
         Long chat2Id = 2L;
         MapLinkRepository linkRepository = new MapLinkRepository();
         MapTgChatRepository tgChatRepository = new MapTgChatRepository();
-        linkController = new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository));
+        linkController =
+                new LinkController(new ChatService(tgChatRepository), new LinkService(linkRepository, clientManager));
         tgChatRepository.save(chat1Id);
         tgChatRepository.save(chat2Id);
         linkController.addLink(chat1Id, new AddLinkRequest("testLink"));
