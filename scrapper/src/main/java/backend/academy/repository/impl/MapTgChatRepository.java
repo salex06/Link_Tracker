@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/** Класс представляет собой хранилище чатов на основе контейнера "Словарь" */
 public class MapTgChatRepository implements ChatRepository {
     private final Map<Long, TgChat> database = new HashMap<>();
 
