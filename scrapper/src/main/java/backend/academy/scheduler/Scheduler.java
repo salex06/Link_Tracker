@@ -9,6 +9,7 @@ import backend.academy.model.Link;
 import backend.academy.service.LinkService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +20,7 @@ import org.springframework.web.client.RestClient;
  * Класс-планировщик. Обеспечивает регулярное обращение к ресурсам, проверку на наличие обновлений и отправку
  * уведомлений
  */
+@Slf4j
 @Service
 public class Scheduler {
     private final LinkService linkService;
@@ -71,6 +73,12 @@ public class Scheduler {
                     link.getTgChatIds().stream().toList());
 
             try {
+                log.atInfo()
+                        .setMessage("Отправка уведомления об обновлении")
+                        .addKeyValue("url", linkUpdate.url())
+                        .addKeyValue("description", linkUpdate.description())
+                        .addKeyValue("tg-chat-ids", linkUpdate.tgChatIds())
+                        .log();
                 botUpdatesClient.post().uri("/updates").body(linkUpdate).exchange((request, response) -> {
                     if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
                         ApiErrorResponse apiErrorResponse =
@@ -81,7 +89,14 @@ public class Scheduler {
                     }
                 });
             } catch (ApiErrorException e) {
-                // pass
+                ApiErrorResponse response = e.apiErrorResponse();
+                log.atError()
+                        .setMessage("Некорректные параметры запроса")
+                        .addKeyValue("description", response.description())
+                        .addKeyValue("code", response.code())
+                        .addKeyValue("exception-name", response.exceptionName())
+                        .addKeyValue("exception-message", response.exceptionName())
+                        .log();
             }
         }
     }
