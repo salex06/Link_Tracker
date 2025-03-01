@@ -2,11 +2,15 @@ package backend.academy.scheduler;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.ClientManager;
+import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkUpdate;
+import backend.academy.exceptions.ApiErrorException;
 import backend.academy.model.Link;
 import backend.academy.service.LinkService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -66,7 +70,19 @@ public class Scheduler {
                     updateDescription,
                     link.getTgChatIds().stream().toList());
 
-            botUpdatesClient.post().uri("/updates").body(linkUpdate).retrieve().toEntity(String.class);
+            try {
+                botUpdatesClient.post().uri("/updates").body(linkUpdate).exchange((request, response) -> {
+                    if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                        ApiErrorResponse apiErrorResponse =
+                                new ObjectMapper().readValue(response.getBody(), ApiErrorResponse.class);
+                        throw new ApiErrorException(apiErrorResponse);
+                    } else {
+                        return new ObjectMapper().readValue(response.getBody(), String.class);
+                    }
+                });
+            } catch (ApiErrorException e) {
+                // pass
+            }
         }
     }
 }
