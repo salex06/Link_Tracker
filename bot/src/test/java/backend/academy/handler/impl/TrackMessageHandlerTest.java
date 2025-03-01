@@ -95,7 +95,7 @@ class TrackMessageHandlerTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
                                                 "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                                        + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"trace\": []}")));
+                                                        + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
@@ -120,7 +120,7 @@ class TrackMessageHandlerTest {
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"trace\": []}")));
+                                + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);

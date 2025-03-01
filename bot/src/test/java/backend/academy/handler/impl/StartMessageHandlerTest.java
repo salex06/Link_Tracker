@@ -88,7 +88,7 @@ class StartMessageHandlerTest {
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"trace\": []}")));
+                                + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualSendMessage = startMessageHandler.handle(update, restClient);

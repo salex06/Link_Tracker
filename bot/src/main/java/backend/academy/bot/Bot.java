@@ -70,7 +70,7 @@ public class Bot {
                     } else {
                         log.atError()
                                 .setMessage("Проблемы с сетью")
-                                .addKeyValue("stack-trace", e.getStackTrace())
+                                .addKeyValue("stacktrace", e.getStackTrace())
                                 .log();
                     }
                 });
