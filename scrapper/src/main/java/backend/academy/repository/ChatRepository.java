@@ -30,6 +30,14 @@ public interface ChatRepository {
     boolean save(Long id);
 
     /**
+     * Сохранить чат
+     *
+     * @param tgChat чат, который требуется сохранить
+     * @return {@code TgChat} - объект класса TgChat - предыдущее состояние чата (null, если добавляется впервые)
+     */
+    TgChat saveTgChat(TgChat tgChat);
+
+    /**
      * Удалить чат по его идентификатору
      *
      * @param id идентификатор чата
