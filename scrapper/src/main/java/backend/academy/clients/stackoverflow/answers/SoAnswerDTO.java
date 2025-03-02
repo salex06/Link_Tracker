@@ -1,7 +1,6 @@
 package backend.academy.clients.stackoverflow.answers;
 
 import backend.academy.clients.stackoverflow.SoOwner;
-import backend.academy.clients.stackoverflow.questions.SoQuestionDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -21,14 +20,11 @@ import java.time.ZoneId;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SoAnswerDTO(
         @JsonProperty("owner") SoOwner owner,
-        @JsonProperty("last_activity_date")
-                @JsonDeserialize(converter = SoQuestionDTO.TimeStampToLocalDateTimeConverter.class)
+        @JsonProperty("last_activity_date") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime lastActivity,
-        @JsonProperty("creation_date")
-                @JsonDeserialize(converter = SoQuestionDTO.TimeStampToLocalDateTimeConverter.class)
+        @JsonProperty("creation_date") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime creationDate,
-        @JsonProperty("last_edit_date")
-                @JsonDeserialize(converter = SoQuestionDTO.TimeStampToLocalDateTimeConverter.class)
+        @JsonProperty("last_edit_date") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime lastEditDate) {
     /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
     public static class TimeStampToLocalDateTimeConverter extends StdConverter<Long, LocalDateTime> {
