@@ -3,17 +3,20 @@ package backend.academy.clients.github.repository;
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
 import backend.academy.model.Link;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Клиент для отслеживания изменений в репозитории на GitHub */
+@Slf4j
 @Component
 public class GitHubRepositoryClient extends Client {
     private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
@@ -26,23 +29,39 @@ public class GitHubRepositoryClient extends Client {
 
     @Override
     public List<String> getUpdates(Link link) {
+        ObjectMapper objectMapper =
+                JsonMapper.builder().addModule(new JavaTimeModule()).build();
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
-            return null;
+            return List.of();
         }
 
-        ResponseEntity<GitHubRepositoryDTO> response = client.method(HttpMethod.GET)
+        log.atInfo()
+                .setMessage("Запрос к GitHub Api (репозиторий)")
+                .addKeyValue("url", url)
+                .log();
+        GitHubRepositoryDTO data = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/vnd.github+json")
-                .retrieve()
-                .toEntity(GitHubRepositoryDTO.class);
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return objectMapper.readValue(response.getBody(), GitHubRepositoryDTO.class);
+                    }
+                    log.atError()
+                            .setMessage("Некорректные параметры запроса к GitHub API")
+                            .addKeyValue("url", url)
+                            .log();
+                    return null;
+                });
 
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return List.of(generateUpdateText(Objects.requireNonNull(response.getBody()), link));
+        if (data != null) {
+            return List.of(generateUpdateText(data, link));
         } else {
-            throw new RuntimeException(String.format(
-                    "Не удалось получить обновления по ссылке: %s (%d)",
-                    link.getUrl(), response.getStatusCode().value()));
+            log.atError()
+                    .setMessage("Ошибка при обращении к GitHub Api")
+                    .addKeyValue("url", url)
+                    .log();
+            return List.of();
         }
     }
 
