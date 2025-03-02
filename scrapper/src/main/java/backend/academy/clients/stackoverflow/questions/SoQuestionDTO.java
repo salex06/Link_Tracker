@@ -9,6 +9,15 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+/**
+ * Объект передачи данных, представляющий отедльную запись - вопрос на StackOverflow
+ *
+ * @param owner автор вопроса
+ * @param lastActivity дата последней активности
+ * @param creationDate дата создания
+ * @param lastEditDate дата последнего изменения
+ * @param title заголовок вопроса
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SoQuestionDTO(
         @JsonProperty("owner") SoOwner owner,
@@ -19,7 +28,15 @@ public record SoQuestionDTO(
         @JsonProperty("last_edit_date") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime lastEditDate,
         @JsonProperty("title") String title) {
+
+    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
     public static class TimeStampToLocalDateTimeConverter extends StdConverter<Long, LocalDateTime> {
+        /**
+         * Конвертировать timestamp в LocalDateTime
+         *
+         * @param seconds количество секунд от 1 янв 1970 (fromEpochSeconds)
+         * @return объекта класса {@code LocalDateTime} - сконвертированное время
+         */
         @Override
         public LocalDateTime convert(Long seconds) {
             if (seconds == null) {
