@@ -6,7 +6,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import backend.academy.clients.stackoverflow.answers.SoAnswerClient;
 import backend.academy.model.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -84,15 +83,15 @@ class SoQuestionClientTest {
     @Test
     void getUpdates_WhenRequestError_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        soQuestionClient =
-            new SoQuestionClient(x -> String.format("http://localhost:" + port + "/questions/79461427"), restClient);
+        soQuestionClient = new SoQuestionClient(
+                x -> String.format("http://localhost:" + port + "/questions/79461427"), restClient);
 
         Link link = new Link(1L, "https://stackoverflow.com/questions/79461427");
         stubFor(get("/questions/79461427")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"items\":[],\"has_more\":false,\"quota_max\":300,\"quota_remaining\":290}")));
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"items\":[],\"has_more\":false,\"quota_max\":300,\"quota_remaining\":290}")));
 
         List<String> updates = soQuestionClient.getUpdates(link);
 

@@ -78,14 +78,14 @@ class SoAnswerClientTest {
     void getUpdates_WhenRequestError_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         soAnswerClient =
-            new SoAnswerClient(x -> String.format("http://localhost:" + port + "/answers/79461427"), restClient);
+                new SoAnswerClient(x -> String.format("http://localhost:" + port + "/answers/79461427"), restClient);
 
         Link link = new Link(1L, "https://stackoverflow.com/answers/79461427");
         stubFor(get("/answers/79461427")
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"items\":[],\"has_more\":false,\"quota_max\":300,\"quota_remaining\":290}")));
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"items\":[],\"has_more\":false,\"quota_max\":300,\"quota_remaining\":290}")));
 
         List<String> updates = soAnswerClient.getUpdates(link);
 
