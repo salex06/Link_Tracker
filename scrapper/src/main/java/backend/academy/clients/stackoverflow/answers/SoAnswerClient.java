@@ -44,7 +44,7 @@ public class SoAnswerClient extends Client {
                     return null;
                 });
 
-        if (dto == null) {
+        if (dto == null || dto.items() == null || dto.items().isEmpty()) {
             return List.of();
         }
         return generateUpdateText(dto.items().getFirst(), link);
