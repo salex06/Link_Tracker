@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Клиент для отслеживания вопросов на StackOverflow. Обеспечивает проверку вопросов на обновления */
+@Slf4j
 @Component
 public class SoQuestionClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
@@ -37,6 +39,10 @@ public class SoQuestionClient extends Client {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
+        log.atInfo()
+                .setMessage("Обращение к StackOverflow API (вопросы)")
+                .addKeyValue("url", url)
+                .log();
         SoQuestionsListDTO dto = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/json")
@@ -48,6 +54,10 @@ public class SoQuestionClient extends Client {
                 });
 
         if (dto == null || dto.items() == null || dto.items().isEmpty()) {
+            log.atError()
+                    .setMessage("Некорректные параметры запроса к StackOverflow API (вопросы)")
+                    .addKeyValue("url", url)
+                    .log();
             return List.of();
         }
         return generateUpdateText(dto.items().getFirst(), link);
