@@ -162,7 +162,7 @@ class GitHubSingleIssueClientTest {
     }
 
     @Test
-    void getUpdates_WhenIssueWasUpdated_ThenReturnEmpty() {
+    void getUpdates_WhenIssueWasNotUpdated_ThenReturnEmpty() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubSingleIssueClient = new GitHubSingleIssueClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3"), restClient);
@@ -273,9 +273,30 @@ class GitHubSingleIssueClientTest {
 
         assertThat(updates).isEmpty();
     }
+
+    @Test
+    void getUpdates_WhenWrongRequest_ThenReturnEmpty() {
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+        gitHubSingleIssueClient = new GitHubSingleIssueClient(
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3000"), restClient);
+
+        String expectedMessage =
+                "Обновление issue #Edited README via GitHub по ссылке https://github.com/octocat/Hello-World/pull/3000";
+        Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues/3000");
+        stubFor(get("/octocat/Hello-World/issues/3")
+                .willReturn(aResponse()
+                        .withStatus(404)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"message\":\"Not Found\",\"documentation_url\":"
+                                + "\"https://docs.github.com/rest/issues/issues#get-an-issue\",\"status\":\"404\"}")));
+
+        List<String> updates = gitHubSingleIssueClient.getUpdates(link);
+
+        assertThat(updates).isEmpty();
+    }
 }
 
-// {"message":"Not Found","documentation_url":"https://docs.github.com/rest/issues/issues#get-an-issue","status":"404"}
+//
 // "{\"id\":1296269,\"node_id\":\"MDEwOlJlcG9zaXRvcnkxMjk2MjY5\",\"name\":\"Hello-World\"," +
 //    "\"full_name\":\"octocat/Hello-World\",\"private\":false,\"owner\":{\"login\":\"octocat\"," +
 //    "\"id\":583231,\"node_id\":\"MDQ6VXNlcjU4MzIzMQ==\",\"avatar_url\":" +

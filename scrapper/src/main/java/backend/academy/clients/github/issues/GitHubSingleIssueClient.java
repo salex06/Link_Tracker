@@ -10,12 +10,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Клиент для отслеживания обновлений по задачам (issue) на GitHub */
+@Slf4j
 @Component
 public class GitHubSingleIssueClient extends Client {
     private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
@@ -33,6 +35,11 @@ public class GitHubSingleIssueClient extends Client {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) return new ArrayList<>();
 
+        log.atInfo()
+                .setMessage("Обращение к GitHub API")
+                .addKeyValue("url", url)
+                .log();
+
         GitHubIssue issuesList = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/vnd.github+json")
@@ -40,9 +47,11 @@ public class GitHubSingleIssueClient extends Client {
                     if (response.getStatusCode().is2xxSuccessful()) {
                         return objectMapper.readValue(response.getBody(), GitHubIssue.class);
                     }
-                    throw new RuntimeException(String.format(
-                            "Не удалось получить обновления по ссылке: %s (%d)",
-                            link.getUrl(), response.getStatusCode().value()));
+                    log.atError()
+                            .setMessage("Некорректные параметры запроса к GitHub API")
+                            .addKeyValue("url", url)
+                            .log();
+                    return null;
                 });
 
         return createUpdatesList(issuesList, link);
