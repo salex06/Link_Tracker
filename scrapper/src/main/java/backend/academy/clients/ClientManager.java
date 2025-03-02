@@ -5,6 +5,10 @@ import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+/**
+ * Менеджер клиентов. Содержит список клиентов, доступных к использованию. Клиенты позволяют отслеживать состояние
+ * ресурсов на предмет обновления
+ */
 @Component
 public final class ClientManager {
     @Autowired
