@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Клиент для отслеживания изменений в репозитории на GitHub */
 @Component
 public class GitHubRepositoryClient extends Client {
     private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");

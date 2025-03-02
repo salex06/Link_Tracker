@@ -15,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Клиент для отслеживания обновлений по задачам (issue) на GitHub */
 @Component
 public class GitHubSingleIssueClient extends Client {
     private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");

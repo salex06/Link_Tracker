@@ -5,6 +5,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
+/**
+ * Модель задачи (issue) GitHub
+ *
+ * @param linkValue ссылка на issue
+ * @param title название
+ * @param author автор
+ * @param updatedAt время обновления
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GitHubIssue(
         @JsonProperty("html_url") String linkValue,
