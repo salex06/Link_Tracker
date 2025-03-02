@@ -80,8 +80,6 @@ class SoAnswerClientTest {
         soAnswerClient =
             new SoAnswerClient(x -> String.format("http://localhost:" + port + "/answers/79461427"), restClient);
 
-        String expectedMessage =
-            "Обновление ответа пользователя 0___________ по ссылке https://stackoverflow.com/answers/79461427";
         Link link = new Link(1L, "https://stackoverflow.com/answers/79461427");
         stubFor(get("/answers/79461427")
             .willReturn(aResponse()
