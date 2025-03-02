@@ -15,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+/** Клиент для отслеживания ответов на StackOverflow. Обеспечивает проверку на обновление ответов */
 @Component
 public class SoAnswerClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/a/(\\w+)$");

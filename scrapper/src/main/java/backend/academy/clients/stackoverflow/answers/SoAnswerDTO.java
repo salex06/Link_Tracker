@@ -10,6 +10,14 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+/**
+ * Объект передачи данных, определяющий структуру отдельной записи - конкретного ответа на StackOverflow
+ *
+ * @param owner автор ответа
+ * @param lastActivity дата последней активности по ответу
+ * @param creationDate дата создания ответа
+ * @param lastEditDate дата изменения ответа
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SoAnswerDTO(
         @JsonProperty("owner") SoOwner owner,
@@ -22,7 +30,14 @@ public record SoAnswerDTO(
         @JsonProperty("last_edit_date")
                 @JsonDeserialize(converter = SoQuestionDTO.TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime lastEditDate) {
+    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
     public static class TimeStampToLocalDateTimeConverter extends StdConverter<Long, LocalDateTime> {
+        /**
+         * Конвертировать timestamp в LocalDateTime
+         *
+         * @param seconds количество секунд от 1 янв 1970 (fromEpochSeconds)
+         * @return объекта класса {@code LocalDateTime} - сконвертированное время
+         */
         @Override
         public LocalDateTime convert(Long seconds) {
             if (seconds == null) {
