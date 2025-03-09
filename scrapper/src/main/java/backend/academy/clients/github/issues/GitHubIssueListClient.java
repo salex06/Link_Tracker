@@ -11,11 +11,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /** Класс для отслеживания изменений в комментариях к issue или pull request на GitHub */
+@Slf4j
 @Component
 public class GitHubIssueListClient extends Client {
     private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/(issues|pulls)$");
@@ -45,10 +47,19 @@ public class GitHubIssueListClient extends Client {
     }
 
     private List<GitHubComment> getComments(ObjectMapper mapper, String url) {
+        log.atInfo()
+                .setMessage("Обращение к GitHub API для получения комментариев")
+                .addKeyValue("url", url)
+                .log();
         return client.get().uri(url).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return mapper.readValue(response.getBody(), new TypeReference<>() {});
             }
+            log.atWarn()
+                    .setMessage("Неудачный запрос на получение комментариев")
+                    .addKeyValue("url", url)
+                    .addKeyValue("code", response.getStatusCode())
+                    .log();
             return null;
         });
     }
@@ -71,10 +82,19 @@ public class GitHubIssueListClient extends Client {
     }
 
     private GitHubIssue getIssue(ObjectMapper mapper, String issueUrl) {
+        log.atInfo()
+                .setMessage("Обращение к GitHub API для получения issue")
+                .addKeyValue("url", issueUrl)
+                .log();
         return client.get().uri(issueUrl).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return mapper.readValue(response.getBody(), GitHubIssue.class);
             }
+            log.atWarn()
+                    .setMessage("Неудачный запрос на получение issue")
+                    .addKeyValue("url", issueUrl)
+                    .addKeyValue("code", response.getStatusCode())
+                    .log();
             return null;
         });
     }
