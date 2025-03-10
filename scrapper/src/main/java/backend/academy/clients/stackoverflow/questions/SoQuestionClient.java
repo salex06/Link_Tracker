@@ -49,7 +49,7 @@ public class SoQuestionClient extends Client {
         }
 
         // Получаем комментарии к вопросу
-        SoCommentListDTO commentListDTO = getComments(objectMapper, url);
+        SoCommentListDTO commentListDTO = getCommentsForQuestion(objectMapper, url);
         List<String> commentUpdates = new ArrayList<>();
         if (commentListDTO != null
                 && commentListDTO.items() != null
@@ -64,11 +64,18 @@ public class SoQuestionClient extends Client {
                 && answersListDTO.items() != null
                 && !answersListDTO.items().isEmpty()) {
             answersUpdates = generateUpdateTextForAnswers(answersListDTO, link, questionDTO);
+
+            // Получаем комментарии к ответам
+            for (SoAnswerDTO answer : answersListDTO.items()) {
+                SoCommentListDTO comments = getCommentsForAnswers(objectMapper, answer.answerId());
+                answersUpdates.addAll(generateUpdateTextForComments(comments, link, questionDTO));
+            }
         }
 
         List<String> allUpdates = new ArrayList<>();
         allUpdates.addAll(commentUpdates);
         allUpdates.addAll(answersUpdates);
+        link.setLastUpdateTime(LocalDateTime.now());
         return allUpdates;
     }
 
@@ -87,7 +94,7 @@ public class SoQuestionClient extends Client {
                 });
     }
 
-    private SoCommentListDTO getComments(ObjectMapper objectMapper, String baseurl) {
+    private SoCommentListDTO getCommentsForQuestion(ObjectMapper objectMapper, String baseurl) {
         String url = baseurl + "/comments?site=stackoverflow&filter=!nNPvSN_LI9";
         log.atInfo()
                 .setMessage("Обращение к StackOverflow Api для получения комментариев к вопросу")
@@ -115,35 +122,38 @@ public class SoQuestionClient extends Client {
         });
     }
 
+    private SoCommentListDTO getCommentsForAnswers(ObjectMapper mapper, Long answerId) {
+        return client.get()
+                .uri("/answers/" + answerId + "/comments?site=stackoverflow&filter=!nNPvSN_LEO")
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return mapper.readValue(response.getBody(), SoCommentListDTO.class);
+                    }
+                    return null;
+                });
+    }
+
     private List<String> generateUpdateTextForComments(SoCommentListDTO comments, Link link, SoQuestionDTO question) {
         List<String> updates = new ArrayList<>();
-        LocalDateTime latestUpdateTime = link.getLastUpdateTime();
 
         for (SoCommentDTO comment : comments.items()) {
             if (wasUpdated(link.getLastUpdateTime(), comment.createdAt())) {
                 updates.add(formatCommentUpdate(comment, question));
-                latestUpdateTime =
-                        (latestUpdateTime.isBefore(comment.createdAt()) ? comment.createdAt() : latestUpdateTime);
             }
         }
 
-        link.setLastUpdateTime(latestUpdateTime);
         return updates;
     }
 
     private List<String> generateUpdateTextForAnswers(SoAnswersListDTO answers, Link link, SoQuestionDTO question) {
         List<String> updates = new ArrayList<>();
-        LocalDateTime latestUpdateTime = link.getLastUpdateTime();
 
         for (SoAnswerDTO answer : answers.items()) {
             if (wasUpdated(link.getLastUpdateTime(), answer.creationDate())) {
                 updates.add(formatAnswerUpdate(answer, question));
-                latestUpdateTime =
-                        (latestUpdateTime.isBefore(answer.creationDate()) ? answer.creationDate() : latestUpdateTime);
             }
         }
 
-        link.setLastUpdateTime(latestUpdateTime);
         return updates;
     }
 

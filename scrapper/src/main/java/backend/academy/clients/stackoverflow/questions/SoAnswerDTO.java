@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
  * @param lastActivity дата последней активности по ответу
  * @param creationDate дата создания ответа
  * @param lastEditDate дата изменения ответа
+ * @param text содержимое ответа
+ * @param answerId идентификатор ответа
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SoAnswerDTO(
@@ -27,4 +29,5 @@ public record SoAnswerDTO(
         @JsonProperty("last_edit_date")
                 @JsonDeserialize(converter = JsonConverters.TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime lastEditDate,
-        @JsonProperty("body") @JsonDeserialize(converter = JsonConverters.StringTruncator.class) String text) {}
+        @JsonProperty("body") @JsonDeserialize(converter = JsonConverters.StringTruncator.class) String text,
+        @JsonProperty("answer_id") Long answerId) {}

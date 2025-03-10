@@ -5,7 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import backend.academy.model.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -60,6 +59,14 @@ class SoQuestionClientTest {
                         + "\n"
                         + "def string_to_int(string):\n"
                         + "    intstring");
+        String expectedMessage3 = "Новый комментарий к вопросу How do I parse a string to a float or int?\r\n"
+                + "Автор: Dendi Handian\r\n"
+                + "Время создания: 2275-09-02T21:40:20\r\n"
+                + "Превью: @ibnɘꟻ I&#39;m aware of it, but the `-&gt;format()` gives you the ability to globally store the string format in config. So, whenever there is a request to change the format everywhere, you don&#39;t";
+        String expectedMessage4 = "Новый комментарий к вопросу How do I parse a string to a float or int?\r\n"
+                + "Автор: Joseph Prosper\r\n"
+                + "Время создания: 2277-10-15T19:53:40\r\n"
+                + "Превью: Body example";
         Link link = new Link(1L, "https://stackoverflow.com/questions/6031003");
         stubFor(get("/questions/6031003?site=stackoverflow")
                 .willReturn(aResponse()
@@ -186,12 +193,124 @@ class SoQuestionClientTest {
                                 + "        }\n"
                                 + "    ]}")));
 
+        stubFor(get("/answers/379910/comments?site=stackoverflow&filter=!nNPvSN_LEO")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "    \"items\": [\n"
+                                + "        {\n"
+                                + "            \"owner\": {\n"
+                                + "                \"account_id\": 10732388,\n"
+                                + "                \"reputation\": 72,\n"
+                                + "                \"user_id\": 7898071,\n"
+                                + "                \"user_type\": \"registered\",\n"
+                                + "                \"profile_image\": \"https://lh6.googleusercontent.com/-sf8U4MFB0xI/AAAAAAAAAAI/AAAAAAAACOE/pJF-RSVL1BM/photo.jpg?sz=256\",\n"
+                                + "                \"display_name\": \"Joseph Prosper\",\n"
+                                + "                \"link\": \"https://stackoverflow.com/users/7898071/joseph-prosper\"\n"
+                                + "            },\n"
+                                + "            \"edited\": false,\n"
+                                + "            \"score\": 0,\n"
+                                + "            \"creation_date\": 1712900420,\n"
+                                + "            \"post_id\": 50854594,\n"
+                                + "            \"comment_id\": 138066063,\n"
+                                + "            \"content_license\": \"CC BY-SA 4.0\",\n"
+                                + "            \"body_markdown\": \"Also you can use `-&gt;ceilYears() ` example `$period = CarbonPeriod::create(&#39;2020-06-06&#39;, &#39;2028-06-06&#39;)-&gt;ceilYears()` Period will return only array of years\",\n"
+                                + "            \"body\": \"Also you can use <code>-&gt;ceilYears() </code> example <code>$period = CarbonPeriod::create(&#39;2020-06-06&#39;, &#39;2028-06-06&#39;)-&gt;ceilYears()</code> Period will return only array of years\"\n"
+                                + "        },\n"
+                                + "        {\n"
+                                + "            \"owner\": {\n"
+                                + "                \"account_id\": 5538948,\n"
+                                + "                \"reputation\": 374,\n"
+                                + "                \"user_id\": 4396293,\n"
+                                + "                \"user_type\": \"registered\",\n"
+                                + "                \"accept_rate\": 0,\n"
+                                + "                \"profile_image\": \"https://i.sstatic.net/RnD0n.jpg?s=256\",\n"
+                                + "                \"display_name\": \"Dendi Handian\",\n"
+                                + "                \"link\": \"https://stackoverflow.com/users/4396293/dendi-handian\"\n"
+                                + "            },\n"
+                                + "            \"reply_to_user\": {\n"
+                                + "                \"account_id\": 5684115,\n"
+                                + "                \"reputation\": 910,\n"
+                                + "                \"user_id\": 4494207,\n"
+                                + "                \"user_type\": \"registered\",\n"
+                                + "                \"profile_image\": \"https://lh4.googleusercontent.com/-PkjKUkAKyIs/AAAAAAAAAAI/AAAAAAAAAgQ/ZPkuZojj5OQ/photo.jpg?sz=256\",\n"
+                                + "                \"display_name\": \"ibnɘꟻ\",\n"
+                                + "                \"link\": \"https://stackoverflow.com/users/4494207/ibn%c9%98%ea%9f%bb\"\n"
+                                + "            },\n"
+                                + "            \"edited\": false,\n"
+                                + "            \"score\": 0,\n"
+                                + "            \"creation_date\": 9646033220,\n"
+                                + "            \"post_id\": 50854594,\n"
+                                + "            \"comment_id\": 126015776,\n"
+                                + "            \"content_license\": \"CC BY-SA 4.0\",\n"
+                                + "            \"body_markdown\": \"@ibnɘꟻ I&#39;m aware of it, but the `-&gt;format()` gives you the ability to globally store the string format in config. So, whenever there is a request to change the format everywhere, you don&#39;t need to change the code everywhere.\",\n"
+                                + "            \"body\": \"@ibnɘꟻ I&#39;m aware of it, but the <code>-&gt;format()</code> gives you the ability to globally store the string format in config. So, whenever there is a request to change the format everywhere, you don&#39;t need to change the code everywhere.\"\n"
+                                + "        }"
+                                + "]}")));
+
+        stubFor(get("/answers/78684527/comments?site=stackoverflow&filter=!nNPvSN_LEO")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "    \"items\": [\n"
+                                + "        {\n"
+                                + "            \"owner\": {\n"
+                                + "                \"account_id\": 10732388,\n"
+                                + "                \"reputation\": 72,\n"
+                                + "                \"user_id\": 7898071,\n"
+                                + "                \"user_type\": \"registered\",\n"
+                                + "                \"profile_image\": \"https://lh6.googleusercontent.com/-sf8U4MFB0xI/AAAAAAAAAAI/AAAAAAAACOE/pJF-RSVL1BM/photo.jpg?sz=256\",\n"
+                                + "                \"display_name\": \"Joseph Prosper\",\n"
+                                + "                \"link\": \"https://stackoverflow.com/users/7898071/joseph-prosper\"\n"
+                                + "            },\n"
+                                + "            \"edited\": false,\n"
+                                + "            \"score\": 0,\n"
+                                + "            \"creation_date\": 9712900420,\n"
+                                + "            \"post_id\": 50854594,\n"
+                                + "            \"comment_id\": 138066063,\n"
+                                + "            \"content_license\": \"CC BY-SA 4.0\",\n"
+                                + "            \"body_markdown\": \"Body example\",\n"
+                                + "            \"body\": \"Body example\"\n"
+                                + "        },\n"
+                                + "        {\n"
+                                + "            \"owner\": {\n"
+                                + "                \"account_id\": 5538948,\n"
+                                + "                \"reputation\": 374,\n"
+                                + "                \"user_id\": 4396293,\n"
+                                + "                \"user_type\": \"registered\",\n"
+                                + "                \"accept_rate\": 0,\n"
+                                + "                \"profile_image\": \"https://i.sstatic.net/RnD0n.jpg?s=256\",\n"
+                                + "                \"display_name\": \"Dendi Handian\",\n"
+                                + "                \"link\": \"https://stackoverflow.com/users/4396293/dendi-handian\"\n"
+                                + "            },\n"
+                                + "            \"reply_to_user\": {\n"
+                                + "                \"account_id\": 5684115,\n"
+                                + "                \"reputation\": 910,\n"
+                                + "                \"user_id\": 4494207,\n"
+                                + "                \"user_type\": \"registered\",\n"
+                                + "                \"profile_image\": \"https://lh4.googleusercontent.com/-PkjKUkAKyIs/AAAAAAAAAAI/AAAAAAAAAgQ/ZPkuZojj5OQ/photo.jpg?sz=256\",\n"
+                                + "                \"display_name\": \"ibnɘꟻ\",\n"
+                                + "                \"link\": \"https://stackoverflow.com/users/4494207/ibn%c9%98%ea%9f%bb\"\n"
+                                + "            },\n"
+                                + "            \"edited\": false,\n"
+                                + "            \"score\": 0,\n"
+                                + "            \"creation_date\": 1646033220,\n"
+                                + "            \"post_id\": 50854594,\n"
+                                + "            \"comment_id\": 126015776,\n"
+                                + "            \"content_license\": \"CC BY-SA 4.0\",\n"
+                                + "            \"body_markdown\": \"@ibnɘꟻ I&#39;m aware of it, but the `-&gt;format()` gives you the ability to globally store the string format in config. So, whenever there is a request to change the format everywhere, you don&#39;t need to change the code everywhere.\",\n"
+                                + "            \"body\": \"@ibnɘꟻ I&#39;m aware of it, but the <code>-&gt;format()</code> gives you the ability to globally store the string format in config. So, whenever there is a request to change the format everywhere, you don&#39;t need to change the code everywhere.\"\n"
+                                + "        }"
+                                + "]}")));
+
         List<String> updates = soQuestionClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
-        assertThat(updates.size()).isEqualTo(2);
+        assertThat(updates.size()).isEqualTo(4);
         assertThat(updates.getFirst().trim()).isEqualTo(expectedMessage1.trim());
-        assertEquals(expectedMessage2.trim(), updates.get(1).trim());
+        assertThat(updates.get(1).trim()).isEqualTo(expectedMessage2.trim());
+        assertThat(updates.get(2).trim()).isEqualTo(expectedMessage3.trim());
+        assertThat(updates.get(3).trim()).isEqualTo(expectedMessage4.trim());
     }
 
     @Test
