@@ -1,4 +1,4 @@
-package backend.academy.clients.stackoverflow.answers;
+package backend.academy.clients.stackoverflow.questions;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;

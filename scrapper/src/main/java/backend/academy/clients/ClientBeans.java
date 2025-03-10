@@ -22,8 +22,7 @@ public class ClientBeans {
 
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
-                return String.format(
-                        "https://api.stackexchange.com/2.3/questions/%s?site=stackoverflow", matcher.group(1));
+                return String.format("https://api.stackexchange.com/2.3/questions/%s", matcher.group(1));
             }
 
             return null;

@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -39,58 +40,126 @@ public class SoQuestionClient extends Client {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
-        log.atInfo()
-                .setMessage("Обращение к StackOverflow API (вопросы)")
-                .addKeyValue("url", url)
-                .log();
+        // Получаем информацию о вопросе
+        SoQuestionDTO questionDTO = getQuestions(
+                objectMapper,
+                Long.valueOf(Arrays.stream(url.split("/")).toList().getLast()));
+        if (questionDTO == null) {
+            return List.of();
+        }
 
-        SoQuestionsListDTO dto = client.method(HttpMethod.GET)
-                .uri(url)
+        // Получаем комментарии к вопросу
+        SoCommentListDTO commentListDTO = getComments(objectMapper, url);
+        List<String> commentUpdates = new ArrayList<>();
+        if (commentListDTO != null
+                && commentListDTO.items() != null
+                && !commentListDTO.items().isEmpty()) {
+            commentUpdates = generateUpdateTextForComments(commentListDTO, link, questionDTO);
+        }
+
+        // Получаем ответы к вопросу
+        SoAnswersListDTO answersListDTO = getAnswers(objectMapper, url);
+        List<String> answersUpdates = new ArrayList<>();
+        if (answersListDTO != null
+                && answersListDTO.items() != null
+                && !answersListDTO.items().isEmpty()) {
+            answersUpdates = generateUpdateTextForAnswers(answersListDTO, link, questionDTO);
+        }
+
+        List<String> allUpdates = new ArrayList<>();
+        allUpdates.addAll(commentUpdates);
+        allUpdates.addAll(answersUpdates);
+        return allUpdates;
+    }
+
+    private SoQuestionDTO getQuestions(ObjectMapper mapper, Long postId) {
+        return client.method(HttpMethod.GET)
+                .uri("/questions/" + postId + "?site=stackoverflow")
                 .header("Accept", "application/json")
                 .exchange((request, response) -> {
                     if (response.getStatusCode().is2xxSuccessful()) {
-                        return objectMapper.readValue(response.getBody(), SoQuestionsListDTO.class);
+                        // System.out.println(new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8));
+                        return mapper.readValue(response.getBody(), SoQuestionsListDTO.class)
+                                .items()
+                                .getFirst();
                     }
                     return null;
                 });
+    }
 
-        if (dto == null || dto.items() == null || dto.items().isEmpty()) {
-            log.atError()
-                    .setMessage("Некорректные параметры запроса к StackOverflow API (вопросы)")
+    private SoCommentListDTO getComments(ObjectMapper objectMapper, String baseurl) {
+        String url = baseurl + "/comments?site=stackoverflow&filter=!nNPvSN_LI9";
+        log.atInfo()
+                .setMessage("Обращение к StackOverflow Api для получения комментариев к вопросу")
+                .addKeyValue("url", url)
+                .log();
+        return client.get().uri(url).exchange((request, response) -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return objectMapper.readValue(response.getBody(), SoCommentListDTO.class);
+            }
+            log.atWarn()
+                    .setMessage("Некорректные параметры запроса к StackOverflow API (комментарии к вопросу)")
                     .addKeyValue("url", url)
                     .log();
+            return null;
+        });
+    }
 
-            return List.of();
+    private SoAnswersListDTO getAnswers(ObjectMapper objectMapper, String baseurl) {
+        String url = baseurl + "/answers?site=stackoverflow&filter=!nNPvSNe7D9";
+        return client.get().uri(url).exchange((request, response) -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return objectMapper.readValue(response.getBody(), SoAnswersListDTO.class);
+            }
+            return null;
+        });
+    }
+
+    private List<String> generateUpdateTextForComments(SoCommentListDTO comments, Link link, SoQuestionDTO question) {
+        List<String> updates = new ArrayList<>();
+        LocalDateTime latestUpdateTime = link.getLastUpdateTime();
+
+        for (SoCommentDTO comment : comments.items()) {
+            if (wasUpdated(link.getLastUpdateTime(), comment.createdAt())) {
+                updates.add(formatCommentUpdate(comment, question));
+                latestUpdateTime =
+                        (latestUpdateTime.isBefore(comment.createdAt()) ? comment.createdAt() : latestUpdateTime);
+            }
         }
-        return generateUpdateText(dto.items().getFirst(), link);
+
+        link.setLastUpdateTime(latestUpdateTime);
+        return updates;
     }
 
-    private List<String> generateUpdateText(SoQuestionDTO body, Link link) {
-        if (!wasUpdated(body, link)) {
-            return List.of();
+    private List<String> generateUpdateTextForAnswers(SoAnswersListDTO answers, Link link, SoQuestionDTO question) {
+        List<String> updates = new ArrayList<>();
+        LocalDateTime latestUpdateTime = link.getLastUpdateTime();
+
+        for (SoAnswerDTO answer : answers.items()) {
+            if (wasUpdated(link.getLastUpdateTime(), answer.creationDate())) {
+                updates.add(formatAnswerUpdate(answer, question));
+                latestUpdateTime =
+                        (latestUpdateTime.isBefore(answer.creationDate()) ? answer.creationDate() : latestUpdateTime);
+            }
         }
 
-        link.setLastUpdateTime(getLatestUpdate(body));
-        return formatUpdate(body, link);
+        link.setLastUpdateTime(latestUpdateTime);
+        return updates;
     }
 
-    private boolean wasUpdated(SoQuestionDTO body, Link link) {
-        return link.getLastUpdateTime() == null
-                || link.getLastUpdateTime()
-                        .isBefore(body.lastActivity() == null ? LocalDateTime.MIN : body.lastActivity())
-                || link.getLastUpdateTime()
-                        .isBefore(body.lastEditDate() == null ? LocalDateTime.MIN : body.lastEditDate());
+    private boolean wasUpdated(LocalDateTime lastUpdateTime, LocalDateTime updateTime) {
+        return lastUpdateTime.isBefore(updateTime);
     }
 
-    private LocalDateTime getLatestUpdate(SoQuestionDTO body) {
-        LocalDateTime creationDate = body.creationDate() == null ? LocalDateTime.MIN : body.creationDate();
-        LocalDateTime editDate = body.lastEditDate() == null ? LocalDateTime.MIN : body.lastEditDate();
-        LocalDateTime activityDate = body.lastActivity() == null ? LocalDateTime.MIN : body.lastActivity();
-
-        return Collections.max(List.of(creationDate, editDate, activityDate));
+    private String formatCommentUpdate(SoCommentDTO comment, SoQuestionDTO question) {
+        return String.format(
+                "Новый комментарий к вопросу %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
+                question.title(), comment.owner().name(), comment.createdAt(), comment.text());
     }
 
-    private List<String> formatUpdate(SoQuestionDTO body, Link link) {
-        return List.of(String.format("Обновление в вопросе '%s' по ссылке %s", body.title(), link.getUrl()));
+    private String formatAnswerUpdate(SoAnswerDTO answer, SoQuestionDTO question) {
+        return String.format(
+                "Новый ответ к вопросу %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
+                question.title(), answer.owner().name(), answer.creationDate(), answer.text());
     }
 }
