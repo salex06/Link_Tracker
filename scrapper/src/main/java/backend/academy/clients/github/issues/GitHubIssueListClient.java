@@ -37,13 +37,53 @@ public class GitHubIssueListClient extends Client {
             return List.of();
         }
 
-        List<GitHubComment> data = getComments(objectMapper, url);
-
-        if (data == null || data.isEmpty()) {
+        List<GitHubIssue> issues = getIssues(objectMapper, url);
+        if (issues == null || issues.isEmpty()) {
             return List.of();
         }
+        List<String> newIssues = createListOfNewIssue(issues, link);
 
-        return createListOfUpdates(objectMapper, link, data);
+        List<List<GitHubComment>> commentsForEachIssue = getCommentsForEachIssue(objectMapper, issues);
+        List<String> newComments = new ArrayList<>();
+        for (List<GitHubComment> commentList : commentsForEachIssue) {
+            if (commentList == null || commentList.isEmpty()) {
+                continue;
+            }
+            newComments.addAll(createListOfCommentUpdates(objectMapper, link, commentList));
+        }
+
+        List<String> resultList = new ArrayList<>();
+        resultList.addAll(newIssues);
+        resultList.addAll(newComments);
+        link.setLastUpdateTime(LocalDateTime.now());
+        return resultList;
+    }
+
+    private List<GitHubIssue> getIssues(ObjectMapper objectMapper, String url) {
+        log.atInfo()
+                .setMessage("Обращение к GitHub API для получения issues/pull requests")
+                .addKeyValue("url", url)
+                .log();
+        return client.get().uri(url).exchange((request, response) -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return objectMapper.readValue(response.getBody(), new TypeReference<>() {});
+            }
+            log.atWarn()
+                    .setMessage("Неудачный запрос на получение issues/pull requests")
+                    .addKeyValue("url", url)
+                    .addKeyValue("code", response.getStatusCode())
+                    .log();
+            return null;
+        });
+    }
+
+    private List<List<GitHubComment>> getCommentsForEachIssue(ObjectMapper objectMapper, List<GitHubIssue> issues) {
+        List<List<GitHubComment>> commentsMatrix = new ArrayList<>();
+        for (GitHubIssue issue : issues) {
+            List<GitHubComment> commentsSet = getComments(objectMapper, issue.commentsUrl());
+            commentsMatrix.add(commentsSet);
+        }
+        return commentsMatrix;
     }
 
     private List<GitHubComment> getComments(ObjectMapper mapper, String url) {
@@ -64,21 +104,32 @@ public class GitHubIssueListClient extends Client {
         });
     }
 
-    private List<String> createListOfUpdates(ObjectMapper objectMapper, Link link, List<GitHubComment> comments) {
+    private List<String> createListOfCommentUpdates(
+            ObjectMapper objectMapper, Link link, List<GitHubComment> comments) {
         List<String> updates = new ArrayList<>();
-        LocalDateTime latestUpdateTime = link.getLastUpdateTime();
 
         for (GitHubComment comment : comments) {
             if (issueWasUpdated(link.getLastUpdateTime(), comment.createdAt())) {
                 GitHubIssue issue = getIssue(objectMapper, comment.issueUrl());
-                updates.add(createUpdate(comment, issue));
-                latestUpdateTime =
-                        (latestUpdateTime.isBefore(comment.createdAt()) ? comment.createdAt() : latestUpdateTime);
+                updates.add(createNewCommentUpdate(comment, issue));
             }
         }
-
-        link.setLastUpdateTime(latestUpdateTime);
         return updates;
+    }
+
+    private List<String> createListOfNewIssue(List<GitHubIssue> issues, Link link) {
+        List<String> issueUpdates = new ArrayList<>();
+
+        for (GitHubIssue issue : issues) {
+            if (newIssue(link.getLastUpdateTime(), issue.createdAt())) {
+                issueUpdates.add(createNewIssueUpdate(issue));
+            }
+        }
+        return issueUpdates;
+    }
+
+    private boolean newIssue(LocalDateTime lastUpdateTime, LocalDateTime issueCreationDate) {
+        return lastUpdateTime.isBefore(issueCreationDate);
     }
 
     private GitHubIssue getIssue(ObjectMapper mapper, String issueUrl) {
@@ -103,9 +154,15 @@ public class GitHubIssueListClient extends Client {
         return lastUpdateTime.isBefore(commentCreateDateTime);
     }
 
-    private String createUpdate(GitHubComment comment, GitHubIssue issue) {
+    private String createNewCommentUpdate(GitHubComment comment, GitHubIssue issue) {
         return String.format(
                 "Новый комментарий к issue %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
                 issue.title(), comment.user().ownerName(), comment.createdAt(), comment.body());
+    }
+
+    private String createNewIssueUpdate(GitHubIssue issue) {
+        return String.format(
+                "Новый issue %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
+                issue.title(), issue.author().ownerName(), issue.createdAt(), issue.description());
     }
 }

@@ -1,13 +1,11 @@
 package backend.academy.clients.github.repository;
 
+import backend.academy.clients.converter.JsonConverters;
 import backend.academy.clients.github.GitHubUser;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.util.StdConverter;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 /**
  * Модель репозитория GitHub
@@ -24,14 +22,5 @@ public record GitHubRepositoryDTO(
         @JsonProperty("name") String repositoryName,
         @JsonProperty("owner") GitHubUser owner,
         @JsonProperty("pushed_at") LocalDateTime pushedAt,
-        @JsonProperty("updated_at") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
-                LocalDateTime updatedAt) {
-
-    public static class TimeStampToLocalDateTimeConverter extends StdConverter<String, LocalDateTime> {
-        @Override
-        public LocalDateTime convert(String time) {
-            Instant instant = Instant.parse(time);
-            return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-        }
-    }
-}
+        @JsonProperty("updated_at") @JsonDeserialize(converter = JsonConverters.LocalDateTimeConverter.class)
+                LocalDateTime updatedAt) {}

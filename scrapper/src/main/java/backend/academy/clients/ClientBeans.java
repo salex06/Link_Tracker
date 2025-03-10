@@ -88,7 +88,7 @@ public class ClientBeans {
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
                 return String.format(
-                        "https://api.github.com/repos/%s/%s/issues/comments", matcher.group(1), matcher.group(2));
+                        "https://api.github.com/repos/%s/%s/%s", matcher.group(1), matcher.group(2), matcher.group(3));
             }
             return null;
         };
