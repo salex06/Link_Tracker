@@ -106,8 +106,8 @@ public class LinkController {
                     new LinkResponse(
                             link.orElseThrow().getId(),
                             link.orElseThrow().getUrl(),
-                            addLinkRequest.tags(),
-                            addLinkRequest.filters()),
+                            link.orElseThrow().getTags(),
+                            link.orElseThrow().getFilters()),
                     HttpStatus.OK);
         }
 

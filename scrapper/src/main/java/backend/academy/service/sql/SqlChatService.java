@@ -68,7 +68,7 @@ public class SqlChatService implements ChatService {
     @Override
     public void updateTags(Link link, TgChat chat, List<String> tags) {
         chatRepository.removeAllTags(link.getId(), chat.chatId());
-        for (String tag : tags) {
+        for (String tag : new HashSet<>(tags)) {
             chatRepository.saveTag(link.getId(), chat.chatId(), tag);
         }
         link.setTags(tags);
@@ -80,7 +80,7 @@ public class SqlChatService implements ChatService {
     @Override
     public void updateFilters(Link link, TgChat chat, List<String> filters) {
         chatRepository.removeAllFilters(link.getId(), chat.chatId());
-        for (String filter : filters) {
+        for (String filter : new HashSet<>(filters)) {
             chatRepository.saveFilter(link.getId(), chat.chatId(), filter);
         }
         link.setFilters(filters);
