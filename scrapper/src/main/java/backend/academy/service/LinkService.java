@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface LinkService {
-    Iterable<Link> getAllLinks();
+    List<Link> getAllLinks();
 
     Optional<Link> getLink(Long chatId, String linkValue);
 

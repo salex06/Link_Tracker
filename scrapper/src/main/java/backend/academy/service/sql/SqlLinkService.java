@@ -8,6 +8,7 @@ import backend.academy.model.plain.TgChat;
 import backend.academy.repository.JdbcChatRepository;
 import backend.academy.repository.JdbcLinkRepository;
 import backend.academy.service.LinkService;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +33,16 @@ public class SqlLinkService implements LinkService {
     }
 
     @Override
-    public Iterable<Link> getAllLinks() {
-        return null;
+    public List<Link> getAllLinks() {
+        List<Link> plainLinks = new ArrayList<>();
+        Iterable<JdbcLink> jdbcLinks = linkRepository.findAll();
+
+        for (JdbcLink link : jdbcLinks) {
+            Set<Long> chats = linkRepository.getChatIdsByUrl(link.getUrl());
+            plainLinks.add(linkMapper.toPlainLink(link, null, null, chats));
+        }
+
+        return plainLinks;
     }
 
     @Override

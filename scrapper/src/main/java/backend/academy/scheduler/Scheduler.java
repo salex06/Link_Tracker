@@ -33,7 +33,7 @@ public class Scheduler {
     @Scheduled(fixedDelay = 50000, initialDelay = 10000)
     public void schedule() {
         List<Client> clients = clientManager.availableClients();
-        Iterable<Link> links = linkService.getAllLinks();
+        List<Link> links = linkService.getAllLinks();
         for (Link link : links) {
             Client suitableClient = getSuitableClient(clients, link);
             List<String> updateDescription = suitableClient.getUpdates(link);
