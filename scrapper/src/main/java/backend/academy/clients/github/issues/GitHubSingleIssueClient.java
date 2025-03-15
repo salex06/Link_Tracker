@@ -2,7 +2,7 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
-import backend.academy.model.Link;
+import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

@@ -1,0 +1,2 @@
+ALTER TABLE tg_chat
+ADD chat_id BIGINT NOT NULL;

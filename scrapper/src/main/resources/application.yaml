@@ -4,15 +4,28 @@ app:
     key: ${SO_TOKEN_KEY}
     access-token: ${SO_ACCESS_TOKEN}
 
+service:
+  access-type: SQL
+
 spring:
   application:
     name: Scrapper
   liquibase:
     enabled: false
+    change-log: filesystem:${project.basedir}/migrations/changelog-master.xml
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
+  datasource:
+    platform: postgres
+    url: jdbc:postgresql://localhost:5433/link_tracker
+    username: postgres
+    password: 123
+    driverClassName: org.postgresql.Driver
 
 server:
   port: 8081

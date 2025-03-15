@@ -1,7 +1,7 @@
 package backend.academy.clients;
 
 import backend.academy.clients.converter.LinkToApiLinkConverter;
-import backend.academy.model.Link;
+import backend.academy.model.plain.Link;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

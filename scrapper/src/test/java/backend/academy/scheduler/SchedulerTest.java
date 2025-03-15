@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.clients.Client;
 import backend.academy.clients.ClientManager;
 import backend.academy.dto.ApiErrorResponse;
-import backend.academy.model.Link;
+import backend.academy.model.plain.Link;
 import backend.academy.service.LinkService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;

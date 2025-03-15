@@ -1,15 +1,17 @@
 package backend.academy.api;
 
+import backend.academy.clients.ClientManager;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkResponse;
 import backend.academy.dto.ListLinksResponse;
 import backend.academy.dto.RemoveLinkRequest;
-import backend.academy.model.Link;
-import backend.academy.model.TgChat;
+import backend.academy.model.plain.Link;
+import backend.academy.model.plain.TgChat;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +30,13 @@ import org.springframework.web.bind.annotation.RequestHeader;
 public class LinkController {
     private final ChatService chatService;
     private final LinkService linkService;
+    private final ClientManager clientManager;
 
     @Autowired
-    public LinkController(ChatService chatService, LinkService linkService) {
+    public LinkController(ChatService chatService, LinkService linkService, ClientManager clientManager) {
         this.chatService = chatService;
         this.linkService = linkService;
+        this.clientManager = clientManager;
     }
 
     /**
@@ -49,11 +53,11 @@ public class LinkController {
                 .setMessage("Запрос на получение отслеживаемых ссылок")
                 .addKeyValue("chat-id", chatId)
                 .log();
-
-        Set<Link> chatLinks = chatService.getChatLinks(chatId);
+        Set<Link> chatLinks = chatService.getAllLinksByChatId(chatId);
         if (chatLinks != null) {
-            return new ResponseEntity<>(
-                    new ListLinksResponse(chatLinks.stream().toList(), chatLinks.size()), HttpStatus.OK);
+            ListLinksResponse response =
+                    new ListLinksResponse(chatLinks.stream().toList(), chatLinks.size());
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
 
         log.atError().setMessage("Чат не найден").addKeyValue("chat-id", chatId).log();
@@ -78,12 +82,18 @@ public class LinkController {
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", addLinkRequest.link())
                 .log();
-
-        Optional<TgChat> chat = chatService.getChat(chatId);
-        if (chat.isPresent() && linkService.validateLink(addLinkRequest.link())) {
-            Link link = linkService.saveOrGetLink(new Link(addLinkRequest.link()));
-            chatService.appendLinkToChat(chatId, link);
-            linkService.appendChatToLink(chatId, link);
+        Optional<TgChat> optChat = chatService.getChatByChatId(chatId);
+        String linkUrl = addLinkRequest.link();
+        if (optChat.isPresent() && linkService.validateLink(clientManager.availableClients(), linkUrl)) {
+            Link link = chatService
+                    .getLink(chatId, linkUrl)
+                    .orElseGet(() -> chatService.saveLink(chatId, new Link(null, addLinkRequest.link())));
+            TgChat chat = optChat.orElseThrow();
+            List<String> tags = addLinkRequest.tags();
+            List<String> filters = addLinkRequest.filters();
+            if (!tags.isEmpty()) chatService.updateTags(link, chat, tags);
+            if (!filters.isEmpty()) chatService.updateFilters(link, chat, filters);
+            chatService.saveTheChatLink(chat, link);
             return new ResponseEntity<>(
                     new LinkResponse(link.getId(), link.getUrl(), addLinkRequest.tags(), addLinkRequest.filters()),
                     HttpStatus.OK);
@@ -115,34 +125,17 @@ public class LinkController {
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", request.link())
                 .log();
-
-        Optional<TgChat> chat = chatService.getChat(chatId);
-        if (chat.isPresent()) {
-            Link foundLink = linkService.findLink(new Link(0L, request.link()));
-            boolean wasDeleted = chatService.deleteLink(chatId, request.link());
-
-            if (!wasDeleted || foundLink == null || !linkService.deleteChatFromLink(chatId, foundLink)) {
-                log.atError()
-                        .setMessage("Ссылка не найдена")
-                        .addKeyValue("chat-id", chatId)
-                        .addKeyValue("link", request.link())
-                        .log();
-
-                return new ResponseEntity<>(
-                        new ApiErrorResponse("Ссылка не найдена", "404", "", "", null), HttpStatus.NOT_FOUND);
-            }
-
-            return new ResponseEntity<>(
-                    new LinkResponse(
-                            foundLink.getId(), foundLink.getUrl(), foundLink.getTags(), foundLink.getFilters()),
-                    HttpStatus.OK);
+        Optional<TgChat> optChat = chatService.getChatByChatId(chatId);
+        String url = request.link();
+        Optional<Link> optLink = chatService.getLink(chatId, url);
+        if (optChat.isPresent() && optLink.isPresent()) {
+            TgChat chat = optChat.orElseThrow();
+            Link link = optLink.orElseThrow();
+            List<String> tags = chatService.getTags(link, chat);
+            List<String> filters = chatService.getFilters(link, chat);
+            chatService.removeTheChatLink(chat, link);
+            return new ResponseEntity<>(new LinkResponse(link.getId(), link.getUrl(), tags, filters), HttpStatus.OK);
         }
-
-        log.atError()
-                .setMessage("Чат для удаления ссылки не найден")
-                .addKeyValue("chat-id", chatId)
-                .log();
-
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--suppress XmlUnusedNamespaceDeclaration -->
+<databaseChangeLog
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.14.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <include relativeToChangelogFile="true" file="000-initial-schema.sql"/>
+    <include relativeToChangelogFile="true" file="001-addChatIdColumn-schema.sql"/>
+    <include relativeToChangelogFile="true" file="002-changeRelationshipWithTags-schema.sql"/>
+    <include relativeToChangelogFile="true" file="003-changeRelationshipWithFilters-schema.sql"/>
+
+    <changeSet id="add-not-null-constraint" author="salex06">
+        <addNotNullConstraint
+            columnName="last_update"
+            tableName="link"
+            columnDataType="TIMESTAMP WITH TIME ZONE"/>
+    </changeSet>
+
+    <changeSet id="add-default-value-to-last-update" author="salex06">
+        <addDefaultValue
+            tableName="link"
+            columnName="last_update"
+            columnDataType="TIMESTAMP WITH TIME ZONE"
+        defaultValueComputed="CURRENT_TIMESTAMP"/>
+    </changeSet>
+
+    <include relativeToChangelogFile="true" file="004-changeForeignKeys-schema.sql"/>
+</databaseChangeLog>

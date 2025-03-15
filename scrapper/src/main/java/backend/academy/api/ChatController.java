@@ -32,7 +32,7 @@ public class ChatController {
      */
     @PostMapping("/tg-chat/{id}")
     ResponseEntity<?> registerChat(@PathVariable Long id) {
-        if (chatService.saveChat(id)) {
+        if (chatService.saveChat(id) != null) {
             log.atInfo()
                     .setMessage("Чат успешно зарегистрирован")
                     .addKeyValue("chat-id", id)
@@ -58,7 +58,7 @@ public class ChatController {
      */
     @DeleteMapping("/tg-chat/{id}")
     ResponseEntity<?> deleteChat(@PathVariable Long id) {
-        if (!chatService.deleteChat(id)) {
+        if (chatService.getChatByChatId(id).isEmpty()) {
             log.atError()
                     .setMessage("Чат для удаления не найден")
                     .addKeyValue("chat-id", id)
@@ -67,7 +67,7 @@ public class ChatController {
             return new ResponseEntity<>(
                     new ApiErrorResponse("Чат не существует", "404", "", "", new ArrayList<>()), HttpStatus.NOT_FOUND);
         }
-
+        chatService.deleteChatByChatId(id);
         log.atInfo().setMessage("Чат успешно удален").addKeyValue("chat-id", id).log();
 
         return new ResponseEntity<>("Чат успешно удален", HttpStatus.OK);

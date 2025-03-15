@@ -5,7 +5,7 @@ import backend.academy.clients.ClientManager;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkUpdate;
 import backend.academy.exceptions.ApiErrorException;
-import backend.academy.model.Link;
+import backend.academy.model.plain.Link;
 import backend.academy.service.LinkService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -30,10 +30,10 @@ public class Scheduler {
         this.botUpdatesClient = botUpdatesClient;
     }
 
-    @Scheduled(fixedDelay = 10000, initialDelay = 10000)
+    @Scheduled(fixedDelay = 50000, initialDelay = 10000)
     public void schedule() {
         List<Client> clients = clientManager.availableClients();
-        List<Link> links = linkService.getAllLinks();
+        Iterable<Link> links = linkService.getAllLinks();
         for (Link link : links) {
             Client suitableClient = getSuitableClient(clients, link);
             List<String> updateDescription = suitableClient.getUpdates(link);

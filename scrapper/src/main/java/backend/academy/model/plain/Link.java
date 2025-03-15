@@ -1,4 +1,4 @@
-package backend.academy.model;
+package backend.academy.model.plain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Link {
     private Long id;
@@ -20,7 +19,20 @@ public class Link {
     @JsonIgnore
     private LocalDateTime lastUpdateTime;
 
-    private static final AtomicLong nextId = new AtomicLong();
+    public Link(
+            Long id,
+            String url,
+            List<String> tags,
+            List<String> filters,
+            Set<Long> tgChatIds,
+            LocalDateTime lastUpdateTime) {
+        this.id = id;
+        this.url = url;
+        this.tags = tags;
+        this.filters = filters;
+        this.tgChatIds = tgChatIds;
+        this.lastUpdateTime = lastUpdateTime;
+    }
 
     public Link(Long id, String url, List<String> tags, List<String> filters, Set<Long> tgChatIds) {
         this.id = id;
@@ -46,20 +58,6 @@ public class Link {
         this.tgChatIds = new HashSet<>();
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
-        this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
-    }
-
-    /**
-     * Конструктор, устанавливающий значение ссылки (id рассчитывается автоматически)
-     *
-     * @param url значение ссылки
-     */
-    public Link(String url) {
-        this.id = nextId.incrementAndGet();
-        this.url = url;
-        this.tags = new ArrayList<>();
-        this.filters = new ArrayList<>();
-        this.tgChatIds = new HashSet<>();
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
