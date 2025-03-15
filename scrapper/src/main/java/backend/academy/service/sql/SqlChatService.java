@@ -161,12 +161,12 @@ public class SqlChatService implements ChatService {
     }
 
     @Override
-    public List<String> getTags(Link link, TgChat chat) {
-        return chatRepository.getTags(link.getId(), chat.chatId());
+    public List<String> getTags(Long linkId, Long chatId) {
+        return chatRepository.getTags(linkId, chatId);
     }
 
     @Override
-    public List<String> getFilters(Link link, TgChat chat) {
-        return chatRepository.getFilters(link.getId(), chat.chatId());
+    public List<String> getFilters(Long linkId, Long chatId) {
+        return chatRepository.getFilters(linkId, chatId);
     }
 }

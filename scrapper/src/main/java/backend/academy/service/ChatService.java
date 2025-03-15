@@ -35,7 +35,7 @@ public interface ChatService {
 
     List<JdbcTgChat> getChatsListeningToLink(JdbcLink link);
 
-    List<String> getTags(Link link, TgChat chat);
+    List<String> getTags(Long linkId, Long chatId);
 
-    List<String> getFilters(Link link, TgChat chat);
+    List<String> getFilters(Long linkId, Long chatId);
 }

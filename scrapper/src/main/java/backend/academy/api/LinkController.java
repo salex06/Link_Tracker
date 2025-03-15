@@ -131,8 +131,8 @@ public class LinkController {
         if (optChat.isPresent() && optLink.isPresent()) {
             TgChat chat = optChat.orElseThrow();
             Link link = optLink.orElseThrow();
-            List<String> tags = chatService.getTags(link, chat);
-            List<String> filters = chatService.getFilters(link, chat);
+            List<String> tags = chatService.getTags(link.getId(), chat.chatId());
+            List<String> filters = chatService.getFilters(link.getId(), chat.chatId());
             chatService.removeTheChatLink(chat, link);
             return new ResponseEntity<>(new LinkResponse(link.getId(), link.getUrl(), tags, filters), HttpStatus.OK);
         }
