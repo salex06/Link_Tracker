@@ -58,7 +58,7 @@ public class ChatController {
      */
     @DeleteMapping("/tg-chat/{id}")
     ResponseEntity<?> deleteChat(@PathVariable Long id) {
-        if (chatService.getChatByChatId(id).isEmpty()) {
+        if (chatService.getPlainTgChatByChatId(id).isEmpty()) {
             log.atError()
                     .setMessage("Чат для удаления не найден")
                     .addKeyValue("chat-id", id)

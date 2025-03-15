@@ -31,11 +31,6 @@ public interface JdbcChatRepository extends CrudRepository<JdbcTgChat, Long> {
     @Transactional
     List<JdbcTgChat> getChatsByLink(@Param("linkId") Long linkId);
 
-    @Query("SELECT link.id, link.link_value, link.last_update FROM link "
-            + "INNER JOIN tg_chat_link ON link.id = tg_chat_link.link_id "
-            + "WHERE tg_chat_link.tg_chat_id = :chatId")
-    List<JdbcLink> getAllLinksByChatId(@Param("chatId") Long chatId);
-
     @Transactional
     @Query("SELECT tag_value FROM chat_link_tags WHERE chat_id = :chatId AND link_id = :linkId")
     List<String> getTags(@Param("linkId") Long linkId, @Param("chatId") Long chatId);

@@ -12,11 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface JdbcLinkRepository extends CrudRepository<JdbcLink, Long> {
-    @Query(
-            "SELECT id, link_value, last_update FROM tg_chat_link INNER JOIN link ON link_id = id WHERE tg_chat_id = :chatId")
-    @Transactional
-    Iterable<JdbcLink> getAllLinksByChatId(@Param("chatId") Long chatId);
-
     @Query("SELECT * FROM link WHERE link_value = :url")
     @Transactional
     Optional<JdbcLink> getLinkByUrl(@Param("url") String url);
@@ -35,4 +30,9 @@ public interface JdbcLinkRepository extends CrudRepository<JdbcLink, Long> {
     @Transactional
     @Query("SELECT filter_value FROM chat_link_filters WHERE chat_id = :chatId AND link_id = :linkId")
     List<String> getFilters(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
+
+    @Query("SELECT link.id, link.link_value, link.last_update FROM link "
+            + "INNER JOIN tg_chat_link ON link.id = tg_chat_link.link_id "
+            + "WHERE tg_chat_link.tg_chat_id = :chatId")
+    List<JdbcLink> getAllLinksByChatId(@Param("chatId") Long chatId);
 }

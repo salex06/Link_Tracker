@@ -13,13 +13,11 @@ public interface ChatService {
 
     Link saveLink(Long chatId, Link link);
 
-    Optional<TgChat> getChatByChatId(Long chatId);
+    Optional<TgChat> getPlainTgChatByChatId(Long chatId);
 
     boolean containsChat(Long chatId);
 
     void deleteChatByChatId(Long chatId);
-
-    Set<Link> getAllLinksByChatId(Long chatId);
 
     Optional<Link> getLink(Long chatId, String linkValue);
 

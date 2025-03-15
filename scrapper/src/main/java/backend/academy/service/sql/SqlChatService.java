@@ -8,6 +8,7 @@ import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.repository.JdbcChatRepository;
 import backend.academy.service.ChatService;
+import backend.academy.service.LinkService;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -20,14 +21,19 @@ import org.springframework.stereotype.Service;
 @Service
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "SQL")
 public class SqlChatService implements ChatService {
-    @Autowired
-    private JdbcChatRepository chatRepository;
+    private final JdbcChatRepository chatRepository;
+    private final ChatMapper chatMapper;
+    private final LinkMapper linkMapper;
+    private final LinkService linkService;
 
     @Autowired
-    private ChatMapper chatMapper;
-
-    @Autowired
-    private LinkMapper linkMapper;
+    public SqlChatService(
+            JdbcChatRepository chatRepository, ChatMapper chatMapper, LinkMapper linkMapper, LinkService linkService) {
+        this.chatRepository = chatRepository;
+        this.chatMapper = chatMapper;
+        this.linkMapper = linkMapper;
+        this.linkService = linkService;
+    }
 
     @Override
     public TgChat saveChat(Long chatId) {
@@ -39,12 +45,19 @@ public class SqlChatService implements ChatService {
     }
 
     @Override
-    public Optional<TgChat> getChatByChatId(Long chatId) {
+    public boolean containsChat(Long chatId) {
+        return chatRepository.existsByChatId(chatId);
+    }
+
+    @Override
+    public Optional<TgChat> getPlainTgChatByChatId(Long chatId) {
         Optional<TgChat> plainChat = Optional.empty();
         Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chatId);
         if (jdbcTgChat.isPresent()) {
             plainChat = Optional.of(new TgChat(
-                    jdbcTgChat.orElseThrow().id(), jdbcTgChat.orElseThrow().chatId(), getAllLinksByChatId(chatId)));
+                    jdbcTgChat.orElseThrow().id(),
+                    jdbcTgChat.orElseThrow().chatId(),
+                    linkService.getAllLinksByChatId(chatId)));
         }
         return plainChat;
     }
@@ -52,35 +65,6 @@ public class SqlChatService implements ChatService {
     @Override
     public void deleteChatByChatId(Long chatId) {
         chatRepository.deleteByChatId(chatId);
-    }
-
-    @Override
-    public boolean containsChat(Long chatId) {
-        return chatRepository.existsByChatId(chatId);
-    }
-
-    @Override
-    public Set<Link> getAllLinksByChatId(Long chatId) {
-        Set<Link> plainLinks = new HashSet<>();
-        List<JdbcLink> jdbcLinks = chatRepository.getAllLinksByChatId(chatId);
-        for (JdbcLink link : jdbcLinks) {
-            List<String> tags = chatRepository.getTags(link.getId(), chatId);
-            List<String> filters = chatRepository.getFilters(link.getId(), chatId);
-            Set<Long> chats = getChatIdsListeningToLink(link.getUrl());
-            plainLinks.add(linkMapper.toPlainLink(link, tags, filters, chats));
-        }
-        return plainLinks;
-    }
-
-    private Set<Long> getChatIdsListeningToLink(String url) {
-        Optional<JdbcLink> jdbcLink = chatRepository.getLinkByValue(url);
-        if (jdbcLink.isEmpty()) {
-            return Set.of();
-        }
-        JdbcLink link = jdbcLink.orElseThrow();
-        List<JdbcTgChat> chats = chatRepository.getChatsByLink(link.getId());
-
-        return chats.stream().map(JdbcTgChat::chatId).collect(Collectors.toSet());
     }
 
     @Override
@@ -93,7 +77,7 @@ public class SqlChatService implements ChatService {
         JdbcLink link = jdbcLink.orElseThrow();
         List<String> tags = chatRepository.getTags(link.getId(), chatId);
         List<String> filters = chatRepository.getFilters(link.getId(), chatId);
-        Set<Long> chats = getChatIdsListeningToLink(link.getUrl());
+        Set<Long> chats = linkService.getChatIdsListeningToLink(link.getUrl());
 
         return Optional.of(linkMapper.toPlainLink(link, tags, filters, chats));
     }

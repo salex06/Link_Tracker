@@ -53,7 +53,7 @@ public class LinkController {
                 .setMessage("Запрос на получение отслеживаемых ссылок")
                 .addKeyValue("chat-id", chatId)
                 .log();
-        Set<Link> chatLinks = chatService.getAllLinksByChatId(chatId);
+        Set<Link> chatLinks = linkService.getAllLinksByChatId(chatId);
         if (chatLinks != null) {
             ListLinksResponse response =
                     new ListLinksResponse(chatLinks.stream().toList(), chatLinks.size());
@@ -82,7 +82,7 @@ public class LinkController {
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", addLinkRequest.link())
                 .log();
-        Optional<TgChat> optChat = chatService.getChatByChatId(chatId);
+        Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
         String linkUrl = addLinkRequest.link();
         if (optChat.isPresent() && linkService.validateLink(clientManager.availableClients(), linkUrl)) {
             Link link = chatService
@@ -125,7 +125,7 @@ public class LinkController {
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", request.link())
                 .log();
-        Optional<TgChat> optChat = chatService.getChatByChatId(chatId);
+        Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
         String url = request.link();
         Optional<Link> optLink = chatService.getLink(chatId, url);
         if (optChat.isPresent() && optLink.isPresent()) {

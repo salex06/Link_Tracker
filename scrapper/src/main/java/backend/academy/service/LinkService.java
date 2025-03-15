@@ -18,7 +18,7 @@ public interface LinkService {
 
     Link updateChats(Link link, Set<TgChat> newChats);
 
-    Iterable<Link> getAllLinksByChatId(Long chatId);
+    Set<Link> getAllLinksByChatId(Long chatId);
 
     /**
      * Проверить, является ли переданная ссылка корректной
@@ -35,4 +35,6 @@ public interface LinkService {
 
         return false;
     }
+
+    Set<Long> getChatIdsListeningToLink(String url);
 }
