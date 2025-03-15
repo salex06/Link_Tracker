@@ -2,32 +2,28 @@ package backend.academy.scheduler;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.ClientManager;
-import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkUpdate;
-import backend.academy.exceptions.ApiErrorException;
 import backend.academy.model.plain.Link;
+import backend.academy.notifications.NotificationSender;
 import backend.academy.service.LinkService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Service
 public class Scheduler {
     private final LinkService linkService;
     private final ClientManager clientManager;
-    private final RestClient botUpdatesClient;
+    private final NotificationSender notificationSender;
 
     @Autowired
-    public Scheduler(LinkService linkService, ClientManager clientManager, RestClient botUpdatesClient) {
+    public Scheduler(LinkService linkService, ClientManager clientManager, NotificationSender sender) {
         this.linkService = linkService;
         this.clientManager = clientManager;
-        this.botUpdatesClient = botUpdatesClient;
+        this.notificationSender = sender;
     }
 
     @Scheduled(fixedDelay = 50000, initialDelay = 10000)
@@ -65,33 +61,7 @@ public class Scheduler {
                     updateDescription,
                     link.getTgChatIds().stream().toList());
 
-            try {
-                log.atInfo()
-                        .setMessage("Отправка уведомления об обновлении")
-                        .addKeyValue("url", linkUpdate.url())
-                        .addKeyValue("description", linkUpdate.description())
-                        .addKeyValue("tg-chat-ids", linkUpdate.tgChatIds())
-                        .log();
-
-                botUpdatesClient.post().uri("/updates").body(linkUpdate).exchange((request, response) -> {
-                    if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                        ApiErrorResponse apiErrorResponse =
-                                new ObjectMapper().readValue(response.getBody(), ApiErrorResponse.class);
-                        throw new ApiErrorException(apiErrorResponse);
-                    }
-                    return null;
-                });
-            } catch (ApiErrorException e) {
-                ApiErrorResponse response = e.apiErrorResponse();
-
-                log.atError()
-                        .setMessage("Некорректные параметры запроса")
-                        .addKeyValue("description", response.description())
-                        .addKeyValue("code", response.code())
-                        .addKeyValue("exception-name", response.exceptionName())
-                        .addKeyValue("exception-message", response.exceptionName())
-                        .log();
-            }
+            notificationSender.send(linkUpdate);
         }
     }
 }
