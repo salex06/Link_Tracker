@@ -1,6 +1,7 @@
 package backend.academy.model.jdbc;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
@@ -16,7 +17,7 @@ public class JdbcLink {
     private String url;
 
     @Column("last_update")
-    private LocalDateTime lastUpdateTime = LocalDateTime.now();
+    private LocalDateTime lastUpdateTime = LocalDateTime.now(ZoneId.of("UTC"));
 
     public JdbcLink() {}
 
