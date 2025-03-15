@@ -85,17 +85,29 @@ public class LinkController {
         Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
         String linkUrl = addLinkRequest.link();
         if (optChat.isPresent() && linkService.validateLink(clientManager.availableClients(), linkUrl)) {
-            Link link = chatService
-                    .getLink(chatId, linkUrl)
-                    .orElseGet(() -> chatService.saveLink(chatId, new Link(null, addLinkRequest.link())));
-            TgChat chat = optChat.orElseThrow();
             List<String> tags = addLinkRequest.tags();
             List<String> filters = addLinkRequest.filters();
-            if (!tags.isEmpty()) chatService.updateTags(link, chat, tags);
-            if (!filters.isEmpty()) chatService.updateFilters(link, chat, filters);
-            chatService.saveTheChatLink(chat, link);
+            TgChat chat = optChat.orElseThrow();
+
+            linkService
+                    .getLink(chatId, linkUrl)
+                    .ifPresentOrElse(
+                            i -> {
+                                chatService.updateTags(i, chat, tags);
+                                chatService.updateFilters(i, chat, filters);
+                            },
+                            () -> {
+                                linkService.saveLink(new Link(null, addLinkRequest.link(), tags, filters, null), chat);
+                            });
+
+            Optional<Link> link = linkService.getLink(chatId, linkUrl);
+
             return new ResponseEntity<>(
-                    new LinkResponse(link.getId(), link.getUrl(), addLinkRequest.tags(), addLinkRequest.filters()),
+                    new LinkResponse(
+                            link.orElseThrow().getId(),
+                            link.orElseThrow().getUrl(),
+                            addLinkRequest.tags(),
+                            addLinkRequest.filters()),
                     HttpStatus.OK);
         }
 
@@ -127,7 +139,7 @@ public class LinkController {
                 .log();
         Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
         String url = request.link();
-        Optional<Link> optLink = chatService.getLink(chatId, url);
+        Optional<Link> optLink = linkService.getLink(chatId, url);
         if (optChat.isPresent() && optLink.isPresent()) {
             TgChat chat = optChat.orElseThrow();
             Link link = optLink.orElseThrow();

@@ -10,15 +10,15 @@ import java.util.Set;
 public interface LinkService {
     Iterable<Link> getAllLinks();
 
-    Optional<Link> getLinkById(Long id);
+    Optional<Link> getLink(Long chatId, String linkValue);
 
-    Optional<Link> getLinkByValue(Long chatId, String url);
-
-    Link saveLink(Link link);
+    Link saveLink(Link link, TgChat chat);
 
     Link updateChats(Link link, Set<TgChat> newChats);
 
     Set<Link> getAllLinksByChatId(Long chatId);
+
+    Set<Long> getChatIdsListeningToLink(String url);
 
     /**
      * Проверить, является ли переданная ссылка корректной
@@ -35,6 +35,4 @@ public interface LinkService {
 
         return false;
     }
-
-    Set<Long> getChatIdsListeningToLink(String url);
 }

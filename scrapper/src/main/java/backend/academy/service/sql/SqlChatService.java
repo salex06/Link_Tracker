@@ -1,6 +1,5 @@
 package backend.academy.service.sql;
 
-import backend.academy.model.jdbc.JdbcLink;
 import backend.academy.model.jdbc.JdbcTgChat;
 import backend.academy.model.mapper.chat.ChatMapper;
 import backend.academy.model.mapper.link.LinkMapper;
@@ -11,9 +10,8 @@ import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -68,80 +66,40 @@ public class SqlChatService implements ChatService {
     }
 
     @Override
-    public Optional<Link> getLink(Long chatId, String linkValue) {
-        Optional<JdbcLink> jdbcLink = chatRepository.getLinkByValue(linkValue);
-        if (jdbcLink.isEmpty()) {
-            return Optional.empty();
-        }
-
-        JdbcLink link = jdbcLink.orElseThrow();
-        List<String> tags = chatRepository.getTags(link.getId(), chatId);
-        List<String> filters = chatRepository.getFilters(link.getId(), chatId);
-        Set<Long> chats = linkService.getChatIdsListeningToLink(link.getUrl());
-
-        return Optional.of(linkMapper.toPlainLink(link, tags, filters, chats));
-    }
-
-    @Override
-    public Link saveLink(Long chatId, Link link) {
-        JdbcLink savedLink = chatRepository.saveLink(link.getUrl());
-        chatRepository.saveTheChatLink(chatId, savedLink.getId());
-        if (!link.getTags().isEmpty()) {
-            for (String tag : link.getTags()) {
-                chatRepository.saveTag(savedLink.getId(), chatId, tag);
-            }
-        }
-
-        if (!link.getFilters().isEmpty()) {
-            for (String filter : link.getFilters()) {
-                chatRepository.saveFilter(savedLink.getId(), chatId, filter);
-            }
-        }
-
-        List<String> tags = chatRepository.getTags(chatId, savedLink.getId());
-        List<String> filter = chatRepository.getFilters(chatId, savedLink.getId());
-        Set<Long> chats = chatRepository.getChatsByLink(savedLink.getId()).stream()
-                .map(JdbcTgChat::chatId)
-                .collect(Collectors.toSet());
-
-        return linkMapper.toPlainLink(savedLink, tags, filter, chats);
-    }
-
-    @Override
     public void updateTags(Link link, TgChat chat, List<String> tags) {
+        chatRepository.removeAllTags(link.getId(), chat.chatId());
         for (String tag : tags) {
-            chatRepository.removeAllTags(link.getId(), chat.chatId());
             chatRepository.saveTag(link.getId(), chat.chatId(), tag);
         }
+        link.setTags(tags);
+        chat.links().stream()
+                .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
+                .forEach(i -> i.setTags(link.getTags()));
     }
 
     @Override
     public void updateFilters(Link link, TgChat chat, List<String> filters) {
+        chatRepository.removeAllFilters(link.getId(), chat.chatId());
         for (String filter : filters) {
-            chatRepository.removeAllFilters(link.getId(), chat.chatId());
             chatRepository.saveFilter(link.getId(), chat.chatId(), filter);
         }
+        link.setFilters(filters);
+        chat.links().stream()
+                .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
+                .forEach(i -> i.setFilters(link.getFilters()));
     }
 
     @Override
     public void saveTheChatLink(TgChat chat, Link link) {
-        chatRepository.saveTheChatLink(chat.chatId(), link.getId());
+        if (chat.links().stream()
+                .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
+                .findAny()
+                .isEmpty()) chatRepository.saveTheChatLink(chat.chatId(), link.getId());
     }
 
     @Override
     public void removeTheChatLink(TgChat chat, Link link) {
         chatRepository.removeTheChatLink(chat.chatId(), link.getId());
-    }
-
-    @Override
-    public JdbcTgChat updateLinks(JdbcTgChat chat, Set<JdbcLink> newLinks) {
-        // TODO: реализовать обновление ссылок
-        return chatRepository.save(chat);
-    }
-
-    @Override
-    public List<JdbcTgChat> getChatsListeningToLink(JdbcLink link) {
-        return chatRepository.getChatsByLink(link.getId());
     }
 
     @Override

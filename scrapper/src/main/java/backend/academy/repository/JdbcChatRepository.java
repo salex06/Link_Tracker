@@ -39,6 +39,10 @@ public interface JdbcChatRepository extends CrudRepository<JdbcTgChat, Long> {
     @Query("SELECT filter_value FROM chat_link_filters WHERE chat_id = :chatId AND link_id = :linkId")
     List<String> getFilters(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
 
+    @Query(
+            "SELECT * FROM link JOIN tg_chat_link ON tg_chat_link.link_id = link.id WHERE link_value = :linkValue AND tg_chat_id = :chatId")
+    Optional<JdbcLink> getLinkByValueAndChatId(@Param("linkValue") String linkValue, @Param("chatId") Long chatId);
+
     @Query("SELECT * FROM link WHERE link_value = :linkValue")
     Optional<JdbcLink> getLinkByValue(@Param("linkValue") String linkValue);
 
@@ -71,7 +75,7 @@ public interface JdbcChatRepository extends CrudRepository<JdbcTgChat, Long> {
     @Modifying
     @Transactional
     @Query("DELETE FROM chat_link_tags WHERE chat_id = :chatId AND link_id = :linkId")
-    void removeAllTags(@Param("chatId") Long linkId, @Param("linkId") Long chatId);
+    void removeAllTags(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
 
     @Modifying
     @Transactional
@@ -83,7 +87,7 @@ public interface JdbcChatRepository extends CrudRepository<JdbcTgChat, Long> {
     @Modifying
     @Transactional
     @Query("DELETE FROM chat_link_filters WHERE chat_id = :chatId AND link_id = :linkId")
-    void removeAllFilters(@Param("chatId") Long linkId, @Param("linkId") Long chatId);
+    void removeAllFilters(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
 
     @Modifying
     @Transactional

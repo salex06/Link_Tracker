@@ -37,18 +37,50 @@ public class SqlLinkService implements LinkService {
     }
 
     @Override
-    public Optional<Link> getLinkById(Long id) {
-        return Optional.empty();
+    public Optional<Link> getLink(Long chatId, String linkValue) {
+        Optional<JdbcLink> jdbcLink = chatRepository.getLinkByValueAndChatId(linkValue, chatId);
+        if (jdbcLink.isEmpty()) {
+            return Optional.empty();
+        }
+
+        JdbcLink link = jdbcLink.orElseThrow();
+        List<String> tags = chatRepository.getTags(link.getId(), chatId);
+        List<String> filters = chatRepository.getFilters(link.getId(), chatId);
+        Set<Long> chats = getChatIdsListeningToLink(link.getUrl());
+
+        return Optional.of(linkMapper.toPlainLink(link, tags, filters, chats));
     }
 
     @Override
-    public Optional<Link> getLinkByValue(Long chatId, String url) {
-        return Optional.empty();
-    }
+    public Link saveLink(Link link, TgChat chat) {
+        JdbcLink savedLink = linkRepository
+                .getLinkByUrl(link.getUrl())
+                .orElseGet(() -> linkRepository.save(linkMapper.toJdbcLink(link)));
 
-    @Override
-    public Link saveLink(Link link) {
-        return null;
+        chatRepository.saveTheChatLink(chat.chatId(), savedLink.getId());
+
+        if (!link.getTags().isEmpty()) {
+            for (String tag : link.getTags()) {
+                chatRepository.saveTag(savedLink.getId(), chat.chatId(), tag);
+            }
+        }
+
+        if (!link.getFilters().isEmpty()) {
+            for (String filter : link.getFilters()) {
+                chatRepository.saveFilter(savedLink.getId(), chat.chatId(), filter);
+            }
+        }
+
+        List<String> tags = chatRepository.getTags(chat.chatId(), savedLink.getId());
+        List<String> filter = chatRepository.getFilters(chat.chatId(), savedLink.getId());
+        Set<Long> chats = chatRepository.getChatsByLink(savedLink.getId()).stream()
+                .map(JdbcTgChat::chatId)
+                .collect(Collectors.toSet());
+
+        Link plainLink = linkMapper.toPlainLink(savedLink, tags, filter, chats);
+        chat.addLink(plainLink);
+
+        return plainLink;
     }
 
     @Override
