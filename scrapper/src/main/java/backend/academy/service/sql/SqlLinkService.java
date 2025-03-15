@@ -16,6 +16,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -33,16 +36,16 @@ public class SqlLinkService implements LinkService {
     }
 
     @Override
-    public List<Link> getAllLinks() {
+    public Page<Link> getAllLinks(Pageable pageable) {
         List<Link> plainLinks = new ArrayList<>();
-        Iterable<JdbcLink> jdbcLinks = linkRepository.findAll();
+        Page<JdbcLink> jdbcLinks = linkRepository.findAll(pageable);
 
         for (JdbcLink link : jdbcLinks) {
             Set<Long> chats = linkRepository.getChatIdsByUrl(link.getUrl());
             plainLinks.add(linkMapper.toPlainLink(link, null, null, chats));
         }
 
-        return plainLinks;
+        return new PageImpl<Link>(plainLinks, pageable, jdbcLinks.getTotalElements());
     }
 
     @Override

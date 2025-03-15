@@ -4,6 +4,8 @@ import backend.academy.model.jdbc.JdbcLink;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface JdbcLinkRepository extends CrudRepository<JdbcLink, Long> {
+    Page<JdbcLink> findAll(Pageable pageable);
+
     @Query("SELECT * FROM link WHERE link_value = :url")
     @Transactional
     Optional<JdbcLink> getLinkByUrl(@Param("url") String url);

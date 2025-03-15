@@ -3,6 +3,7 @@ app:
   stackoverflow:
     key: ${SO_TOKEN_KEY}
     access-token: ${SO_ACCESS_TOKEN}
+  page-size: 50
 
 service:
   access-type: SQL

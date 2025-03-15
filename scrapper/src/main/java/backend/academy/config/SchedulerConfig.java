@@ -1,5 +1,6 @@
 package backend.academy.config;
 
+import backend.academy.ScrapperConfig;
 import backend.academy.clients.ClientManager;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.notifications.impl.HttpNotificationSender;
@@ -28,7 +29,8 @@ public class SchedulerConfig {
     public Scheduler scheduler(
             LinkService linkService,
             ClientManager clientManager,
-            @Qualifier("httpNotificationSender") NotificationSender notificationSender) {
-        return new Scheduler(linkService, clientManager, notificationSender);
+            @Qualifier("httpNotificationSender") NotificationSender notificationSender,
+            ScrapperConfig config) {
+        return new Scheduler(linkService, clientManager, notificationSender, config);
     }
 }

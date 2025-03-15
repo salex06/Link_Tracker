@@ -6,9 +6,11 @@ import backend.academy.model.plain.TgChat;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface LinkService {
-    List<Link> getAllLinks();
+    Page<Link> getAllLinks(Pageable pageable);
 
     Optional<Link> getLink(Long chatId, String linkValue);
 
