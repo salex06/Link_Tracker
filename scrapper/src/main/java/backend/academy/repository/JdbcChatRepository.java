@@ -39,10 +39,6 @@ public interface JdbcChatRepository extends CrudRepository<JdbcTgChat, Long> {
     @Query("SELECT filter_value FROM chat_link_filters WHERE chat_id = :chatId AND link_id = :linkId")
     List<String> getFilters(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
 
-    @Query(
-            "SELECT * FROM link JOIN tg_chat_link ON tg_chat_link.link_id = link.id WHERE link_value = :linkValue AND tg_chat_id = :chatId")
-    Optional<JdbcLink> getLinkByValueAndChatId(@Param("linkValue") String linkValue, @Param("chatId") Long chatId);
-
     @Query("SELECT * FROM link WHERE link_value = :linkValue")
     Optional<JdbcLink> getLinkByValue(@Param("linkValue") String linkValue);
 

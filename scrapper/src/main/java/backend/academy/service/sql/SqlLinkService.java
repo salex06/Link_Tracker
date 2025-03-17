@@ -50,7 +50,7 @@ public class SqlLinkService implements LinkService {
 
     @Override
     public Optional<Link> getLink(Long chatId, String linkValue) {
-        Optional<JdbcLink> jdbcLink = chatRepository.getLinkByValueAndChatId(linkValue, chatId);
+        Optional<JdbcLink> jdbcLink = linkRepository.getLinkByUrlAndChatId(chatId, linkValue);
         if (jdbcLink.isEmpty()) {
             return Optional.empty();
         }
@@ -72,13 +72,13 @@ public class SqlLinkService implements LinkService {
         chatRepository.saveTheChatLink(chat.chatId(), savedLink.getId());
 
         if (!link.getTags().isEmpty()) {
-            for (String tag : link.getTags()) {
+            for (String tag : new HashSet<>(link.getTags())) {
                 chatRepository.saveTag(savedLink.getId(), chat.chatId(), tag);
             }
         }
 
         if (!link.getFilters().isEmpty()) {
-            for (String filter : link.getFilters()) {
+            for (String filter : new HashSet<>(link.getFilters())) {
                 chatRepository.saveFilter(savedLink.getId(), chat.chatId(), filter);
             }
         }

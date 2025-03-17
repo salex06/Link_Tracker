@@ -23,17 +23,9 @@ public interface JdbcLinkRepository extends CrudRepository<JdbcLink, Long> {
     @Query("SELECT tg_chat_id FROM tg_chat_link INNER JOIN link ON link_id = id WHERE link_value = :linkValue")
     Set<Long> getChatIdsByUrl(@Param("linkValue") String url);
 
-    @Query("\tSELECT (link.id, link.link_value, link.last_update) FROM link\n"
-            + "\tINNER JOIN tg_chat_link ON link.id = tg_chat_link.link_id\n"
-            + "\tWHERE tg_chat_link.tg_chat_id = :chatId AND link.link_value = :linkValue")
+    @Query(
+            "SELECT * FROM link JOIN tg_chat_link ON tg_chat_link.link_id = link.id WHERE link_value = :linkValue AND tg_chat_id = :chatId")
     Optional<JdbcLink> getLinkByUrlAndChatId(@Param("chatId") Long chatId, @Param("linkValue") String url);
-
-    @Query("SELECT tag_value FROM chat_link_tags WHERE chat_id = :chatId AND link_id = :linkId")
-    List<String> getTags(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
-
-    @Transactional
-    @Query("SELECT filter_value FROM chat_link_filters WHERE chat_id = :chatId AND link_id = :linkId")
-    List<String> getFilters(@Param("linkId") Long linkId, @Param("chatId") Long chatId);
 
     @Query("SELECT link.id, link.link_value, link.last_update FROM link "
             + "INNER JOIN tg_chat_link ON link.id = tg_chat_link.link_id "
