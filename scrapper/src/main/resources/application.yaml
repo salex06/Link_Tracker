@@ -13,7 +13,7 @@ spring:
     name: Scrapper
   liquibase:
     enabled: false
-    change-log: filesystem:${project.basedir}/migrations/changelog-master.xml
+    change-log: classpath:migrations/master.xml
   jpa:
     hibernate:
       ddl-auto: validate
