@@ -11,6 +11,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -60,6 +61,7 @@ public class JdbcLinkRepository {
         return null;
     }
 
+    @Modifying
     @Transactional
     private JdbcLink updateEntity(JdbcLink jdbcLink) {
         String sql = "UPDATE link SET link_value = :linkValue, last_update = :lastUpdate WHERE id = :id";

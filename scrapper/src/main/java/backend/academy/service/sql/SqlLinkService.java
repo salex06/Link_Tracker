@@ -115,7 +115,7 @@ public class SqlLinkService implements LinkService {
 
     @Override
     public Set<Long> getChatIdsListeningToLink(String url) {
-        Optional<JdbcLink> jdbcLink = chatRepository.getLinkByValue(url);
+        Optional<JdbcLink> jdbcLink = linkRepository.getLinkByUrl(url);
         if (jdbcLink.isEmpty()) {
             return Set.of();
         }
