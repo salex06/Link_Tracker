@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jdbc.repository.query.Modifying;
-import org.springframework.data.repository.query.Param;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -22,6 +21,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Репозиторий, взаимодействующий с БД для получения информации о ссылках и чатах, связанных с ними */
 @Repository
 @RequiredArgsConstructor
 public class JdbcLinkRepository {
@@ -34,6 +34,12 @@ public class JdbcLinkRepository {
             rs.getString("link_value"),
             rs.getTimestamp("last_update").toLocalDateTime());
 
+    /**
+     * Сохранить ссылку в БД. Если ссылка уже записана в БД - обновляет запись
+     *
+     * @param jdbcLink ссылка для сохранения
+     * @return сохраненную ссылку
+     */
     @Transactional
     public JdbcLink save(JdbcLink jdbcLink) {
         if (jdbcLink.getId() == null) {
@@ -76,6 +82,12 @@ public class JdbcLinkRepository {
         return jdbcLink;
     }
 
+    /**
+     * Получить все ссылки из БД с использованием механизма пагинации
+     *
+     * @param pageable информация о текущей запрашиваемой странице - размер и смещение
+     * @return {@code Page<JdbcLink>} - страница с ссылками
+     */
     public Page<JdbcLink> findAll(Pageable pageable) {
         int pageSize = pageable.getPageSize();
         long offset = pageable.getOffset();
@@ -96,6 +108,12 @@ public class JdbcLinkRepository {
         return new PageImpl<>(content, pageable, total);
     }
 
+    /**
+     * Получить ссылку по значению url
+     *
+     * @param url значение ссылки для поиска
+     * @return ссылку, если найдена, иначе - {@code Optional.empty()}
+     */
     public Optional<JdbcLink> getLinkByUrl(String url) {
         String sql = "SELECT * FROM link WHERE link_value = :url";
 
@@ -110,6 +128,12 @@ public class JdbcLinkRepository {
         }
     }
 
+    /**
+     * Получить все чаты, отслеживающие ссылку с данным значением
+     *
+     * @param url значение ссылки
+     * @return множество идентификаторов чатов, отслеживающих ссылку
+     */
     public Set<Long> getChatIdsByUrl(String url) {
         String sql =
                 "SELECT tg_chat_id FROM tg_chat_link INNER JOIN link ON link_id = id WHERE link_value = :linkValue";
@@ -120,6 +144,14 @@ public class JdbcLinkRepository {
         return new HashSet<>(namedJdbcTemplate.queryForList(sql, params, Long.class));
     }
 
+    /**
+     * Получить ссылку по её значению и идентификатору чата
+     *
+     * @param chatId идентификатор чата
+     * @param url значение ссылки
+     * @return {@code Optional<JdbcLink>}, если ссылка, чат найдены и связаны друг с другом, иначе -
+     *     {@code Optional.empty()}
+     */
     public Optional<JdbcLink> getLinkByUrlAndChatId(Long chatId, String url) {
         String sql =
                 "SELECT * FROM link JOIN tg_chat_link ON tg_chat_link.link_id = link.id WHERE link_value = :linkValue AND tg_chat_id = :chatId";
@@ -136,7 +168,13 @@ public class JdbcLinkRepository {
         }
     }
 
-    public List<JdbcLink> getAllLinksByChatId(@Param("chatId") Long chatId) {
+    /**
+     * Получить все ссылки, отслеживаемые чатом
+     *
+     * @param chatId идентификатор чата
+     * @return список ссылок, которые отслеживает чат
+     */
+    public List<JdbcLink> getAllLinksByChatId(Long chatId) {
         String sql = "SELECT link.id, link.link_value, link.last_update FROM link "
                 + "INNER JOIN tg_chat_link ON link.id = tg_chat_link.link_id "
                 + "WHERE tg_chat_link.tg_chat_id = :chatId";
