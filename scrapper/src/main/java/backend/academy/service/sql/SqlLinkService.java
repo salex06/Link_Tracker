@@ -65,11 +65,12 @@ public class SqlLinkService implements LinkService {
 
     @Override
     public Link saveLink(Link link, TgChat chat) {
-        JdbcLink savedLink = linkRepository.getLinkByUrl(link.getUrl()).orElseGet(() -> {
-            JdbcLink temp = linkRepository.save(linkMapper.toJdbcLink(link));
-            chatRepository.saveTheChatLink(chat.chatId(), temp.getId());
-            return temp;
-        });
+        JdbcLink savedLink = linkRepository
+                .getLinkByUrl(link.getUrl())
+                .orElseGet(() -> linkRepository.save(linkMapper.toJdbcLink(link)));
+
+        if (linkRepository.getLinkByUrlAndChatId(chat.chatId(), link.getUrl()).isEmpty())
+            chatRepository.saveTheChatLink(chat.chatId(), savedLink.getId());
 
         chatRepository.removeAllTags(savedLink.getId(), chat.chatId());
         if (!link.getTags().isEmpty()) {
