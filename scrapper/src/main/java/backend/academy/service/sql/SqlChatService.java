@@ -2,7 +2,6 @@ package backend.academy.service.sql;
 
 import backend.academy.model.jdbc.JdbcTgChat;
 import backend.academy.model.mapper.chat.ChatMapper;
-import backend.academy.model.mapper.link.LinkMapper;
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.repository.JdbcChatRepository;
@@ -21,15 +20,12 @@ import org.springframework.stereotype.Service;
 public class SqlChatService implements ChatService {
     private final JdbcChatRepository chatRepository;
     private final ChatMapper chatMapper;
-    private final LinkMapper linkMapper;
     private final LinkService linkService;
 
     @Autowired
-    public SqlChatService(
-            JdbcChatRepository chatRepository, ChatMapper chatMapper, LinkMapper linkMapper, LinkService linkService) {
+    public SqlChatService(JdbcChatRepository chatRepository, ChatMapper chatMapper, LinkService linkService) {
         this.chatRepository = chatRepository;
         this.chatMapper = chatMapper;
-        this.linkMapper = linkMapper;
         this.linkService = linkService;
     }
 
@@ -52,10 +48,8 @@ public class SqlChatService implements ChatService {
         Optional<TgChat> plainChat = Optional.empty();
         Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chatId);
         if (jdbcTgChat.isPresent()) {
-            plainChat = Optional.of(new TgChat(
-                    jdbcTgChat.orElseThrow().id(),
-                    jdbcTgChat.orElseThrow().chatId(),
-                    linkService.getAllLinksByChatId(chatId)));
+            plainChat = Optional.of(
+                    chatMapper.toPlainTgChat(jdbcTgChat.orElseThrow(), linkService.getAllLinksByChatId(chatId)));
         }
         return plainChat;
     }
