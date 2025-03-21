@@ -65,26 +65,28 @@ public class SqlLinkService implements LinkService {
 
     @Override
     public Link saveLink(Link link, TgChat chat) {
-        JdbcLink savedLink = linkRepository
-                .getLinkByUrl(link.getUrl())
-                .orElseGet(() -> linkRepository.save(linkMapper.toJdbcLink(link)));
+        JdbcLink savedLink = linkRepository.getLinkByUrl(link.getUrl()).orElseGet(() -> {
+            JdbcLink temp = linkRepository.save(linkMapper.toJdbcLink(link));
+            chatRepository.saveTheChatLink(chat.chatId(), temp.getId());
+            return temp;
+        });
 
-        chatRepository.saveTheChatLink(chat.chatId(), savedLink.getId());
-
+        chatRepository.removeAllTags(savedLink.getId(), chat.chatId());
         if (!link.getTags().isEmpty()) {
             for (String tag : new HashSet<>(link.getTags())) {
                 chatRepository.saveTag(savedLink.getId(), chat.chatId(), tag);
             }
         }
 
+        chatRepository.removeAllFilters(savedLink.getId(), chat.chatId());
         if (!link.getFilters().isEmpty()) {
             for (String filter : new HashSet<>(link.getFilters())) {
                 chatRepository.saveFilter(savedLink.getId(), chat.chatId(), filter);
             }
         }
 
-        List<String> tags = chatRepository.getTags(chat.chatId(), savedLink.getId());
-        List<String> filter = chatRepository.getFilters(chat.chatId(), savedLink.getId());
+        List<String> tags = chatRepository.getTags(savedLink.getId(), chat.chatId());
+        List<String> filter = chatRepository.getFilters(savedLink.getId(), chat.chatId());
         Set<Long> chats = chatRepository.getChatsByLink(savedLink.getId()).stream()
                 .map(JdbcTgChat::chatId)
                 .collect(Collectors.toSet());
@@ -93,11 +95,6 @@ public class SqlLinkService implements LinkService {
         chat.addLink(plainLink);
 
         return plainLink;
-    }
-
-    @Override
-    public Link updateChats(Link link, Set<TgChat> newChats) {
-        return null;
     }
 
     @Override

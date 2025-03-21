@@ -11,6 +11,7 @@ import backend.academy.model.plain.TgChat;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,7 +69,8 @@ public class LinkController {
     }
 
     /**
-     * Эндпоинт, обрабатывающий запрос на добавление (регистрацию) ссылки
+     * Эндпоинт, обрабатывающий запрос на добавление (регистрацию) ссылки. При наличии уже записанной ссылки в БД
+     * обновляет информацию о тегах и фильтрах
      *
      * @param chatId идентификатор чата
      * @param addLinkRequest объект передачи данных, хранящий информацию о ссылке
@@ -89,26 +91,10 @@ public class LinkController {
             List<String> filters = addLinkRequest.filters();
             TgChat chat = optChat.orElseThrow();
 
-            linkService
-                    .getLink(chatId, linkUrl)
-                    .ifPresentOrElse(
-                            i -> {
-                                chatService.updateTags(i, chat, tags);
-                                chatService.updateFilters(i, chat, filters);
-                            },
-                            () -> {
-                                linkService.saveLink(new Link(null, addLinkRequest.link(), tags, filters, null), chat);
-                            });
-
-            Optional<Link> link = linkService.getLink(chatId, linkUrl);
+            Link link = linkService.saveLink(new Link(null, linkUrl, tags, filters, new HashSet<>()), chat);
 
             return new ResponseEntity<>(
-                    new LinkResponse(
-                            link.orElseThrow().getId(),
-                            link.orElseThrow().getUrl(),
-                            link.orElseThrow().getTags(),
-                            link.orElseThrow().getFilters()),
-                    HttpStatus.OK);
+                    new LinkResponse(link.getId(), link.getUrl(), link.getTags(), link.getFilters()), HttpStatus.OK);
         }
 
         log.atError()
