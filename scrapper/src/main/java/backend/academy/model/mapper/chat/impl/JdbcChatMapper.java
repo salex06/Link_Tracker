@@ -8,7 +8,7 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StandardChatMapper implements ChatMapper {
+public class JdbcChatMapper implements ChatMapper {
     @Override
     public TgChat toPlainTgChat(JdbcTgChat chat, Set<Link> links) {
         return new TgChat(chat.id(), chat.chatId(), links);

@@ -8,7 +8,7 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StandardLinkMapper implements LinkMapper {
+public class JdbcLinkMapper implements LinkMapper {
     @Override
     public Link toPlainLink(JdbcLink jdbcLink, List<String> tags, List<String> filters, Set<Long> tgChatIds) {
         return new Link(jdbcLink.getId(), jdbcLink.getUrl(), tags, filters, tgChatIds, jdbcLink.getLastUpdateTime());
