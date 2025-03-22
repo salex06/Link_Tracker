@@ -6,12 +6,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 /** Модель orm-сущности чата, хранящего информацию о внутреннем идентификаторе и telegram идентификаторе */
 @Entity
 @Table(name = "tg_chat")
 @NoArgsConstructor
+@AllArgsConstructor
 public class OrmChat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
