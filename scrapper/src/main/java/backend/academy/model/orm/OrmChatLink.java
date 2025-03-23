@@ -21,18 +21,18 @@ public class OrmChatLink {
 
     @ManyToOne
     @MapsId("chatId")
-    @JoinColumn(name = "tg_chat_id")
+    @JoinColumn(name = "tg_chat_id", referencedColumnName = "id")
     private OrmChat chat;
 
     @ManyToOne
     @MapsId("linkId")
-    @JoinColumn(name = "link_id")
+    @JoinColumn(name = "link_id", referencedColumnName = "id")
     private OrmLink link;
 
     public OrmChatLink(OrmChat chat, OrmLink link) {
         this.chat = chat;
         this.link = link;
-        this.id = new OrmChatLinkIdEmbedded(chat.getChatId(), link.getId());
+        this.id = new OrmChatLinkIdEmbedded(chat.getId(), link.getId());
     }
 
     public OrmChatLinkIdEmbedded getId() {
@@ -49,7 +49,7 @@ public class OrmChatLink {
 
     public void setChat(OrmChat chat) {
         this.chat = chat;
-        this.id = new OrmChatLinkIdEmbedded(chat.getChatId(), this.link.getId());
+        this.id = new OrmChatLinkIdEmbedded(chat.getId(), this.link.getId());
     }
 
     public OrmLink getLink() {
@@ -58,6 +58,6 @@ public class OrmChatLink {
 
     public void setLink(OrmLink link) {
         this.link = link;
-        this.id = new OrmChatLinkIdEmbedded(this.chat.getChatId(), link.getId());
+        this.id = new OrmChatLinkIdEmbedded(this.chat.getId(), link.getId());
     }
 }

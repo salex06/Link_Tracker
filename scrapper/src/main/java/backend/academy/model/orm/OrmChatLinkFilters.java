@@ -29,7 +29,7 @@ public class OrmChatLinkFilters {
     public OrmChatLinkFilters(OrmChat chat, OrmLink link, String filterValue) {
         this.chat = chat;
         this.link = link;
-        this.id = new OrmChatLinkFiltersIdEmbedded(chat.getChatId(), link.getId(), filterValue);
+        this.id = new OrmChatLinkFiltersIdEmbedded(chat.getId(), link.getId(), filterValue);
     }
 
     public OrmChatLinkFiltersIdEmbedded getId() {

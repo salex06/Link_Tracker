@@ -118,24 +118,27 @@ class LinkControllerTest {
 
     @Test
     public void removeLink_WhenChatIsNotRegistered_ThenReturnErrorMessage() {
-        String expectedMessage = "Некорректные параметры запроса";
+        String expectedMessage = "Чат не существует";
         when(chatService.getPlainTgChatByChatId(anyLong())).thenReturn(Optional.empty());
-        when(linkService.getLink(anyLong(), anyString())).thenReturn(Optional.of(new Link(1L, "test1")));
+        when(linkService.getLink(anyLong(), anyString())).thenReturn(Optional.of(new Link(1L, "test")));
 
         ResponseEntity<?> response = linkController.removeLink(1L, new RemoveLinkRequest("test"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
         assertThat(((ApiErrorResponse) response.getBody()).description()).isEqualTo(expectedMessage);
     }
 
     @Test
     public void removeLink_WhenLinkNotFound_ThenReturnErrorMessage() {
-        ApiErrorResponse expectedResponse = new ApiErrorResponse("Чат не существует", "404", "", "", new ArrayList<>());
+        ApiErrorResponse expectedResponse =
+                new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>());
+        when(chatService.getPlainTgChatByChatId(anyLong()))
+                .thenReturn(Optional.of(new TgChat(1L, 2L, new HashSet<>())));
 
         ResponseEntity<?> response = linkController.removeLink(1L, new RemoveLinkRequest("testLink"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
         assertThat(((ApiErrorResponse) response.getBody())).isEqualTo(expectedResponse);
     }

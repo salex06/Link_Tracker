@@ -136,10 +136,10 @@ class JdbcLinkRepositoryTest {
     @Test
     public void getChatIdsByUrl_WhenUrlExists_ThenReturnSetOfIds() {
         String url = "test_link1";
-        Set<Long> expectedIds = Set.of(1L, 4L);
+        Set<Long> expectedIds = Set.of(1L, 2L);
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link1')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (4)");
-        jdbcTemplate.update("INSERT INTO tg_chat_link(tg_chat_id, link_id) VALUES (1, 1), (4, 1)");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(tg_chat_id, link_id) VALUES (1, 1), (2, 1)");
 
         Set<Long> actualIds = linkRepository.getChatIdsByUrl(url);
         assertThat(actualIds).isEqualTo(expectedIds);
@@ -150,7 +150,7 @@ class JdbcLinkRepositoryTest {
         String url = "test_link1";
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('another_test')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (4)");
-        jdbcTemplate.update("INSERT INTO tg_chat_link(tg_chat_id, link_id) VALUES (1, 1), (4, 1)");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(tg_chat_id, link_id) VALUES (1, 1), (2, 1)");
 
         Set<Long> actualIds = linkRepository.getChatIdsByUrl(url);
 
