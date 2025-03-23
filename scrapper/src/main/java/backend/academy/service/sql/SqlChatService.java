@@ -12,10 +12,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("sqlChatService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "SQL")
 public class SqlChatService implements ChatService {
     private final JdbcChatRepository chatRepository;
@@ -23,7 +24,10 @@ public class SqlChatService implements ChatService {
     private final LinkService linkService;
 
     @Autowired
-    public SqlChatService(JdbcChatRepository chatRepository, ChatMapper chatMapper, LinkService linkService) {
+    public SqlChatService(
+            JdbcChatRepository chatRepository,
+            ChatMapper chatMapper,
+            @Qualifier("sqlLinkService") LinkService linkService) {
         this.chatRepository = chatRepository;
         this.chatMapper = chatMapper;
         this.linkService = linkService;

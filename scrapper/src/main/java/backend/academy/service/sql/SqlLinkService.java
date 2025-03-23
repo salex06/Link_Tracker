@@ -21,7 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("sqlLinkService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "SQL")
 public class SqlLinkService implements LinkService {
     private final JdbcLinkRepository linkRepository;
