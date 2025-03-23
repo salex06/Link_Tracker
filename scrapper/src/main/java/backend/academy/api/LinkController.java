@@ -126,11 +126,11 @@ public class LinkController {
         Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
         String url = request.link();
         Optional<Link> optLink = linkService.getLink(chatId, url);
-        if (optLink.isEmpty()) {
+        if (optChat.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiErrorResponse("Чат не существует", "404", "", "", new ArrayList<>()), HttpStatus.NOT_FOUND);
         }
-        if (optChat.isPresent()) {
+        if (optLink.isPresent()) {
             TgChat chat = optChat.orElseThrow();
             Link link = optLink.orElseThrow();
             List<String> tags = chatService.getTags(link.getId(), chat.chatId());
