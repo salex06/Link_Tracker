@@ -28,4 +28,5 @@
     </changeSet>
 
     <include relativeToChangelogFile="true" file="004-changeForeignKeys-schema.sql"/>
+    <include relativeToChangelogFile="true" file="005-changeForeignKeysRevert-schema.sql"/>
 </databaseChangeLog>
