@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+/** Сервис для реализации бизнес-логики взаимодействия с чатами. Использует репозиторий на основе JPA (Hibernate) */
 @Service("ormChatService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "ORM")
 public class OrmChatService implements ChatService {

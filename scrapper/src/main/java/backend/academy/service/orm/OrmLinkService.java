@@ -28,6 +28,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Сервис для реализации бизнес логики взаимодействия с ссылками. Взаимодействует с базой данных на основа JPA
+ * (Hibernate)
+ */
 @Service("ormLinkService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "ORM")
 public class OrmLinkService implements LinkService {

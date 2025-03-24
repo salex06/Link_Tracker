@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.RestClient;
 
+/** Класс, позволяющий отправлять уведомления с помощью http-запросов */
 @Slf4j
 public class HttpNotificationSender implements NotificationSender {
     private final RestClient botUpdatesClient;
