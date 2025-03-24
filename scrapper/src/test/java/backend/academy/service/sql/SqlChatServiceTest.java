@@ -3,6 +3,7 @@ package backend.academy.service.sql;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -120,6 +121,7 @@ class SqlChatServiceTest {
                 Set.of(new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId)));
         TgChat chat = new TgChat(id, chatId, expectedLinks);
         Link link = new Link(1L, "test_link1");
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         chatService.saveTheChatLink(chat, link);
 

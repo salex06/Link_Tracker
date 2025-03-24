@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service("sqlLinkService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "SQL")
@@ -41,8 +42,11 @@ public class SqlLinkService implements LinkService {
         Page<JdbcLink> jdbcLinks = linkRepository.findAll(pageable);
 
         for (JdbcLink link : jdbcLinks) {
-            Set<Long> chats = linkRepository.getChatIdsByUrl(link.getUrl());
-            plainLinks.add(linkMapper.toPlainLink(link, null, null, chats));
+            Set<Long> primaryChatIds = linkRepository.getChatIdsByUrl(link.getUrl());
+            Set<Long> chatIds = primaryChatIds.stream()
+                    .map(i -> chatRepository.findByChatId(i).orElseThrow().chatId())
+                    .collect(Collectors.toSet());
+            plainLinks.add(linkMapper.toPlainLink(link, null, null, chatIds));
         }
 
         return new PageImpl<Link>(plainLinks, pageable, jdbcLinks.getTotalElements());
@@ -50,44 +54,64 @@ public class SqlLinkService implements LinkService {
 
     @Override
     public Optional<Link> getLink(Long chatId, String linkValue) {
-        Optional<JdbcLink> jdbcLink = linkRepository.getLinkByUrlAndChatId(chatId, linkValue);
+        Optional<JdbcTgChat> chat = chatRepository.findByChatId(chatId);
+        if (chat.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<JdbcLink> jdbcLink =
+                linkRepository.getLinkByUrlAndChatId(chat.orElseThrow().id(), linkValue);
         if (jdbcLink.isEmpty()) {
             return Optional.empty();
         }
 
         JdbcLink link = jdbcLink.orElseThrow();
-        List<String> tags = chatRepository.getTags(link.getId(), chatId);
-        List<String> filters = chatRepository.getFilters(link.getId(), chatId);
+        List<String> tags =
+                chatRepository.getTags(link.getId(), chat.orElseThrow().id());
+        List<String> filters =
+                chatRepository.getFilters(link.getId(), chat.orElseThrow().id());
         Set<Long> chats = getChatIdsListeningToLink(link.getUrl());
 
         return Optional.of(linkMapper.toPlainLink(link, tags, filters, chats));
     }
 
     @Override
+    @Transactional
     public Link saveLink(Link link, TgChat chat) {
         JdbcLink savedLink = linkRepository
                 .getLinkByUrl(link.getUrl())
                 .orElseGet(() -> linkRepository.save(linkMapper.toJdbcLink(link)));
 
-        if (linkRepository.getLinkByUrlAndChatId(chat.chatId(), link.getUrl()).isEmpty())
-            chatRepository.saveTheChatLink(chat.chatId(), savedLink.getId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        if (jdbcTgChat.isEmpty()) {
+            return null;
+        }
 
-        chatRepository.removeAllTags(savedLink.getId(), chat.chatId());
+        if (linkRepository
+                .getLinkByUrlAndChatId(jdbcTgChat.orElseThrow().id(), link.getUrl())
+                .isEmpty())
+            chatRepository.saveTheChatLink(jdbcTgChat.orElseThrow().id(), savedLink.getId());
+
+        chatRepository.removeAllTags(savedLink.getId(), jdbcTgChat.orElseThrow().id());
         if (!link.getTags().isEmpty()) {
             for (String tag : new HashSet<>(link.getTags())) {
-                chatRepository.saveTag(savedLink.getId(), chat.chatId(), tag);
+                chatRepository.saveTag(
+                        savedLink.getId(), jdbcTgChat.orElseThrow().id(), tag);
             }
         }
 
-        chatRepository.removeAllFilters(savedLink.getId(), chat.chatId());
+        chatRepository.removeAllFilters(
+                savedLink.getId(), jdbcTgChat.orElseThrow().id());
         if (!link.getFilters().isEmpty()) {
             for (String filter : new HashSet<>(link.getFilters())) {
-                chatRepository.saveFilter(savedLink.getId(), chat.chatId(), filter);
+                chatRepository.saveFilter(
+                        savedLink.getId(), jdbcTgChat.orElseThrow().id(), filter);
             }
         }
 
-        List<String> tags = chatRepository.getTags(savedLink.getId(), chat.chatId());
-        List<String> filter = chatRepository.getFilters(savedLink.getId(), chat.chatId());
+        List<String> tags = chatRepository.getTags(
+                savedLink.getId(), jdbcTgChat.orElseThrow().id());
+        List<String> filter = chatRepository.getFilters(
+                savedLink.getId(), jdbcTgChat.orElseThrow().id());
         Set<Long> chats = chatRepository.getChatsByLink(savedLink.getId()).stream()
                 .map(JdbcTgChat::chatId)
                 .collect(Collectors.toSet());
@@ -100,11 +124,16 @@ public class SqlLinkService implements LinkService {
 
     @Override
     public Set<Link> getAllLinksByChatId(Long chatId) {
+        Optional<JdbcTgChat> chat = chatRepository.findByChatId(chatId);
+        if (chat.isEmpty()) {
+            return Set.of();
+        }
+        Long jdbcTgChatId = chat.orElseThrow().id();
         Set<Link> plainLinks = new HashSet<>();
-        List<JdbcLink> jdbcLinks = linkRepository.getAllLinksByChatId(chatId);
+        List<JdbcLink> jdbcLinks = linkRepository.getAllLinksByChatId(jdbcTgChatId);
         for (JdbcLink link : jdbcLinks) {
-            List<String> tags = chatRepository.getTags(link.getId(), chatId);
-            List<String> filters = chatRepository.getFilters(link.getId(), chatId);
+            List<String> tags = chatRepository.getTags(link.getId(), jdbcTgChatId);
+            List<String> filters = chatRepository.getFilters(link.getId(), jdbcTgChatId);
             Set<Long> chats = getChatIdsListeningToLink(link.getUrl());
             plainLinks.add(linkMapper.toPlainLink(link, tags, filters, chats));
         }

@@ -52,8 +52,9 @@ public class SqlChatService implements ChatService {
         Optional<TgChat> plainChat = Optional.empty();
         Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chatId);
         if (jdbcTgChat.isPresent()) {
-            plainChat = Optional.of(
-                    chatMapper.toPlainTgChat(jdbcTgChat.orElseThrow(), linkService.getAllLinksByChatId(chatId)));
+            plainChat = Optional.of(chatMapper.toPlainTgChat(
+                    jdbcTgChat.orElseThrow(),
+                    linkService.getAllLinksByChatId(jdbcTgChat.orElseThrow().chatId())));
         }
         return plainChat;
     }
@@ -65,9 +66,14 @@ public class SqlChatService implements ChatService {
 
     @Override
     public void updateTags(Link link, TgChat chat, List<String> tags) {
-        chatRepository.removeAllTags(link.getId(), chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        if (jdbcTgChat.isEmpty()) {
+            return;
+        }
+        JdbcTgChat jdbcChat = jdbcTgChat.orElseThrow();
+        chatRepository.removeAllTags(link.getId(), jdbcChat.id());
         for (String tag : new HashSet<>(tags)) {
-            chatRepository.saveTag(link.getId(), chat.chatId(), tag);
+            chatRepository.saveTag(link.getId(), jdbcChat.id(), tag);
         }
         link.setTags(tags);
         chat.links().stream()
@@ -77,9 +83,14 @@ public class SqlChatService implements ChatService {
 
     @Override
     public void updateFilters(Link link, TgChat chat, List<String> filters) {
-        chatRepository.removeAllFilters(link.getId(), chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        if (jdbcTgChat.isEmpty()) {
+            return;
+        }
+        JdbcTgChat jdbcChat = jdbcTgChat.orElseThrow();
+        chatRepository.removeAllFilters(link.getId(), jdbcChat.id());
         for (String filter : new HashSet<>(filters)) {
-            chatRepository.saveFilter(link.getId(), chat.chatId(), filter);
+            chatRepository.saveFilter(link.getId(), jdbcChat.id(), filter);
         }
         link.setFilters(filters);
         chat.links().stream()
@@ -89,24 +100,41 @@ public class SqlChatService implements ChatService {
 
     @Override
     public void saveTheChatLink(TgChat chat, Link link) {
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        if (jdbcTgChat.isEmpty()) {
+            return;
+        }
         if (chat.links().stream()
                 .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                 .findAny()
-                .isEmpty()) chatRepository.saveTheChatLink(chat.chatId(), link.getId());
+                .isEmpty())
+            chatRepository.saveTheChatLink(jdbcTgChat.orElseThrow().id(), link.getId());
     }
 
     @Override
     public void removeTheChatLink(TgChat chat, Link link) {
-        chatRepository.removeTheChatLink(chat.chatId(), link.getId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        if (jdbcTgChat.isEmpty()) {
+            return;
+        }
+        chatRepository.removeTheChatLink(jdbcTgChat.orElseThrow().id(), link.getId());
     }
 
     @Override
     public List<String> getTags(Long linkId, Long chatId) {
-        return chatRepository.getTags(linkId, chatId);
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chatId);
+        if (jdbcTgChat.isEmpty()) {
+            return List.of();
+        }
+        return chatRepository.getTags(linkId, jdbcTgChat.orElseThrow().id());
     }
 
     @Override
     public List<String> getFilters(Long linkId, Long chatId) {
-        return chatRepository.getFilters(linkId, chatId);
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chatId);
+        if (jdbcTgChat.isEmpty()) {
+            return List.of();
+        }
+        return chatRepository.getFilters(linkId, jdbcTgChat.orElseThrow().id());
     }
 }

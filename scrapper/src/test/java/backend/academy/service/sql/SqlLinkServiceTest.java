@@ -75,6 +75,7 @@ class SqlLinkServiceTest {
 
                     return new Link(link.getId(), link.getUrl(), null, null, chatIds);
                 });
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         Page<Link> actualLinks = linkService.getAllLinks(pageable);
 
@@ -98,6 +99,7 @@ class SqlLinkServiceTest {
         List<String> expectedTags = List.of("tag1", "tag2");
         List<String> expectedFilters = List.of();
         Set<Long> expectedChatIds = Set.of(1L, 2L);
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
         when(linkRepository.getLinkByUrlAndChatId(anyLong(), anyString()))
                 .thenReturn(Optional.of(new JdbcLink(expectedLinkId, expectedString)));
         when(chatRepository.getTags(expectedLinkId, expectedChatId)).thenReturn(expectedTags);
@@ -144,8 +146,8 @@ class SqlLinkServiceTest {
         });
         when(linkRepository.getLinkByUrlAndChatId(anyLong(), anyString())).thenReturn(Optional.empty());
         when(chatRepository.saveTheChatLink(anyLong(), anyLong())).thenReturn(true);
-        when(chatRepository.getTags(expectedLinkId, chatId)).thenReturn(expectedTags);
-        when(chatRepository.getFilters(expectedLinkId, chatId)).thenReturn(expectedFilters);
+        when(chatRepository.getTags(anyLong(), anyLong())).thenReturn(expectedTags);
+        when(chatRepository.getFilters(anyLong(), anyLong())).thenReturn(expectedFilters);
         when(chatRepository.getChatsByLink(expectedLinkId)).thenReturn(List.of(new JdbcTgChat(1L, chatId)));
         when(linkMapper.toPlainLink(any(JdbcLink.class), anyList(), anyList(), anySet()))
                 .thenAnswer(invocationOnMock -> {
@@ -156,6 +158,7 @@ class SqlLinkServiceTest {
 
                     return new Link(link.getId(), link.getUrl(), tags, filters, chatIds);
                 });
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         Link actualLink = linkService.saveLink(expectedLink, expectedChat);
 
@@ -188,9 +191,9 @@ class SqlLinkServiceTest {
         });
         when(linkRepository.getLinkByUrlAndChatId(anyLong(), anyString())).thenReturn(Optional.empty());
         when(chatRepository.saveTheChatLink(anyLong(), anyLong())).thenReturn(true);
-        when(chatRepository.getTags(expectedLinkId, chatId)).thenReturn(expectedTags);
-        when(chatRepository.getFilters(expectedLinkId, chatId)).thenReturn(expectedFilters);
-        when(chatRepository.getChatsByLink(expectedLinkId)).thenReturn(List.of(new JdbcTgChat(1L, chatId)));
+        when(chatRepository.getTags(anyLong(), anyLong())).thenReturn(expectedTags);
+        when(chatRepository.getFilters(anyLong(), anyLong())).thenReturn(expectedFilters);
+        when(chatRepository.getChatsByLink(anyLong())).thenReturn(List.of(new JdbcTgChat(1L, chatId)));
         when(linkMapper.toPlainLink(any(JdbcLink.class), anyList(), anyList(), anySet()))
                 .thenAnswer(invocationOnMock -> {
                     JdbcLink link = invocationOnMock.getArgument(0);
@@ -200,6 +203,7 @@ class SqlLinkServiceTest {
 
                     return new Link(link.getId(), link.getUrl(), tags, filters, chatIds);
                 });
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         Link actualLink = linkService.saveLink(expectedLink, expectedChat);
 
@@ -233,9 +237,9 @@ class SqlLinkServiceTest {
         when(linkRepository.getLinkByUrlAndChatId(anyLong(), anyString()))
                 .thenReturn(Optional.of(new JdbcLink(expectedLinkId, expectedUrl)));
         when(chatRepository.saveTheChatLink(anyLong(), anyLong())).thenReturn(true);
-        when(chatRepository.getTags(expectedLinkId, chatId)).thenReturn(expectedTags);
-        when(chatRepository.getFilters(expectedLinkId, chatId)).thenReturn(expectedFilters);
-        when(chatRepository.getChatsByLink(expectedLinkId)).thenReturn(List.of(new JdbcTgChat(1L, chatId)));
+        when(chatRepository.getTags(anyLong(), anyLong())).thenReturn(expectedTags);
+        when(chatRepository.getFilters(anyLong(), anyLong())).thenReturn(expectedFilters);
+        when(chatRepository.getChatsByLink(anyLong())).thenReturn(List.of(new JdbcTgChat(1L, chatId)));
         when(linkMapper.toPlainLink(any(JdbcLink.class), anyList(), anyList(), anySet()))
                 .thenAnswer(invocationOnMock -> {
                     JdbcLink link = invocationOnMock.getArgument(0);
@@ -245,6 +249,7 @@ class SqlLinkServiceTest {
 
                     return new Link(link.getId(), link.getUrl(), tags, filters, chatIds);
                 });
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         Link actualLink = linkService.saveLink(expectedLink, expectedChat);
 
@@ -285,6 +290,7 @@ class SqlLinkServiceTest {
 
                     return new Link(link.getId(), link.getUrl(), tags, filters, chatIds);
                 });
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         Set<Link> actualLinks = linkService.getAllLinksByChatId(chatId);
         assertEquals(expectedLinks, actualLinks);
