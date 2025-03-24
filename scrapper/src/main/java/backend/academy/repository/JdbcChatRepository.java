@@ -126,7 +126,7 @@ public class JdbcChatRepository {
     @Transactional
     public List<JdbcTgChat> getChatsByLink(Long linkId) {
         String sql =
-                "SELECT id, chat_id FROM tg_chat_link INNER JOIN tg_chat ON tg_chat.chat_id = tg_chat_id WHERE link_id = :linkId";
+                "SELECT id, chat_id FROM tg_chat_link INNER JOIN tg_chat ON tg_chat.id = tg_chat_id WHERE link_id = :linkId";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkId", linkId);
