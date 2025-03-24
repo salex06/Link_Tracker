@@ -75,7 +75,7 @@ class SqlLinkServiceTest {
 
                     return new Link(link.getId(), link.getUrl(), null, null, chatIds);
                 });
-        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
+        when(chatRepository.findById(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
         Page<Link> actualLinks = linkService.getAllLinks(pageable);
 

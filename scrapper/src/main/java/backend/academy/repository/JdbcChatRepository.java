@@ -102,6 +102,26 @@ public class JdbcChatRepository {
     }
 
     /**
+     * Найти чат по внутреннему идентификатору
+     *
+     * @param id внутренний идентификатор чата
+     * @return объект класса JdbcTgChat, если чат существует, иначе - Optional.empty()
+     */
+    public Optional<JdbcTgChat> findById(Long id) {
+        String sql = "SELECT * FROM tg_chat chat WHERE chat.id = :id";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("id", id);
+
+        try {
+            JdbcTgChat link = namedJdbcTemplate.queryForObject(sql, params, jdbcChatRowMapper);
+            return Optional.of(link);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Удалить чат по тг-идентификатору
      *
      * @param chatId идентификатор от telegram Api

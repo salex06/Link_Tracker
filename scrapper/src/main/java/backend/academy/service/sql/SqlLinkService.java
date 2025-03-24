@@ -45,7 +45,7 @@ public class SqlLinkService implements LinkService {
         for (JdbcLink link : jdbcLinks) {
             Set<Long> primaryChatIds = linkRepository.getChatIdsByUrl(link.getUrl());
             Set<Long> chatIds = primaryChatIds.stream()
-                    .map(i -> chatRepository.findByChatId(i).orElseThrow().chatId())
+                    .map(i -> chatRepository.findById(i).orElseThrow().chatId())
                     .collect(Collectors.toSet());
             plainLinks.add(linkMapper.toPlainLink(link, null, null, chatIds));
         }

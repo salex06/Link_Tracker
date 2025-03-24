@@ -42,7 +42,9 @@ public class Scheduler {
         do {
             Pageable pageable = PageRequest.of(pageNumber, pageSize);
             page = linkService.getAllLinks(pageable);
-            page.getContent().forEach(link -> processLink(clients, link));
+            page.getContent().stream()
+                    .filter(i -> !i.getTgChatIds().isEmpty())
+                    .forEach(link -> processLink(clients, link));
 
             pageNumber++;
         } while (page.hasNext());
