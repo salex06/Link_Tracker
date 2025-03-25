@@ -36,6 +36,7 @@ public class UntrackMessageHandler implements Handler {
 
             return new SendMessage(chatId, "Вы должны указать URL после команды!");
         }
+
         String linkUrlToUntrack = splittedMessage[1];
 
         log.atInfo()
@@ -59,9 +60,11 @@ public class UntrackMessageHandler implements Handler {
                             return objectMapper.readValue(response.getBody(), LinkResponse.class);
                         }
                     });
+
             if (linkResponse == null) {
                 return new SendMessage(chatId, "Ошибка при ответе на запрос отслеживания");
             }
+
             return new SendMessage(
                     chatId,
                     String.format("Ресурс %s удален из отслеживаемых. ID: %d", linkResponse.url(), linkResponse.id()));
@@ -70,6 +73,7 @@ public class UntrackMessageHandler implements Handler {
                     .setMessage("Некорректные параметры при запросе на прекращение отслеживания ссылки")
                     .addKeyValue("chat-id", chatId)
                     .log();
+
             return new SendMessage(chatId, e.apiErrorResponse().description());
         }
     }

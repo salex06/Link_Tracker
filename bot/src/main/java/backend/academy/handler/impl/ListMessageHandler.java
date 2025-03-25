@@ -44,9 +44,11 @@ public class ListMessageHandler implements Handler {
                         }
                         return objectMapper.readValue(response.getBody(), ListLinksResponse.class);
                     });
+
             if (linksResponse == null) {
                 return new SendMessage(chatId, "Ошибка при получении списка ресурсов");
             }
+
             String trackedLinks = getTrackedLinksAsString(linksResponse);
             return new SendMessage(chatId, trackedLinks);
         } catch (ApiErrorException e) {
@@ -55,6 +57,7 @@ public class ListMessageHandler implements Handler {
                     .addKeyValue("error", e)
                     .addKeyValue("chat-id", chatId)
                     .log();
+
             return new SendMessage(chatId, e.apiErrorResponse().description());
         }
     }

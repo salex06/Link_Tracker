@@ -58,6 +58,7 @@ public class ChatService {
         if (link.isEmpty()) {
             return false;
         }
+
         chatLinks.remove(link.orElseThrow());
         chat.orElseThrow().links(chatLinks);
         return true;
@@ -89,6 +90,7 @@ public class ChatService {
             saveChat(chatId);
             return true;
         }
+
         return false;
     }
 }

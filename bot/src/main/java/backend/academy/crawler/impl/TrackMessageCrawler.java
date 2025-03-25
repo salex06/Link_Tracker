@@ -107,11 +107,13 @@ public class TrackMessageCrawler implements MessageCrawler {
 
     private DialogStateDTO doRestart(Update update) {
         Long chatId = update.message().chat().id();
+
         if (CrawlValidator.isAvailableToReset(userStates, chatId)) {
             userStates.remove(chatId);
             return new DialogStateDTO(
                     new SendMessage(chatId, "Режим добавления ресурса для отслеживания прекращен"), UNDEFINED);
         }
+
         return createErrorResponse(update, "Ошибка. Нечего сбрасывать");
     }
 

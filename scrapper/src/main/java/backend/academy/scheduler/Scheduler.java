@@ -49,6 +49,7 @@ public class Scheduler {
                 return client;
             }
         }
+
         throw new RuntimeException("No suitable clients for link: " + link.getUrl());
     }
 
@@ -71,6 +72,7 @@ public class Scheduler {
                         .addKeyValue("description", linkUpdate.description())
                         .addKeyValue("tg-chat-ids", linkUpdate.tgChatIds())
                         .log();
+
                 botUpdatesClient.post().uri("/updates").body(linkUpdate).exchange((request, response) -> {
                     if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
                         ApiErrorResponse apiErrorResponse =
@@ -81,6 +83,7 @@ public class Scheduler {
                 });
             } catch (ApiErrorException e) {
                 ApiErrorResponse response = e.apiErrorResponse();
+
                 log.atError()
                         .setMessage("Некорректные параметры запроса")
                         .addKeyValue("description", response.description())

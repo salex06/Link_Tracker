@@ -55,6 +55,7 @@ public class CrawlValidator {
         if (!userStates.containsKey(chatId)) {
             return false;
         }
+
         TrackMessageState currentState = userStates.get(chatId).getKey();
         return currentState == WAITING_FOR_TAGS || currentState == WAITING_FOR_FILTERS;
     }

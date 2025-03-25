@@ -44,6 +44,7 @@ public class ChatController {
                 .setMessage("Чат не зарегистрирован")
                 .addKeyValue("chat-id", id)
                 .log();
+
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", List.of()),
                 HttpStatus.BAD_REQUEST);
@@ -62,10 +63,13 @@ public class ChatController {
                     .setMessage("Чат для удаления не найден")
                     .addKeyValue("chat-id", id)
                     .log();
+
             return new ResponseEntity<>(
                     new ApiErrorResponse("Чат не существует", "404", "", "", new ArrayList<>()), HttpStatus.NOT_FOUND);
         }
+
         log.atInfo().setMessage("Чат успешно удален").addKeyValue("chat-id", id).log();
+
         return new ResponseEntity<>("Чат успешно удален", HttpStatus.OK);
     }
 }

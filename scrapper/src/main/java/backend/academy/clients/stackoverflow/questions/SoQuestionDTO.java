@@ -35,6 +35,7 @@ public record SoQuestionDTO(
             if (seconds == null) {
                 return LocalDateTime.MIN;
             }
+
             return LocalDateTime.ofInstant(Instant.ofEpochSecond(seconds), ZoneId.of("UTC"));
         }
     }

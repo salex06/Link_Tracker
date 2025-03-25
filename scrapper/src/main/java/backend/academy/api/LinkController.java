@@ -49,12 +49,15 @@ public class LinkController {
                 .setMessage("Запрос на получение отслеживаемых ссылок")
                 .addKeyValue("chat-id", chatId)
                 .log();
+
         Set<Link> chatLinks = chatService.getChatLinks(chatId);
         if (chatLinks != null) {
             return new ResponseEntity<>(
                     new ListLinksResponse(chatLinks.stream().toList(), chatLinks.size()), HttpStatus.OK);
         }
+
         log.atError().setMessage("Чат не найден").addKeyValue("chat-id", chatId).log();
+
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);
@@ -75,6 +78,7 @@ public class LinkController {
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", addLinkRequest.link())
                 .log();
+
         Optional<TgChat> chat = chatService.getChat(chatId);
         if (chat.isPresent() && linkService.validateLink(addLinkRequest.link())) {
             Link link = linkService.saveOrGetLink(new Link(addLinkRequest.link()));
@@ -84,11 +88,13 @@ public class LinkController {
                     new LinkResponse(link.getId(), link.getUrl(), addLinkRequest.tags(), addLinkRequest.filters()),
                     HttpStatus.OK);
         }
+
         log.atError()
                 .setMessage("Некорректные параметры запроса на отслеживание ссылки")
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", addLinkRequest.link())
                 .log();
+
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);
@@ -109,6 +115,7 @@ public class LinkController {
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("link", request.link())
                 .log();
+
         Optional<TgChat> chat = chatService.getChat(chatId);
         if (chat.isPresent()) {
             Link foundLink = linkService.findLink(new Link(0L, request.link()));
@@ -120,18 +127,22 @@ public class LinkController {
                         .addKeyValue("chat-id", chatId)
                         .addKeyValue("link", request.link())
                         .log();
+
                 return new ResponseEntity<>(
                         new ApiErrorResponse("Ссылка не найдена", "404", "", "", null), HttpStatus.NOT_FOUND);
             }
+
             return new ResponseEntity<>(
                     new LinkResponse(
                             foundLink.getId(), foundLink.getUrl(), foundLink.getTags(), foundLink.getFilters()),
                     HttpStatus.OK);
         }
+
         log.atError()
                 .setMessage("Чат для удаления ссылки не найден")
                 .addKeyValue("chat-id", chatId)
                 .log();
+
         return new ResponseEntity<>(
                 new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
                 HttpStatus.BAD_REQUEST);

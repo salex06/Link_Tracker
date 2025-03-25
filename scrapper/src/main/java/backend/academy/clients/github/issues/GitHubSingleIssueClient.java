@@ -31,6 +31,7 @@ public class GitHubSingleIssueClient extends Client {
     public List<String> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
+
         String url = linkConverter.convert(link.getUrl());
         if (url == null) return new ArrayList<>();
 
@@ -46,10 +47,12 @@ public class GitHubSingleIssueClient extends Client {
                     if (response.getStatusCode().is2xxSuccessful()) {
                         return objectMapper.readValue(response.getBody(), GitHubIssue.class);
                     }
+
                     log.atError()
                             .setMessage("Некорректные параметры запроса к GitHub API")
                             .addKeyValue("url", url)
                             .log();
+
                     return null;
                 });
 
@@ -60,6 +63,7 @@ public class GitHubSingleIssueClient extends Client {
         if (gitHubIssue == null) {
             return List.of();
         }
+
         List<String> updatesList = new ArrayList<>();
         LocalDateTime previousUpdateTime = link.getLastUpdateTime();
 

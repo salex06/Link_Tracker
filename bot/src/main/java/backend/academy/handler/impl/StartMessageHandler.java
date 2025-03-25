@@ -40,9 +40,11 @@ public class StartMessageHandler implements Handler {
                 }
                 return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
             });
+
             return new SendMessage(chatId, data);
         } catch (ApiErrorException e) {
             ApiErrorResponse apiErrorResponse = e.apiErrorResponse();
+
             log.atError()
                     .setMessage("Некорректные параметры запроса")
                     .addKeyValue("error", e)
@@ -50,6 +52,7 @@ public class StartMessageHandler implements Handler {
                     .addKeyValue("url", url)
                     .addKeyValue("chat-id", chatId)
                     .log();
+
             return new SendMessage(chatId, apiErrorResponse.description());
         }
     }

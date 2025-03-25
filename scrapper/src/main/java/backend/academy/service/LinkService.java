@@ -43,6 +43,7 @@ public class LinkService {
                 return dbLink;
             }
         }
+
         return null;
     }
 
@@ -61,6 +62,7 @@ public class LinkService {
         if (inDataBaseLink != null) {
             return inDataBaseLink;
         }
+
         saveLink(link);
         return link;
     }
@@ -82,6 +84,7 @@ public class LinkService {
             linkRepository.save(link);
             return true;
         }
+
         return false;
     }
 
@@ -104,6 +107,7 @@ public class LinkService {
             linkRepository.save(link);
             return true;
         }
+
         return false;
     }
 
@@ -119,6 +123,7 @@ public class LinkService {
                 return true;
             }
         }
+
         return false;
     }
 }

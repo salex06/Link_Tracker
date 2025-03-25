@@ -23,9 +23,11 @@ public class MapLinkRepository implements LinkRepository {
     @Override
     public Link save(Link link) {
         Link previousLink = null;
+
         if (database.containsKey(link.getId())) {
             previousLink = database.get(link.getId());
         }
+
         database.put(link.getId(), link);
         return previousLink;
     }

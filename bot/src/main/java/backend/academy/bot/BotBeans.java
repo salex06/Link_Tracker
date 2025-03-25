@@ -19,9 +19,11 @@ public class BotBeans {
     @Bean
     SetMyCommands setMyCommands() {
         List<BotCommand> botCommands = new ArrayList<>();
+
         BotCommandsStorage.getCommandDescription()
                 .forEach((commandName, commandDescription) ->
                         botCommands.add(new BotCommand(commandName, commandDescription)));
+
         return new SetMyCommands(botCommands.toArray(new BotCommand[0]));
     }
 }

@@ -16,6 +16,7 @@ public class MapTgChatRepository implements ChatRepository {
         if (database.containsKey(id)) {
             return Optional.of(database.get(id));
         }
+
         return Optional.empty();
     }
 
@@ -29,6 +30,7 @@ public class MapTgChatRepository implements ChatRepository {
         if (database.containsKey(id)) {
             return false;
         }
+
         database.put(id, new TgChat(id, new HashSet<>()));
         return true;
     }
@@ -36,9 +38,11 @@ public class MapTgChatRepository implements ChatRepository {
     @Override
     public TgChat saveTgChat(TgChat tgChat) {
         TgChat previousTgChat = null;
+
         if (database.containsKey(tgChat.id())) {
             previousTgChat = database.get(tgChat.id());
         }
+
         database.put(tgChat.id(), tgChat);
         return previousTgChat;
     }

@@ -35,6 +35,7 @@ public class SoQuestionClient extends Client {
         if (url == null) {
             return null;
         }
+
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
@@ -42,6 +43,7 @@ public class SoQuestionClient extends Client {
                 .setMessage("Обращение к StackOverflow API (вопросы)")
                 .addKeyValue("url", url)
                 .log();
+
         SoQuestionsListDTO dto = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/json")
@@ -57,6 +59,7 @@ public class SoQuestionClient extends Client {
                     .setMessage("Некорректные параметры запроса к StackOverflow API (вопросы)")
                     .addKeyValue("url", url)
                     .log();
+
             return List.of();
         }
         return generateUpdateText(dto.items().getFirst(), link);
@@ -66,6 +69,7 @@ public class SoQuestionClient extends Client {
         if (!wasUpdated(body, link)) {
             return List.of();
         }
+
         link.setLastUpdateTime(getLatestUpdate(body));
         return formatUpdate(body, link);
     }
@@ -82,6 +86,7 @@ public class SoQuestionClient extends Client {
         LocalDateTime creationDate = body.creationDate() == null ? LocalDateTime.MIN : body.creationDate();
         LocalDateTime editDate = body.lastEditDate() == null ? LocalDateTime.MIN : body.lastEditDate();
         LocalDateTime activityDate = body.lastActivity() == null ? LocalDateTime.MIN : body.lastActivity();
+
         return Collections.max(List.of(creationDate, editDate, activityDate));
     }
 

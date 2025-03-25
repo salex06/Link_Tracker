@@ -24,6 +24,7 @@ public class Bot {
      */
     public Bot(BotConfig botConfig, Processor tgChatProcessor, SetMyCommands setMyCommands) {
         this.bot = new TelegramBot(botConfig.telegramToken());
+
         this.bot.setUpdatesListener(updates -> {
             updates.forEach(update -> {
                 SendMessage message = tgChatProcessor.process(update);
@@ -31,6 +32,7 @@ public class Bot {
             });
             return UpdatesListener.CONFIRMED_UPDATES_ALL;
         });
+
         this.commands = setMyCommands;
         bot.execute(commands);
     }
@@ -44,6 +46,7 @@ public class Bot {
     @Autowired
     public Bot(TelegramBot telegramBot, Processor tgChatProcessor, SetMyCommands setMyCommands) {
         this.bot = telegramBot;
+
         this.bot.setUpdatesListener(
                 updates -> {
                     updates.forEach(update -> {
@@ -72,6 +75,7 @@ public class Bot {
                                 .log();
                     }
                 });
+
         this.commands = setMyCommands;
         bot.execute(commands);
     }
@@ -83,6 +87,7 @@ public class Bot {
      */
     public Bot(TelegramBot telegramBot) {
         this.bot = telegramBot;
+
         this.commands = null;
         bot.execute(commands);
     }

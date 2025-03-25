@@ -66,9 +66,11 @@ public class TrackMessageHandler implements Handler {
                             return objectMapper.readValue(response.getBody(), LinkResponse.class);
                         }
                     });
+
             if (linkResponse == null) {
                 return new SendMessage(chatId, "Ошибка при ответе на запрос отслеживания");
             }
+
             return new SendMessage(
                     chatId,
                     String.format(
@@ -81,6 +83,7 @@ public class TrackMessageHandler implements Handler {
                     .addKeyValue("tags", crawlerReport.tags())
                     .addKeyValue("filters", crawlerReport.filters())
                     .log();
+
             return new SendMessage(chatId, e.apiErrorResponse().description());
         }
     }

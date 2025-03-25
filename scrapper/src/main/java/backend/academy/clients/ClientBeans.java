@@ -19,11 +19,13 @@ public class ClientBeans {
     public LinkToApiLinkConverter soQuestionLinkConverter() {
         return x -> {
             Pattern pattern = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
+
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
                 return String.format(
                         "https://api.stackexchange.com/2.3/questions/%s?site=stackoverflow", matcher.group(1));
             }
+
             return null;
         };
     }
@@ -32,11 +34,13 @@ public class ClientBeans {
     LinkToApiLinkConverter soAnswerLinkConverter() {
         return x -> {
             Pattern pattern = Pattern.compile("^https://stackoverflow\\.com/a/(\\d+)$");
+
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
                 return String.format(
                         "https://api.stackexchange.com/2.3/answers/%s?site=stackoverflow", matcher.group(1));
             }
+
             return null;
         };
     }
@@ -45,10 +49,12 @@ public class ClientBeans {
     LinkToApiLinkConverter gitHubRepositoryConverter() {
         return x -> {
             Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
+
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
                 return String.format("https://api.github.com/repos/%s/%s", matcher.group(1), matcher.group(2));
             }
+
             return null;
         };
     }
@@ -57,12 +63,14 @@ public class ClientBeans {
     LinkToApiLinkConverter gitHubSingleIssueConverter() {
         return x -> {
             Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
+
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
                 return String.format(
                         "https://api.github.com/repos/%s/%s/issues/%s",
                         matcher.group(1), matcher.group(2), matcher.group(3));
             }
+
             return null;
         };
     }

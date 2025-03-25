@@ -30,6 +30,7 @@ public class GitHubRepositoryClient extends Client {
     public List<String> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
+
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return List.of();
@@ -39,6 +40,7 @@ public class GitHubRepositoryClient extends Client {
                 .setMessage("Запрос к GitHub Api (репозиторий)")
                 .addKeyValue("url", url)
                 .log();
+
         GitHubRepositoryDTO data = client.method(HttpMethod.GET)
                 .uri(url)
                 .header("Accept", "application/vnd.github+json")
@@ -46,10 +48,12 @@ public class GitHubRepositoryClient extends Client {
                     if (response.getStatusCode().is2xxSuccessful()) {
                         return objectMapper.readValue(response.getBody(), GitHubRepositoryDTO.class);
                     }
+
                     log.atError()
                             .setMessage("Некорректные параметры запроса к GitHub API")
                             .addKeyValue("url", url)
                             .log();
+
                     return null;
                 });
 
@@ -60,18 +64,21 @@ public class GitHubRepositoryClient extends Client {
                     .setMessage("Ошибка при обращении к GitHub Api")
                     .addKeyValue("url", url)
                     .log();
+
             return List.of();
         }
     }
 
     private String generateUpdateText(GitHubRepositoryDTO body, Link link) {
         String updateDescription = "";
+
         LocalDateTime previousUpdateTime = link.getLastUpdateTime();
         if (wasUpdated(previousUpdateTime, body.updatedAt())) {
             link.setLastUpdateTime(body.updatedAt());
             updateDescription =
                     String.format("Обновление репозитория %s по ссылке %s", body.repositoryName(), body.linkValue());
         }
+
         return updateDescription;
     }
 
