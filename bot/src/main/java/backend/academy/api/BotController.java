@@ -44,7 +44,7 @@ public class BotController {
                 .addKeyValue("tg-chat-ids", tgChatIds)
                 .log();
 
-        if (anyFieldIsNull(linkUpdate)) {
+        if (LinkUpdate.anyFieldIsNull(linkUpdate)) {
             throw new ApiErrorException(
                     new ApiErrorResponse("Некорректные параметры запроса", "400", null, null, null));
         }
@@ -52,13 +52,6 @@ public class BotController {
         sendOutMessages(tgChatIds, url, id, description);
 
         return ResponseEntity.ok("");
-    }
-
-    private boolean anyFieldIsNull(LinkUpdate linkUpdate) {
-        return linkUpdate.url() == null
-                || linkUpdate.id() == null
-                || linkUpdate.tgChatIds() == null
-                || linkUpdate.description() == null;
     }
 
     private void sendOutMessages(List<Long> tgChatIds, String url, Long id, String description) {

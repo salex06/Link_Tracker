@@ -14,4 +14,11 @@ public record LinkUpdate(Long id, String url, String description, List<Long> tgC
     public LinkUpdate() {
         this(null, null, null, null);
     }
+
+    public static boolean anyFieldIsNull(LinkUpdate linkUpdate) {
+        return linkUpdate.url() == null
+                || linkUpdate.id() == null
+                || linkUpdate.tgChatIds() == null
+                || linkUpdate.description() == null;
+    }
 }
