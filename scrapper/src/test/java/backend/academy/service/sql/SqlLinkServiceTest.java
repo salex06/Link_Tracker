@@ -85,6 +85,7 @@ class SqlLinkServiceTest {
     @Test
     public void getLink_WhenLinkDoNotExist_ThenReturnEmpty() {
         when(linkRepository.getLinkByUrlAndChatId(anyLong(), anyString())).thenReturn(Optional.empty());
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 2L)));
 
         Optional<Link> actualLink = linkService.getLink(1L, "test_link");
 
@@ -170,6 +171,25 @@ class SqlLinkServiceTest {
 
         verify(linkRepository, times(1)).save(any(JdbcLink.class));
         verify(chatRepository, times(1)).saveTheChatLink(anyLong(), anyLong());
+    }
+
+    @Test
+    public void saveLink_WhenNoChatInDb_ThenReturnNull(){
+        Long chatId = 2L;
+        Long expectedLinkId = 1L;
+        String expectedUrl = "test_link";
+        List<String> expectedTags = List.of("tag1", "tag2");
+        List<String> expectedFilters = List.of("filter1", "filter2");
+        Set<Long> expectedChatIds = Set.of(2L);
+        Link expectedLink = new Link(null, expectedUrl, expectedTags, expectedFilters, expectedChatIds);
+        TgChat expectedChat = new TgChat(1L, chatId, new HashSet<>());
+        when(linkRepository.getLinkByUrl(expectedUrl)).thenReturn(Optional.empty());
+        when(linkRepository.save(any(JdbcLink.class))).thenReturn(new JdbcLink(expectedLinkId, expectedUrl));
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
+
+        Link link = linkService.saveLink(expectedLink, expectedChat);
+
+        assertThat(link).isNull();
     }
 
     @Test
@@ -294,6 +314,16 @@ class SqlLinkServiceTest {
 
         Set<Link> actualLinks = linkService.getAllLinksByChatId(chatId);
         assertEquals(expectedLinks, actualLinks);
+    }
+
+    @Test
+    public void getAllLinks_WhenChatNotInDb_ThenReturnEmptySet(){
+        Long chatId = 1L;
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
+
+        Set<Link> links = linkService.getAllLinksByChatId(chatId);
+
+        assertThat(links).isEmpty();
     }
 
     @Test
