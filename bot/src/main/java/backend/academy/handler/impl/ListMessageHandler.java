@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Обработчик команды получения списка отслеживаемых ресурсов */
 @Slf4j
 @Order(2)
 @Component

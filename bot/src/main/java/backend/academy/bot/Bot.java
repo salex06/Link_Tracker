@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 
-/** Класс - обёртка для телеграм бота. */
 @Slf4j
 @Component
 public class Bot {
@@ -23,7 +22,6 @@ public class Bot {
      * @param botConfig конфигурация бота (токен и имя бота)
      * @param tgChatProcessor обработчик сообщений пользователя
      */
-    // @Autowired
     public Bot(BotConfig botConfig, Processor tgChatProcessor, SetMyCommands setMyCommands) {
         this.bot = new TelegramBot(botConfig.telegramToken());
         this.bot.setUpdatesListener(updates -> {
@@ -89,11 +87,6 @@ public class Bot {
         bot.execute(commands);
     }
 
-    /**
-     * Отправить сообщение пользователю в чат
-     *
-     * @param message сообщение для пользователя
-     */
     public void execute(SendMessage message) {
         bot.execute(message);
     }

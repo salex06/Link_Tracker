@@ -12,7 +12,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Обработчик запроса помощи. Предоставляет список доступных команд */
 @Slf4j
 @Order(2)
 @Component

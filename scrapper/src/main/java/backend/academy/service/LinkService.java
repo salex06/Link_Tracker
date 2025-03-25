@@ -11,7 +11,6 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/** Сервис для обработки ссылок, которые передаются между пользователем и хранилищем */
 @Service
 public class LinkService {
     private final LinkRepository linkRepository;
@@ -23,21 +22,10 @@ public class LinkService {
         this.clientManager = clientManager;
     }
 
-    /**
-     * Возвращает все ссылки из хранилища в виде списка
-     *
-     * @return объекты класса Link из хранилища
-     */
     public List<Link> getAllLinks() {
         return linkRepository.getAllLinks();
     }
 
-    /**
-     * Получить ссылку по Id
-     *
-     * @param id идентификатор ссылки
-     * @return {@code Optional<Link>} - если ссылка найдена, иначе - {@code Optional.empty()}
-     */
     public Optional<Link> getLink(Long id) {
         return linkRepository.getById(id);
     }
@@ -68,13 +56,6 @@ public class LinkService {
         return linkRepository.save(link);
     }
 
-    /**
-     * Выполняет поиск в хранилище переданной ссылки и сохраняет, если ссылка там отстутствуем
-     *
-     * @param link ссылка для сохранения
-     * @return объект класса Link. Если ссылка уже была в хранилище, то возвращается эта ссылка, иначе - добавляется
-     *     ссылка, переданная в качестве параметра
-     */
     public Link saveOrGetLink(Link link) {
         Link inDataBaseLink = findLink(link);
         if (inDataBaseLink != null) {

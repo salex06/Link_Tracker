@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/** Компонент, отвечающий за выбор корректного обработчика для пользовательской команды */
 @Component
 public class HandlerManager {
     private final List<Handler> handlerList;

@@ -6,7 +6,7 @@ import com.pengrad.telegrambot.request.SendMessage;
 /** Интерфейс предоставляет метод process для обработки сообщений пользователя и формирования ответа */
 public interface Processor {
     /**
-     * Обработать команду пользователя
+     * Обработать сообщение пользователя
      *
      * @param update информация о сообщении от пользователя
      * @return {@code SendMessage} - ответ бота на команду

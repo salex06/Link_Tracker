@@ -10,10 +10,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Модель ссылки, содержащая информацию о тегах, фильтрах, связанных чатах, а также значение самой ссылки и её
- * идентификатор
- */
 public class Link {
     private Long id;
     private String url;
@@ -26,15 +22,6 @@ public class Link {
 
     private static final AtomicLong nextId = new AtomicLong();
 
-    /**
-     * Конструктор со всеми параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     * @param tags теги
-     * @param filters фильтры
-     * @param tgChatIds связанные чаты в телеграме
-     */
     public Link(Long id, String url, List<String> tags, List<String> filters, Set<Long> tgChatIds) {
         this.id = id;
         this.url = url;
@@ -44,13 +31,6 @@ public class Link {
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
-    /**
-     * Конструктор с основными параметрами (без тегов и фильтров)
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     * @param tgChatIds привязанные чаты в телеграме
-     */
     public Link(Long id, String url, Set<Long> tgChatIds) {
         this.id = id;
         this.url = url;
@@ -60,12 +40,6 @@ public class Link {
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
-    /**
-     * Конструктор с двумя параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     */
     public Link(Long id, String url) {
         this.id = id;
         this.url = url;
@@ -89,7 +63,6 @@ public class Link {
         this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
     }
 
-    /** Конструктор по умолчанию */
     public Link() {
         this.id = null;
         this.url = null;

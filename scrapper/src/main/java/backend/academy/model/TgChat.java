@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Модель чата в телеграме, хранящая уникальный идентификатор и набор ссылок, которые отслеживаются данным чатом */
 @AllArgsConstructor
 @Getter
 public class TgChat {

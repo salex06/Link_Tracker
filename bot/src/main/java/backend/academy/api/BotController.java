@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-/** BotController предоставляет методы, обрабатывающие запросы к отдельным эндпоинтам */
 @Slf4j
 @RestController
 public class BotController {

@@ -26,14 +26,8 @@ public record GitHubRepositoryDTO(
         @JsonProperty("pushed_at") LocalDateTime pushedAt,
         @JsonProperty("updated_at") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime updatedAt) {
-    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
+
     public static class TimeStampToLocalDateTimeConverter extends StdConverter<String, LocalDateTime> {
-        /**
-         * Конвертировать timestamp в LocalDateTime
-         *
-         * @param time время в строковом виде
-         * @return объекта класса {@code LocalDateTime} - сконвертированное время
-         */
         @Override
         public LocalDateTime convert(String time) {
             Instant instant = Instant.parse(time);

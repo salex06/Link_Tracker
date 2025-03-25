@@ -15,7 +15,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Клиент для отслеживания изменений в репозитории на GitHub */
 @Slf4j
 @Component
 public class GitHubRepositoryClient extends Client {

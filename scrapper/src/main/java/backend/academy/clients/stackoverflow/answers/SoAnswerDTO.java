@@ -26,14 +26,8 @@ public record SoAnswerDTO(
                 LocalDateTime creationDate,
         @JsonProperty("last_edit_date") @JsonDeserialize(converter = TimeStampToLocalDateTimeConverter.class)
                 LocalDateTime lastEditDate) {
-    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
+
     public static class TimeStampToLocalDateTimeConverter extends StdConverter<Long, LocalDateTime> {
-        /**
-         * Конвертировать timestamp в LocalDateTime
-         *
-         * @param seconds количество секунд от 1 янв 1970 (fromEpochSeconds)
-         * @return объекта класса {@code LocalDateTime} - сконвертированное время
-         */
         @Override
         public LocalDateTime convert(Long seconds) {
             if (seconds == null) {

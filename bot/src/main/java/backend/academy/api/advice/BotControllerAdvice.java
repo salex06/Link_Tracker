@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/** Класс для перехвата и обработки исключений, возникающих в контроллере BotController */
 @Slf4j
 @RestControllerAdvice
 public class BotControllerAdvice {

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Контроллер, обрабатывающий запросы на регистрацию/удаление пользователей бота в телеграмме */
 @Slf4j
 @RestController
 public class ChatController {

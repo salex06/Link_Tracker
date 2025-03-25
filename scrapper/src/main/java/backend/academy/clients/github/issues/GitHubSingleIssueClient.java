@@ -16,7 +16,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Клиент для отслеживания обновлений по задачам (issue) на GitHub */
 @Slf4j
 @Component
 public class GitHubSingleIssueClient extends Client {

@@ -16,7 +16,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Клиент для отслеживания ответов на StackOverflow. Обеспечивает проверку на обновление ответов */
 @Slf4j
 @Component
 public class SoAnswerClient extends Client {

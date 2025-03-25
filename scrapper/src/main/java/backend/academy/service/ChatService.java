@@ -10,7 +10,6 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/** Сервис предоставляет методы для обработки запросов на регистрацию или удаление чатов и работу с ними */
 @Service
 public class ChatService {
     private final ChatRepository chatRepository;
@@ -20,51 +19,22 @@ public class ChatService {
         this.chatRepository = chatRepository;
     }
 
-    /**
-     * Сохранить чат в базу данных
-     *
-     * @param chatId идентификатор чата
-     * @return {@code true} в случае успешного сохранения, иначе - {@code false}
-     */
     public boolean saveChat(Long chatId) {
         return chatRepository.save(chatId);
     }
 
-    /**
-     * Получить чат по его идентификатору
-     *
-     * @param chatId идентификатор чата
-     * @return {@code Optional<TgChat>} если чат найден, иначе {@code Optional.empty()}
-     */
     public Optional<TgChat> getChat(Long chatId) {
         return chatRepository.getById(chatId);
     }
 
-    /**
-     * Получить список всех чатов
-     *
-     * @return все сохраненные чаты из базы данных
-     */
     public List<TgChat> getAllChat() {
         return chatRepository.getAll();
     }
 
-    /**
-     * Проверить, содержится ли в базе данных чат
-     *
-     * @param chatId идентификатор чата
-     * @return {@code true}, если содержится, иначе - {@code false}
-     */
     public boolean containsChat(Long chatId) {
         return chatRepository.getById(chatId).isPresent();
     }
 
-    /**
-     * Удалить чат из базы данных
-     *
-     * @param chatId идентификатор чата
-     * @return {@code true}, если чат удален, иначе (например, не найден) - {@code false}
-     */
     public boolean deleteChat(Long chatId) {
         return chatRepository.remove(chatId);
     }

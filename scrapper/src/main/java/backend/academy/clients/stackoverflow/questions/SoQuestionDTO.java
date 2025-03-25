@@ -29,14 +29,7 @@ public record SoQuestionDTO(
                 LocalDateTime lastEditDate,
         @JsonProperty("title") String title) {
 
-    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
     public static class TimeStampToLocalDateTimeConverter extends StdConverter<Long, LocalDateTime> {
-        /**
-         * Конвертировать timestamp в LocalDateTime
-         *
-         * @param seconds количество секунд от 1 янв 1970 (fromEpochSeconds)
-         * @return объекта класса {@code LocalDateTime} - сконвертированное время
-         */
         @Override
         public LocalDateTime convert(Long seconds) {
             if (seconds == null) {

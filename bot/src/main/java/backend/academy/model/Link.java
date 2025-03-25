@@ -6,10 +6,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 
-/**
- * Представление ссылки на ресурс в системе. Объект класса Link имеет идентификатор, значение ссылки, набор чатов,
- * отслеживающих ссылку
- */
 @Getter
 public class Link {
     private Long id;

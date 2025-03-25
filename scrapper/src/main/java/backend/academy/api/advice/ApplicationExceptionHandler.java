@@ -15,10 +15,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/**
- * Класс предоставляет набор метоодов, которые перехватывают и обрабатывают исключения, сгенерированные в контроллере
- * ChatController
- */
 @Slf4j
 @ControllerAdvice
 public class ApplicationExceptionHandler {

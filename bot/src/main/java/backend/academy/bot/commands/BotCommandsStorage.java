@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/** Хранилище доступных команд бота */
 public class BotCommandsStorage {
     private BotCommandsStorage() {}
 
@@ -26,11 +25,6 @@ public class BotCommandsStorage {
         COMMANDS.add(new Command("/untrack", true));
     }
 
-    /**
-     * Возвращает список доступных команд
-     *
-     * @return {@code List<Command>} - список доступных команд
-     */
     public static List<Command> getCommands() {
         return Collections.unmodifiableList(COMMANDS);
     }

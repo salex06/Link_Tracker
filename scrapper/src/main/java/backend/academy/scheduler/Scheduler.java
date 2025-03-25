@@ -16,10 +16,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-/**
- * Класс-планировщик. Обеспечивает регулярное обращение к ресурсам, проверку на наличие обновлений и отправку
- * уведомлений
- */
 @Slf4j
 @Service
 public class Scheduler {
@@ -34,10 +30,6 @@ public class Scheduler {
         this.botUpdatesClient = botUpdatesClient;
     }
 
-    /**
-     * Метод для выполнения запланированных задач. Через определенные промежутки времени обращается к ресурсам по
-     * ссылкам, хранящимся в БД, осуществляет поиск обновлений и отправляет соответствующее уведомление
-     */
     @Scheduled(fixedDelay = 10000, initialDelay = 10000)
     public void schedule() {
         List<Client> clients = clientManager.availableClients();
