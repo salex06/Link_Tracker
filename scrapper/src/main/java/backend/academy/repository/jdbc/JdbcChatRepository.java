@@ -1,4 +1,4 @@
-package backend.academy.repository;
+package backend.academy.repository.jdbc;
 
 import backend.academy.model.jdbc.JdbcTgChat;
 import java.util.List;

@@ -13,7 +13,7 @@ import backend.academy.model.jdbc.JdbcTgChat;
 import backend.academy.model.mapper.chat.ChatMapper;
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
-import backend.academy.repository.JdbcChatRepository;
+import backend.academy.repository.jdbc.JdbcChatRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;

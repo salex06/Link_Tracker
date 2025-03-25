@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import backend.academy.model.jdbc.JdbcLink;
+import backend.academy.repository.jdbc.JdbcLinkRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;

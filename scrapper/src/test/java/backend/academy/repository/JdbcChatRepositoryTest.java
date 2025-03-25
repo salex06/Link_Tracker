@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import backend.academy.model.jdbc.JdbcTgChat;
+import backend.academy.repository.jdbc.JdbcChatRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
