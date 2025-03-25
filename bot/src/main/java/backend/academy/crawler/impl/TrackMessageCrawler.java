@@ -1,5 +1,8 @@
 package backend.academy.crawler.impl;
 
+import static backend.academy.crawler.CrawlValidator.RESTART_MESSAGE;
+import static backend.academy.crawler.CrawlValidator.SKIP_THE_SETTING;
+import static backend.academy.crawler.CrawlValidator.isTheStartMessage;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.COMPLETED;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.ERROR;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.UNDEFINED;
@@ -7,6 +10,7 @@ import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_LINK;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_TAGS;
 
+import backend.academy.crawler.CrawlValidator;
 import backend.academy.crawler.DialogStateDTO;
 import backend.academy.crawler.MessageCrawler;
 import backend.academy.dto.AddLinkRequest;
@@ -19,37 +23,68 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.Getter;
 
 public class TrackMessageCrawler implements MessageCrawler {
-    private static final String START_DIALOG_COMMAND = "/track";
-    private static final String RESTART_MESSAGE = "Сбросить";
-    private static final String SKIP_THE_SETTING = "Пропустить";
-    private static final int MESSAGE_COUNT_IF_COMPLETED = 3;
     private final Map<Long, Map.Entry<TrackMessageState, List<String>>> userStates = new HashMap<>();
 
     @Override
     public DialogStateDTO crawl(Update update) {
-        Long chatId = update.message().chat().id();
+        DialogStateDTO dto = getMessageForCornerCases(update);
+        // Если краевой случай, возвращаем сформированный ответ
+        if (dto != null) {
+            return dto;
+        }
+
+        // Получаем информацию о предыдущем сообщении
+        String previousMessageText = update.message().replyToMessage().text();
+        TrackMessageState previousState = TrackMessageState.fromDescription(previousMessageText);
+
+        // Обрабатываем сообщение в соответствии с тем, на какое сообщение он ответил
+        return switch (previousState) {
+            case WAITING_FOR_FILTERS -> setCompleted(update);
+            case WAITING_FOR_TAGS -> createWaitingForFiltersResponse(update);
+            case WAITING_FOR_LINK -> createWaitingForTagsResponse(update);
+            default -> createUndefinedResponse();
+        };
+    }
+
+    @Override
+    public AddLinkRequest terminate(Long chatId) {
+        if (!CrawlValidator.dialogWasCompletedSuccessfully(userStates, chatId)) {
+            return null;
+        }
+
+        List<String> messages = userStates.get(chatId).getValue();
+
+        String url = messages.getFirst();
+        List<String> tags = Arrays.stream(messages.get(1).split(" ")).toList();
+        List<String> filters = Arrays.stream(messages.get(2).split(" ")).toList();
+
+        userStates.remove(chatId);
+
+        return new AddLinkRequest(url, tags, filters);
+    }
+
+    private DialogStateDTO getMessageForCornerCases(Update update) {
         Message lastMessage = update.message();
 
         // Если введены специальные команды "Пропустить" или "Начать заново"
-        if (Objects.equals(lastMessage.text(), RESTART_MESSAGE)) {
+        if (CrawlValidator.isRestartMessage(lastMessage.text())) {
             return doRestart(update);
-        } else if (Objects.equals(lastMessage.text(), SKIP_THE_SETTING)) {
+        } else if (CrawlValidator.isSkipMessage(lastMessage.text())) {
             return doSkipTheSetting(update);
         }
 
         // Если это начало диалога
-        if (isTheStartMessage(update)) {
+        if (isTheStartMessage(lastMessage.text())) {
             // устанавливаем состояние диалога: "Ожидание ссылки"
-            changeStateToWaitingForLink(chatId);
             return createWaitingForLinkResponse(update);
         }
 
         // Если состояние диалога не найдено
-        if (dialogStateWasNotSetYet(update.message().chat().id())) {
+        if (CrawlValidator.dialogStateWasNotSetYet(
+                userStates, update.message().chat().id())) {
             // возвращаем пустое сообщение
             return createUndefinedResponse();
         }
@@ -67,45 +102,12 @@ public class TrackMessageCrawler implements MessageCrawler {
             return createErrorResponse(update, "Ошибка. Вы должны отвечать на сообщения бота");
         }
 
-        // Получаем инфомрацию о предыдущем сообщении
-        String previousMessageText = replyToMessage.text();
-        TrackMessageState previousState = TrackMessageState.fromDescription(previousMessageText);
-
-        // Обрабатываем сообщение в соответствии с тем, на какое сообщение он ответил
-        return switch (previousState) {
-            case WAITING_FOR_FILTERS -> setCompleted(update);
-            case WAITING_FOR_TAGS -> createWaitingForFiltersResponse(update);
-            case WAITING_FOR_LINK -> createWaitingForTagsResponse(update);
-            default -> createUndefinedResponse();
-        };
-    }
-
-    @Override
-    public AddLinkRequest terminate(Long chatId) {
-        if (!dialogWasCompletedSuccessfully(chatId)) {
-            return null;
-        }
-
-        List<String> messages = userStates.get(chatId).getValue();
-
-        String url = messages.getFirst();
-        List<String> tags = Arrays.stream(messages.get(1).split(" ")).toList();
-        List<String> filters = Arrays.stream(messages.get(2).split(" ")).toList();
-
-        userStates.remove(chatId);
-
-        return new AddLinkRequest(url, tags, filters);
-    }
-
-    private boolean dialogWasCompletedSuccessfully(Long chatId) {
-        return userStates.containsKey(chatId)
-                && userStates.get(chatId).getKey() == COMPLETED
-                && userStates.get(chatId).getValue().size() == MESSAGE_COUNT_IF_COMPLETED;
+        return null;
     }
 
     private DialogStateDTO doRestart(Update update) {
         Long chatId = update.message().chat().id();
-        if (userStates.containsKey(chatId)) {
+        if (CrawlValidator.isAvailableToReset(userStates, chatId)) {
             userStates.remove(chatId);
             return new DialogStateDTO(
                     new SendMessage(chatId, "Режим добавления ресурса для отслеживания прекращен"), UNDEFINED);
@@ -116,17 +118,13 @@ public class TrackMessageCrawler implements MessageCrawler {
     private DialogStateDTO doSkipTheSetting(Update update) {
         Long chatId = update.message().chat().id();
 
-        if (!userStates.containsKey(chatId)) {
+        if (!CrawlValidator.isAvailableToSkip(userStates, chatId)) {
             return createErrorResponse(update, "Ошибка. Нечего пропускать");
         }
 
         Map.Entry<TrackMessageState, List<String>> current = userStates.get(chatId);
         TrackMessageState currentState = current.getKey();
         List<String> messages = current.getValue();
-
-        if (currentState != WAITING_FOR_TAGS && currentState != WAITING_FOR_FILTERS) {
-            return createErrorResponse(update, "Можно пропустить только выбор тегов и фильтров!");
-        }
 
         messages.add("");
         SendMessage message;
@@ -137,22 +135,9 @@ public class TrackMessageCrawler implements MessageCrawler {
             currentState = COMPLETED;
             message = null;
         }
+
         userStates.put(chatId, Map.entry(currentState, messages));
         return new DialogStateDTO(message, currentState);
-    }
-
-    private boolean isTheStartMessage(Update update) {
-        String message = update.message().text();
-
-        return message.equals(START_DIALOG_COMMAND);
-    }
-
-    private void changeStateToWaitingForLink(Long chatId) {
-        userStates.put(chatId, Map.entry(WAITING_FOR_LINK, new ArrayList<>()));
-    }
-
-    private boolean dialogStateWasNotSetYet(Long chatId) {
-        return !userStates.containsKey(chatId);
     }
 
     private DialogStateDTO createErrorResponse(Update update, String errorMessage) {
@@ -166,11 +151,11 @@ public class TrackMessageCrawler implements MessageCrawler {
 
         Map.Entry<TrackMessageState, List<String>> data = userStates.get(chatId);
         List<String> messages = userStates.get(chatId).getValue();
+
         if (data.getKey() != WAITING_FOR_FILTERS) {
             return createErrorResponse(update, "Ошибка. Попробуйте снова");
         }
-
-        if (!filtersAreValid(update.message().text())) {
+        if (!CrawlValidator.filtersAreValid(update.message().text())) {
             return createErrorResponse(update, "Ошибка. Формат ввода фильтров: 'filter1:prop1 filter2:prop2 ...'");
         }
 
@@ -178,10 +163,6 @@ public class TrackMessageCrawler implements MessageCrawler {
         userStates.put(chatId, Map.entry(COMPLETED, messages));
 
         return new DialogStateDTO(null, COMPLETED);
-    }
-
-    private boolean filtersAreValid(String text) {
-        return text.matches("^(\\w+:\\w+)( \\w+:\\w+)*$");
     }
 
     private DialogStateDTO createWaitingForLinkResponse(Update update) {
