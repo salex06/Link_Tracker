@@ -41,9 +41,8 @@ public class ListMessageHandler implements Handler {
                             ApiErrorResponse apiErrorResponse =
                                     objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
                             throw new ApiErrorException(apiErrorResponse);
-                        } else {
-                            return objectMapper.readValue(response.getBody(), ListLinksResponse.class);
                         }
+                        return objectMapper.readValue(response.getBody(), ListLinksResponse.class);
                     });
             if (linksResponse == null) {
                 return new SendMessage(chatId, "Ошибка при получении списка ресурсов");

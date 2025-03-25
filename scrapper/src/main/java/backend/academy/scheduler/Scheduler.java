@@ -76,9 +76,8 @@ public class Scheduler {
                         ApiErrorResponse apiErrorResponse =
                                 new ObjectMapper().readValue(response.getBody(), ApiErrorResponse.class);
                         throw new ApiErrorException(apiErrorResponse);
-                    } else {
-                        return new ObjectMapper().readValue(response.getBody(), String.class);
                     }
+                    return new ObjectMapper().readValue(response.getBody(), String.class);
                 });
             } catch (ApiErrorException e) {
                 ApiErrorResponse response = e.apiErrorResponse();

@@ -37,9 +37,8 @@ public class StartMessageHandler implements Handler {
                     ApiErrorResponse apiErrorResponse =
                             objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
                     throw new ApiErrorException(apiErrorResponse);
-                } else {
-                    return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
                 }
+                return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
             });
             return new SendMessage(chatId, data);
         } catch (ApiErrorException e) {
