@@ -1,10 +1,12 @@
 package backend.academy.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import backend.academy.model.jdbc.JdbcLink;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -227,5 +229,34 @@ class JdbcLinkRepositoryTest {
         List<JdbcLink> actualLink = linkRepository.getAllLinksByChatId(chatId);
 
         assertThat(actualLink).isEmpty();
+    }
+
+    @Test
+    public void save_WhenNoLinkInDatabase_ThenInsertEntity() {
+        Long expectedId = 1L;
+        String expectedUrl = "url";
+        JdbcLink link = new JdbcLink(null, expectedUrl);
+
+        JdbcLink actualLink = linkRepository.save(link);
+
+        assertThat(actualLink).isNotNull();
+        assertEquals(expectedId, actualLink.getId());
+        assertEquals(expectedUrl, actualLink.getUrl());
+    }
+
+    @Test
+    public void save_WhenLinkInDatabase_ThenUpdateEntity() {
+        Long expectedId = 2L;
+        String expectedUrl = "new_url";
+        LocalDateTime expectedLocalDateTime = LocalDateTime.now();
+        JdbcLink link = new JdbcLink(2L, expectedUrl, expectedLocalDateTime);
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('any'), ('url')");
+
+        JdbcLink actualLink = linkRepository.save(link);
+
+        assertThat(actualLink).isNotNull();
+        assertEquals(expectedId, actualLink.getId());
+        assertEquals(expectedUrl, actualLink.getUrl());
+        assertEquals(expectedLocalDateTime, actualLink.getLastUpdateTime());
     }
 }

@@ -235,7 +235,7 @@ class JdbcChatRepositoryTest {
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1)");
 
-        boolean result = chatRepository.saveTag(chatId, linkId, "tagValue");
+        boolean result = chatRepository.saveTag(linkId, chatId, "tagValue");
 
         assertThat(result).isTrue();
     }
@@ -245,7 +245,7 @@ class JdbcChatRepositoryTest {
         Long chatId = 1L;
         Long linkId = 1L;
 
-        boolean result = chatRepository.saveTag(chatId, linkId, "tagValue");
+        boolean result = chatRepository.saveTag(linkId, chatId, "tagValue");
 
         assertThat(result).isFalse();
     }
@@ -257,7 +257,7 @@ class JdbcChatRepositoryTest {
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1)");
 
-        boolean result = chatRepository.saveTag(chatId, linkId, "filter");
+        boolean result = chatRepository.saveTag(linkId, chatId, "filter");
 
         assertThat(result).isTrue();
     }
@@ -267,7 +267,7 @@ class JdbcChatRepositoryTest {
         Long chatId = 1L;
         Long linkId = 1L;
 
-        boolean result = chatRepository.saveFilter(chatId, linkId, "filter");
+        boolean result = chatRepository.saveFilter(linkId, chatId, "filter");
 
         assertThat(result).isFalse();
     }
@@ -338,5 +338,27 @@ class JdbcChatRepositoryTest {
 
         assertThat(otherTags.size()).isEqualTo(1);
         assertThat(otherTags.getFirst()).isEqualTo("another_tag");
+    }
+
+    @Test
+    public void findById_WhenChatInDb_ThenReturnChat() {
+        Long expectedId = 1L;
+        Long expectedChatId = 12345L;
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (12345)");
+
+        Optional<JdbcTgChat> chat = chatRepository.findById(expectedId);
+
+        assertThat(chat).isNotEmpty();
+        assertThat(chat.get().id()).isEqualTo(expectedId);
+        assertThat(chat.get().chatId()).isEqualTo(expectedChatId);
+    }
+
+    @Test
+    public void findById_WhenChatNotInDb_ThenReturnChat() {
+        Long expectedId = 1L;
+
+        Optional<JdbcTgChat> chat = chatRepository.findById(expectedId);
+
+        assertThat(chat).isEmpty();
     }
 }
