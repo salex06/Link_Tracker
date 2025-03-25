@@ -131,27 +131,25 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void updateTags_WhenChatDoNotExist_ThenReturn(){
+    public void updateTags_WhenChatDoNotExist_ThenReturn() {
         Long id = 1L;
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
-        Set<Link> expectedLinks =
-            Set.of(link);
+        Set<Link> expectedLinks = Set.of(link);
         TgChat chat = new TgChat(id, chatId, expectedLinks);
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.empty());
 
         chatService.updateTags(link, chat, List.of("tags"));
 
-        verify(chatRepository,times(0)).removeAllTags(anyLong(), anyLong());
+        verify(chatRepository, times(0)).removeAllTags(anyLong(), anyLong());
     }
 
     @Test
-    public void updateFilters_WhenChatDoNotExist_ThenReturn(){
+    public void updateFilters_WhenChatDoNotExist_ThenReturn() {
         Long id = 1L;
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
-        Set<Link> expectedLinks =
-            Set.of(link);
+        Set<Link> expectedLinks = Set.of(link);
         TgChat chat = new TgChat(id, chatId, expectedLinks);
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.empty());
 
@@ -161,43 +159,41 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void updateTags_WhenChatExists_ThenSaveTags(){
+    public void updateTags_WhenChatExists_ThenSaveTags() {
         Long id = 1L;
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
-        Set<Link> expectedLinks =
-            Set.of(link);
+        Set<Link> expectedLinks = Set.of(link);
         TgChat chat = new TgChat(id, chatId, expectedLinks);
         List<String> expectedTags = List.of("new_tag1", "new_tag2");
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
 
         chatService.updateTags(link, chat, expectedTags);
 
-        verify(chatRepository,times(1)).removeAllTags(anyLong(), anyLong());
-        verify(chatRepository,times(2)).saveTag(anyLong(), anyLong(), anyString());
+        verify(chatRepository, times(1)).removeAllTags(anyLong(), anyLong());
+        verify(chatRepository, times(2)).saveTag(anyLong(), anyLong(), anyString());
         assertEquals(link.getTags(), expectedTags);
     }
 
     @Test
-    public void updateFilters_WhenChatExists_ThenSaveFilters(){
+    public void updateFilters_WhenChatExists_ThenSaveFilters() {
         Long id = 1L;
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
-        Set<Link> expectedLinks =
-            Set.of(link);
+        Set<Link> expectedLinks = Set.of(link);
         TgChat chat = new TgChat(id, chatId, expectedLinks);
         List<String> expectedFilters = List.of("new_filter1", "new_filter2");
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
 
         chatService.updateFilters(link, chat, expectedFilters);
 
-        verify(chatRepository,times(1)).removeAllFilters(anyLong(), anyLong());
-        verify(chatRepository,times(2)).saveFilter(anyLong(), anyLong(), anyString());
+        verify(chatRepository, times(1)).removeAllFilters(anyLong(), anyLong());
+        verify(chatRepository, times(2)).saveFilter(anyLong(), anyLong(), anyString());
         assertEquals(link.getFilters(), expectedFilters);
     }
 
     @Test
-    public void removeTheChatLink_WhenChatDoNotExist_ThenReturn(){
+    public void removeTheChatLink_WhenChatDoNotExist_ThenReturn() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
         when(chat.chatId()).thenReturn(1L);
@@ -208,7 +204,7 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void removeTheChatLink_WhenChatExists_ThenRemove(){
+    public void removeTheChatLink_WhenChatExists_ThenRemove() {
         Long id = 1L;
         Long chatId = 2L;
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
@@ -221,7 +217,7 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void getTags_WhenChatDoNotExist_ThenReturnEmptyList(){
+    public void getTags_WhenChatDoNotExist_ThenReturnEmptyList() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
         when(chat.chatId()).thenReturn(1L);
@@ -232,7 +228,7 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void getFilters_WhenChatDoNotExist_ThenReturnEmptyList(){
+    public void getFilters_WhenChatDoNotExist_ThenReturnEmptyList() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
         when(chat.chatId()).thenReturn(1L);
@@ -243,7 +239,7 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void getTags_WhenChatExists_ThenReturnTags(){
+    public void getTags_WhenChatExists_ThenReturnTags() {
         Long linkId = 1L;
         Long chatId = 2L;
         List<String> expectedTags = List.of("tag1", "tag2");
@@ -258,7 +254,7 @@ class SqlChatServiceTest {
     }
 
     @Test
-    public void getFilters_WhenChatExists_ThenReturnFilters(){
+    public void getFilters_WhenChatExists_ThenReturnFilters() {
         Long linkId = 1L;
         Long chatId = 2L;
         List<String> expectedFilters = List.of("filter1", "filter2");

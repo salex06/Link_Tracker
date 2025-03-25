@@ -174,7 +174,7 @@ class SqlLinkServiceTest {
     }
 
     @Test
-    public void saveLink_WhenNoChatInDb_ThenReturnNull(){
+    public void saveLink_WhenNoChatInDb_ThenReturnNull() {
         Long chatId = 2L;
         Long expectedLinkId = 1L;
         String expectedUrl = "test_link";
@@ -317,7 +317,7 @@ class SqlLinkServiceTest {
     }
 
     @Test
-    public void getAllLinks_WhenChatNotInDb_ThenReturnEmptySet(){
+    public void getAllLinks_WhenChatNotInDb_ThenReturnEmptySet() {
         Long chatId = 1L;
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
 
