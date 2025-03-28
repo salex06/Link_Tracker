@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -161,14 +164,22 @@ public class SoQuestionClient extends Client {
     }
 
     private String formatCommentUpdate(SoCommentDTO comment, SoQuestionDTO question) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
         return String.format(
-                "Новый комментарий к вопросу %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
-                question.title(), comment.owner().name(), comment.createdAt(), comment.text());
+                "Новый комментарий к вопросу %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                question.title(),
+                comment.owner().name(),
+                formatter.format(LocalDateTime.ofInstant(comment.createdAt(), ZoneId.of("UTC"))),
+                comment.text());
     }
 
     private String formatAnswerUpdate(SoAnswerDTO answer, SoQuestionDTO question) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
         return String.format(
-                "Новый ответ к вопросу %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
-                question.title(), answer.owner().name(), answer.creationDate(), answer.text());
+                "Новый ответ к вопросу %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                question.title(),
+                answer.owner().name(),
+                formatter.format(LocalDateTime.ofInstant(answer.creationDate(), ZoneId.of("UTC"))),
+                answer.text());
     }
 }

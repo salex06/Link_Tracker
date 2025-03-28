@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -154,14 +157,22 @@ public class GitHubIssueListClient extends Client {
     }
 
     private String createNewCommentUpdate(GitHubComment comment, GitHubIssue issue) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
         return String.format(
-                "Новый комментарий к issue %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
-                issue.title(), comment.user().ownerName(), comment.createdAt(), comment.body());
+                "Новый комментарий к issue %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                issue.title(),
+                comment.user().ownerName(),
+                formatter.format(LocalDateTime.ofInstant(comment.createdAt(), ZoneId.of("UTC"))),
+                comment.body());
     }
 
     private String createNewIssueUpdate(GitHubIssue issue) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
         return String.format(
-                "Новый issue %s%nАвтор: %s%nВремя создания: %s%nПревью: %s",
-                issue.title(), issue.author().ownerName(), issue.createdAt(), issue.description());
+                "Новый issue %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                issue.title(),
+                issue.author().ownerName(),
+                formatter.format(LocalDateTime.ofInstant(issue.createdAt(), ZoneId.of("UTC"))),
+                issue.description());
     }
 }
