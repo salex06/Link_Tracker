@@ -3,6 +3,7 @@ package backend.academy.service;
 import backend.academy.clients.Client;
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -16,9 +17,10 @@ public interface LinkService {
      * Получить ссылки с использованием механизма пагинации
      *
      * @param pageable параметры страницы
+     * @param duration интервал отслеживания (через какой промежуток времени ссылку нужно проверить)
      * @return страница с ссылками
      */
-    Page<Link> getAllLinks(Pageable pageable);
+    Page<Link> getAllLinks(Pageable pageable, Duration duration);
 
     /**
      * Получить ссылку по идентификатору чата и значению ссылки

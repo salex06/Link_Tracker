@@ -7,7 +7,9 @@ import backend.academy.dto.LinkUpdate;
 import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.service.LinkService;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,10 +44,8 @@ public class Scheduler {
         List<Client> clients = clientManager.availableClients();
         do {
             Pageable pageable = PageRequest.of(pageNumber, pageSize);
-            page = linkService.getAllLinks(pageable);
-            page.getContent().stream()
-                    .filter(i -> !i.getTgChatIds().isEmpty())
-                    .forEach(link -> processLink(clients, link));
+            page = linkService.getAllLinks(pageable, Duration.of(10, ChronoUnit.SECONDS));
+            page.getContent().forEach(link -> processLink(clients, link));
 
             pageNumber++;
         } while (page.hasNext());

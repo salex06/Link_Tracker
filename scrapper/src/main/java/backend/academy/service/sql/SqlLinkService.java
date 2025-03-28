@@ -8,6 +8,7 @@ import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
 import backend.academy.service.LinkService;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,9 +40,9 @@ public class SqlLinkService implements LinkService {
     }
 
     @Override
-    public Page<Link> getAllLinks(Pageable pageable) {
+    public Page<Link> getAllLinks(Pageable pageable, Duration duration) {
         List<Link> plainLinks = new ArrayList<>();
-        Page<JdbcLink> jdbcLinks = linkRepository.findAll(pageable);
+        Page<JdbcLink> jdbcLinks = linkRepository.findAll(pageable, duration);
 
         for (JdbcLink link : jdbcLinks) {
             Set<Long> primaryChatIds = linkRepository.getChatIdsByUrl(link.getUrl());

@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,7 +19,9 @@ import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -65,7 +68,7 @@ class SqlLinkServiceTest {
         int pageNumber = 0;
         int pageSize = 5;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        when(linkRepository.findAll(pageable))
+        when(linkRepository.findAll(eq(pageable), any(Duration.class)))
                 .thenReturn(new PageImpl<>(List.of(new JdbcLink(link1Id, link1Url), new JdbcLink(link2Id, link2Url))));
         when(linkRepository.getChatIdsByUrl(link1Url)).thenReturn(expectedLink1TgChats);
         when(linkRepository.getChatIdsByUrl(link2Url)).thenReturn(expectedLink2TgChats);
@@ -78,7 +81,7 @@ class SqlLinkServiceTest {
                 });
         when(chatRepository.findById(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
-        Page<Link> actualLinks = linkService.getAllLinks(pageable);
+        Page<Link> actualLinks = linkService.getAllLinks(pageable, Duration.of(10, ChronoUnit.SECONDS));
 
         assertEquals(expectedLinks.getContent(), actualLinks.getContent());
     }

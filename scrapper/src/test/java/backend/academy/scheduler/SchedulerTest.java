@@ -16,6 +16,7 @@ import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.notifications.impl.HttpNotificationSender;
 import backend.academy.service.LinkService;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -88,7 +89,8 @@ class SchedulerTest {
     @Test
     public void schedule_WhenNoSuitableClients_ThenThrowException() {
         Link link1 = new Link(1L, "wrong_url", List.of("tag"), List.of("filter"), Set.of(1L));
-        when(linkService.getAllLinks(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(link1)));
+        when(linkService.getAllLinks(any(Pageable.class), any(Duration.class)))
+                .thenReturn(new PageImpl<>(List.of(link1)));
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> scheduler.schedule());
         assertEquals("No suitable clients for link: " + link1.getUrl(), ex.getMessage());
@@ -99,7 +101,8 @@ class SchedulerTest {
         Link link1 = new Link(
                 CLIENT2_NO_UPDATES_INDICATOR, CLIENT2_SUPPORTED_URL, List.of("tag"), List.of("filter"), Set.of(1L));
 
-        when(linkService.getAllLinks(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(link1)));
+        when(linkService.getAllLinks(any(Pageable.class), any(Duration.class)))
+                .thenReturn(new PageImpl<>(List.of(link1)));
 
         scheduler.schedule();
 
@@ -112,7 +115,8 @@ class SchedulerTest {
         List<String> linkUpdate2 = List.of("update3", "update4");
         Link link1 = new Link(5L, CLIENT1_SUPPORTED_URL, List.of("tag"), List.of("filter"), Set.of(1L));
         Link link2 = new Link(3L, CLIENT2_SUPPORTED_URL, List.of("tag"), List.of("filter"), Set.of(1L));
-        when(linkService.getAllLinks(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(link1, link2)));
+        when(linkService.getAllLinks(any(Pageable.class), any(Duration.class)))
+                .thenReturn(new PageImpl<>(List.of(link1, link2)));
 
         scheduler.schedule();
 

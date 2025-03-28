@@ -15,6 +15,7 @@ import backend.academy.repository.orm.OrmChatLinkTagsRepository;
 import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
 import backend.academy.service.LinkService;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -59,9 +60,12 @@ public class OrmLinkService implements LinkService {
     }
 
     @Override
-    public Page<Link> getAllLinks(Pageable pageable) {
+    public Page<Link> getAllLinks(Pageable pageable, Duration duration) {
+        Instant now = Instant.now();
+        Instant timeFilter = now.minus(duration);
+
         List<Link> plainLinks = new ArrayList<>();
-        Page<OrmLink> links = linkRepository.findAll(pageable);
+        Page<OrmLink> links = linkRepository.findAll(timeFilter, pageable);
 
         for (OrmLink link : links) {
             Set<Long> primaryChatIds = chatLinkRepository.findAllChatIdByLinkId(link.getId());

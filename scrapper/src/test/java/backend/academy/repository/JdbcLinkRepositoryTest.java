@@ -8,6 +8,7 @@ import backend.academy.model.jdbc.JdbcLink;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -115,12 +116,14 @@ class JdbcLinkRepositoryTest {
     @Test
     public void findAll_WhenGetFirstPage_ThenReturnCorrectLinks() {
         List<String> expectedLinkValues = List.of("test_link1", "test_link2");
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (2)");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link1')");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link2')");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link3')");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(link_id, tg_chat_id) VALUES (1, 1), (2, 2), (3, 1)");
         Pageable pageable = PageRequest.of(0, 2);
 
-        Page<JdbcLink> page = linkRepository.findAll(pageable);
+        Page<JdbcLink> page = linkRepository.findAll(pageable, Duration.ofNanos(1));
 
         assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.getTotalElements()).isEqualTo(3);
@@ -131,17 +134,51 @@ class JdbcLinkRepositoryTest {
     @Test
     public void findAll_WhenGetSecondPage_ThenReturnCorrectLinks() {
         List<String> expectedLinkValues = List.of("test_link3");
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (2)");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link1')");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link2')");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link3')");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(link_id, tg_chat_id) VALUES (1, 1), (2, 2), (3, 1)");
         Pageable pageable = PageRequest.of(1, 2);
 
-        Page<JdbcLink> page = linkRepository.findAll(pageable);
+        Page<JdbcLink> page = linkRepository.findAll(pageable, Duration.ofNanos(1));
 
         assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.getTotalElements()).isEqualTo(3);
         List<String> links = page.getContent().stream().map(JdbcLink::getUrl).toList();
         assertThat(links).isEqualTo(expectedLinkValues);
+    }
+
+    @Test
+    public void findAll_WhenAnyLinkHasNoChats_ThenSkipThisOne() {
+        List<String> expectedLinkValues = List.of("test_link1", "test_link3");
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (2)");
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link1')");
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link2')");
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link3')");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(link_id, tg_chat_id) VALUES (1, 1), (3, 1)");
+        Pageable pageable = PageRequest.of(0, 2);
+
+        Page<JdbcLink> page = linkRepository.findAll(pageable, Duration.ofNanos(1));
+
+        assertThat(page.getTotalPages()).isEqualTo(1);
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        List<String> links = page.getContent().stream().map(JdbcLink::getUrl).toList();
+        assertThat(links).isEqualTo(expectedLinkValues);
+    }
+
+    @Test
+    public void findAll_WhenLinkWasUpdatedRecently_ThenSkipThisOne() {
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (2)");
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link1')");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(link_id, tg_chat_id) VALUES (1, 1)");
+        Pageable pageable = PageRequest.of(0, 2);
+
+        Page<JdbcLink> page = linkRepository.findAll(pageable, Duration.ofDays(1));
+
+        assertThat(page.getTotalPages()).isEqualTo(0);
+        assertThat(page.getTotalElements()).isEqualTo(0);
+        assertThat(page.getContent()).isEmpty();
     }
 
     @Test

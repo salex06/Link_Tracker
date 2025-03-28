@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,7 +25,9 @@ import backend.academy.repository.orm.OrmChatLinkRepository;
 import backend.academy.repository.orm.OrmChatLinkTagsRepository;
 import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -83,7 +86,7 @@ class OrmLinkServiceTest {
         int pageNumber = 0;
         int pageSize = 5;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        when(linkRepository.findAll(pageable))
+        when(linkRepository.findAll(any(Instant.class), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(
                         new OrmLink(link1Id, link1Url, Instant.now()), new OrmLink(link2Id, link2Url, Instant.now()))));
         when(chatLinkRepository.findAllChatIdByLinkId(link1Id)).thenReturn(expectedLink1PrimaryIds);
@@ -97,7 +100,7 @@ class OrmLinkServiceTest {
             return new Link(link.getId(), link.getLinkValue(), null, null, chatIds);
         });
 
-        Page<Link> actualLinks = linkService.getAllLinks(pageable);
+        Page<Link> actualLinks = linkService.getAllLinks(pageable, Duration.of(10, ChronoUnit.SECONDS));
 
         assertEquals(expectedLinks.getContent(), actualLinks.getContent());
     }

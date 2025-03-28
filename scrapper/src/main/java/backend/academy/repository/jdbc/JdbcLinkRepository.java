@@ -2,6 +2,7 @@ package backend.academy.repository.jdbc;
 
 import backend.academy.model.jdbc.JdbcLink;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -90,19 +91,22 @@ public class JdbcLinkRepository {
      * @param pageable информация о текущей запрашиваемой странице - размер и смещение
      * @return {@code Page<JdbcLink>} - страница с ссылками
      */
-    public Page<JdbcLink> findAll(Pageable pageable) {
+    public Page<JdbcLink> findAll(Pageable pageable, Duration duration) {
         int pageSize = pageable.getPageSize();
         long offset = pageable.getOffset();
 
-        String sql = "SELECT * FROM link LIMIT :pageSize OFFSET :offset";
+        String sql =
+                "SELECT * FROM link WHERE last_update < NOW() - cast(:duration as interval) AND id IN (SELECT link_id FROM tg_chat_link) ORDER BY id LIMIT :pageSize OFFSET :offset";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("pageSize", pageSize);
         params.addValue("offset", offset);
+        params.addValue("duration", duration.getSeconds() + " seconds");
 
         List<JdbcLink> content = namedJdbcTemplate.query(sql, params, jdbcLinkRowMapper);
-        String countSql = "SELECT COUNT(*) FROM link";
+        String countSql =
+                "SELECT COUNT(*) FROM link WHERE last_update < NOW() - cast(:duration as interval) AND id IN (SELECT link_id FROM tg_chat_link)";
 
-        Long total = namedJdbcTemplate.queryForObject(countSql, new MapSqlParameterSource(), Long.class);
+        Long total = namedJdbcTemplate.queryForObject(countSql, params, Long.class);
         if (total == null) {
             throw new RuntimeException("Unexpected Sql Error");
         }

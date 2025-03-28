@@ -4,7 +4,6 @@ import backend.academy.model.orm.OrmLink;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,8 +21,12 @@ public interface OrmLinkRepository extends JpaRepository<OrmLink, Long> {
      * @param pageable параметры текущей страницы записей
      * @return страница с набором ссылок
      */
-    @NotNull
-    Page<OrmLink> findAll(@NotNull Pageable pageable);
+    @Query(
+            value =
+                    "SELECT l FROM OrmLink l WHERE l.lastUpdate < :cutoff AND l.id IN (SELECT cl.id.linkId FROM OrmChatLink cl)",
+            countQuery =
+                    "SELECT count(l) FROM OrmLink l WHERE l.lastUpdate < :cutoff AND l.id IN (SELECT cl.id.linkId FROM OrmChatLink cl)")
+    Page<OrmLink> findAll(@Param("cutoff") Instant cutoff, Pageable pageable);
 
     /**
      * Найти ссылку по её значению
