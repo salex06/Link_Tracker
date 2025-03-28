@@ -9,8 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,235 +50,150 @@ class GitHubIssueListClientTest {
         gitHubIssueListClient = new GitHubIssueListClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
 
-        String expectedMessage1 = "Новый issue new issue\r\n" + "Автор: salex06\r\n"
-                + "Время создания: 31-12-+999999999 23:59 (UTC)\r\n"
-                + "Превью: issue description";
+        String expectedMessage1 =
+                """
+            Новый issue new issue\r
+            Автор: salex06\r
+            Время создания: 31-12-+999999999 23:59 (UTC)\r
+            Превью: issue description\r""";
         String expectedMessage2 =
-                String.format("Новый комментарий к issue README file modified %nАвтор: mattstifanelli%n"
-                        + "Время создания: 31-12-+999999999 23:59 (UTC)%n"
-                        + "Превью: Let's try again via Issue tacker...%n");
+                """
+            Новый комментарий к issue README file modified \r
+            Автор: mattstifanelli\r
+            Время создания: 31-12-+999999999 23:59 (UTC)\r
+            Превью: Let's try again via Issue tacker...\r
+            """;
         String expectedMessage3 =
-                String.format("Новый комментарий к issue Edited README via GitHub%n" + "Автор: masonzou%n"
-                        + "Время создания: 31-12-+999999999 23:59 (UTC)%n"
-                        + "Превью: test%n");
+                """
+            Новый комментарий к issue Edited README via GitHub\r
+            Автор: masonzou\r
+            Время создания: 31-12-+999999999 23:59 (UTC)\r
+            Превью: test\r
+            """;
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
-        stubFor(get("/octocat/Hello-World/issues")
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[\n" + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/salex06/testrepo/issues/5\",\n"
-                                + "        \"repository_url\": \"https://api.github.com/repos/salex06/testrepo\",\n"
-                                + "        \"labels_url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/labels{/name}\",\n"
-                                + "        \"comments_url\": \"http://localhost:"
-                                + port + "/octocat/Hello-World/issues/5/comments\",\n"
-                                + "        \"events_url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/events\",\n"
-                                + "        \"html_url\": \"https://github.com/salex06/testrepo/issues/5\",\n"
-                                + "        \"id\": 2905544102,\n"
-                                + "        \"node_id\": \"I_kwDON6S4cc6tLxWm\",\n"
-                                + "        \"number\": 5,\n"
-                                + "        \"title\": \"new issue\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"salex06\",\n"
-                                + "            \"id\": 180034077,\n"
-                                + "            \"node_id\": \"U_kgDOCrsaHQ\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/180034077?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/salex06\",\n"
-                                + "            \"html_url\": \"https://github.com/salex06\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/salex06/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/salex06/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/salex06/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/salex06/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/salex06/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/salex06/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/salex06/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/salex06/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/salex06/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"labels\": [],\n"
-                                + "        \"state\": \"open\",\n"
-                                + "        \"locked\": false,\n"
-                                + "        \"assignee\": null,\n"
-                                + "        \"assignees\": [],\n"
-                                + "        \"milestone\": null,\n"
-                                + "        \"comments\": 0,\n"
-                                + "        \"created_at\": \""
-                                + LocalDateTime.MAX.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-                                + "\",\n" + "        \"updated_at\": \"2025-03-09T16:57:04Z\",\n"
-                                + "        \"closed_at\": null,\n"
-                                + "        \"author_association\": \"OWNER\",\n"
-                                + "        \"sub_issues_summary\": {\n"
-                                + "            \"total\": 0,\n"
-                                + "            \"completed\": 0,\n"
-                                + "            \"percent_completed\": 0\n"
-                                + "        },\n"
-                                + "        \"active_lock_reason\": null,\n"
-                                + "        \"body\": \"issue description\",\n"
-                                + "        \"closed_by\": null,\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"timeline_url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/timeline\",\n"
-                                + "        \"performed_via_github_app\": null,\n"
-                                + "        \"state_reason\": null\n"
-                                + "    }\n"
-                                + "]")));
+        stubFor(
+                get("/octocat/Hello-World/issues")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                                [
+                                    {
+                                        "url": "https://api.github.com/repos/salex06/testrepo/issues/5",
+                                        "repository_url": "https://api.github.com/repos/salex06/testrepo",
+                                        "labels_url": "https://api.github.com/repos/salex06/testrepo/issues/5/labels{/name}",
+                                        "comments_url": "http://localhost:8090/octocat/Hello-World/issues/5/comments",
+                                        "events_url": "https://api.github.com/repos/salex06/testrepo/issues/5/events",
+                                        "html_url": "https://github.com/salex06/testrepo/issues/5", "id": 2905544102,
+                                        "node_id": "I_kwDON6S4cc6tLxWm", "number": 5, "title": "new issue", "user": { "login":
+                                        "salex06", "id": 180034077, "node_id": "U_kgDOCrsaHQ", "avatar_url":
+                                        "https://avatars.githubusercontent.com/u/180034077?v=4", "gravatar_id": "", "url":
+                                        "https://api.github.com/users/salex06", "html_url": "https://github.com/salex06",
+                                        "followers_url": "https://api.github.com/users/salex06/followers", "following_url":
+                                        "https://api.github.com/users/salex06/following{/other_user}", "gists_url":
+                                        "https://api.github.com/users/salex06/gists{/gist_id}", "starred_url":
+                                        "https://api.github.com/users/salex06/starred{/owner}{/repo}", "subscriptions_url":
+                                        "https://api.github.com/users/salex06/subscriptions", "organizations_url":
+                                        "https://api.github.com/users/salex06/orgs", "repos_url":
+                                        "https://api.github.com/users/salex06/repos", "events_url":
+                                        "https://api.github.com/users/salex06/events{/privacy}", "received_events_url":
+                                        "https://api.github.com/users/salex06/received_events", "type": "User", "user_view_type":
+                                        "public", "site_admin": false }, "labels": [], "state": "open", "locked": false,
+                                        "assignee": null, "assignees": [], "milestone": null, "comments": 0, "created_at":
+                                        "+999999999-12-31T23:59:59Z", "updated_at": "2025-03-09T16:57:04Z", "closed_at": null,
+                                        "author_association": "OWNER", "sub_issues_summary": { "total": 0, "completed": 0,
+                                        "percent_completed": 0 }, "active_lock_reason": null, "body": "issue description",
+                                        "closed_by": null, "reactions": { "url":
+                                        "https://api.github.com/repos/salex06/testrepo/issues/5/reactions", "total_count": 0,
+                                        "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0, "rocket": 0,
+                                        "eyes": 0 }, "timeline_url":
+                                        "https://api.github.com/repos/salex06/testrepo/issues/5/timeline",
+                                        "performed_via_github_app": null, "state_reason": null
+                                    }
+                                ]
+                                """)));
 
-        stubFor(get("/octocat/Hello-World/issues/5/comments")
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[\n" + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825\",\n"
-                                + "        \"html_url\": \"https://github.com/octocat/Hello-World/pull/2#issuecomment-1146825\",\n"
-                                + "        \"issue_url\": \"https://api.github.com/repos/octocat/Hello-World/issues/2\",\n"
-                                + "        \"id\": 1146825,\n"
-                                + "        \"node_id\": \"MDEyOklzc3VlQ29tbWVudDExNDY4MjU=\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"mattstifanelli\",\n"
-                                + "            \"id\": 783382,\n"
-                                + "            \"node_id\": \"MDQ6VXNlcjc4MzM4Mg==\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/783382?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/mattstifanelli\",\n"
-                                + "            \"html_url\": \"https://github.com/mattstifanelli\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/mattstifanelli/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/mattstifanelli/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/mattstifanelli/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/mattstifanelli/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/mattstifanelli/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/mattstifanelli/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/mattstifanelli/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/mattstifanelli/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/mattstifanelli/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"created_at\": \""
-                                + LocalDateTime.MAX.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-                                + "\",\n" + "        \"updated_at\": \"2011-05-12T14:34:22Z\",\n"
-                                + "        \"author_association\": \"NONE\",\n"
-                                + "        \"body\": \"Let's try again via Issue tacker...\\n\",\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"performed_via_github_app\": null\n"
-                                + "    },\n"
-                                + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876\",\n"
-                                + "        \"html_url\": \"https://github.com/octocat/Hello-World/pull/3#issuecomment-1325876\",\n"
-                                + "        \"issue_url\": \"https://api.github.com/repos/octocat/Hello-World/issues/3\",\n"
-                                + "        \"id\": 1325876,\n"
-                                + "        \"node_id\": \"MDEyOklzc3VlQ29tbWVudDEzMjU4NzY=\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"shailendra75\",\n"
-                                + "            \"id\": 831975,\n"
-                                + "            \"node_id\": \"MDQ6VXNlcjgzMTk3NQ==\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/831975?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/shailendra75\",\n"
-                                + "            \"html_url\": \"https://github.com/shailendra75\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/shailendra75/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/shailendra75/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/shailendra75/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/shailendra75/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/shailendra75/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/shailendra75/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/shailendra75/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/shailendra75/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/shailendra75/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"created_at\": \"2011-06-08T10:58:32Z\",\n"
-                                + "        \"updated_at\": \"2011-06-08T10:58:32Z\",\n"
-                                + "        \"author_association\": \"NONE\",\n"
-                                + "        \"body\": \"getting famlirized with git\\n\",\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"performed_via_github_app\": null\n"
-                                + "    },\n"
-                                + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258\",\n"
-                                + "        \"html_url\": \"https://github.com/octocat/Hello-World/pull/1#issuecomment-1340258\",\n"
-                                + "        \"issue_url\": \"https://api.github.com/repos/octocat/Hello-World/issues/1\",\n"
-                                + "        \"id\": 1340258,\n"
-                                + "        \"node_id\": \"MDEyOklzc3VlQ29tbWVudDEzNDAyNTg=\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"masonzou\",\n"
-                                + "            \"id\": 841296,\n"
-                                + "            \"node_id\": \"MDQ6VXNlcjg0MTI5Ng==\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/841296?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/masonzou\",\n"
-                                + "            \"html_url\": \"https://github.com/masonzou\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/masonzou/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/masonzou/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/masonzou/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/masonzou/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/masonzou/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/masonzou/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/masonzou/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/masonzou/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/masonzou/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"created_at\": \""
-                                + LocalDateTime.MAX.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-                                + "\",\n" + "        \"updated_at\": \"2011-06-10T07:30:27Z\",\n"
-                                + "        \"author_association\": \"NONE\",\n"
-                                + "        \"body\": \"test\\n\",\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"performed_via_github_app\": null\n"
-                                + "    }"
-                                + "]")));
+        stubFor(
+                get("/octocat/Hello-World/issues/5/comments")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                                [
+                                    {
+                                        "url": "https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825",
+                                        "html_url": "https://github.com/octocat/Hello-World/pull/2#issuecomment-1146825",
+                                        "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/2", "id": 1146825,
+                                        "node_id": "MDEyOklzc3VlQ29tbWVudDExNDY4MjU=", "user": { "login": "mattstifanelli",
+                                        "id": 783382, "node_id": "MDQ6VXNlcjc4MzM4Mg==", "avatar_url":
+                                        "https://avatars.githubusercontent.com/u/783382?v=4", "gravatar_id": "", "url":
+                                        "https://api.github.com/users/mattstifanelli", "html_url": "https://github.com/mattstifanelli",
+                                        "followers_url": "https://api.github.com/users/mattstifanelli/followers", "following_url":
+                                        "https://api.github.com/users/mattstifanelli/following{/other_user}", "gists_url":
+                                        "https://api.github.com/users/mattstifanelli/gists{/gist_id}", "starred_url":
+                                        "https://api.github.com/users/mattstifanelli/starred{/owner}{/repo}", "subscriptions_url":
+                                        "https://api.github.com/users/mattstifanelli/subscriptions", "organizations_url":
+                                        "https://api.github.com/users/mattstifanelli/orgs", "repos_url":
+                                        "https://api.github.com/users/mattstifanelli/repos", "events_url":
+                                        "https://api.github.com/users/mattstifanelli/events{/privacy}",
+                                        "received_events_url": "https://api.github.com/users/mattstifanelli/received_events",
+                                        "type": "User", "user_view_type": "public", "site_admin": false },
+                                        "created_at": "+999999999-12-31T23:59:59Z", "updated_at": "2011-05-12T14:34:22Z",
+                                        "author_association": "NONE", "body": "Let's try again via Issue tacker...",
+                                        "reactions": { "url":
+                                        "https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825/reactions",
+                                        "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                        "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }, { "url":
+                                        "https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876",
+                                        "html_url": "https://github.com/octocat/Hello-World/pull/3#issuecomment-1325876",
+                                        "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/3", "id": 1325876,
+                                        "node_id": "MDEyOklzc3VlQ29tbWVudDEzMjU4NzY=", "user": { "login": "shailendra75",
+                                        "id": 831975, "node_id": "MDQ6VXNlcjgzMTk3NQ==", "avatar_url":
+                                        "https://avatars.githubusercontent.com/u/831975?v=4", "gravatar_id": "", "url":
+                                        "https://api.github.com/users/shailendra75", "html_url": "https://github.com/shailendra75",
+                                        "followers_url": "https://api.github.com/users/shailendra75/followers", "following_url":
+                                        "https://api.github.com/users/shailendra75/following{/other_user}", "gists_url":
+                                        "https://api.github.com/users/shailendra75/gists{/gist_id}", "starred_url":
+                                        "https://api.github.com/users/shailendra75/starred{/owner}{/repo}", "subscriptions_url":
+                                        "https://api.github.com/users/shailendra75/subscriptions", "organizations_url":
+                                        "https://api.github.com/users/shailendra75/orgs", "repos_url":
+                                        "https://api.github.com/users/shailendra75/repos", "events_url":
+                                        "https://api.github.com/users/shailendra75/events{/privacy}", "received_events_url":
+                                        "https://api.github.com/users/shailendra75/received_events", "type": "User",
+                                        "user_view_type": "public", "site_admin": false }, "created_at": "2011-06-08T10:58:32Z",
+                                        "updated_at": "2011-06-08T10:58:32Z", "author_association": "NONE", "body":
+                                        "getting famlirized with git", "reactions": { "url":
+                                        "https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876/reactions",
+                                        "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                        "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }, { "url":
+                                        "https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258",
+                                        "html_url": "https://github.com/octocat/Hello-World/pull/1#issuecomment-1340258",
+                                        "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/1", "id": 1340258,
+                                        "node_id": "MDEyOklzc3VlQ29tbWVudDEzNDAyNTg=", "user": { "login": "masonzou", "id": 841296,
+                                        "node_id": "MDQ6VXNlcjg0MTI5Ng==", "avatar_url": "https://avatars.githubusercontent.com/u/841296?v=4",
+                                        "gravatar_id": "", "url": "https://api.github.com/users/masonzou", "html_url":
+                                        "https://github.com/masonzou", "followers_url": "https://api.github.com/users/masonzou/followers",
+                                        "following_url": "https://api.github.com/users/masonzou/following{/other_user}", "gists_url":
+                                        "https://api.github.com/users/masonzou/gists{/gist_id}", "starred_url":
+                                        "https://api.github.com/users/masonzou/starred{/owner}{/repo}", "subscriptions_url":
+                                        "https://api.github.com/users/masonzou/subscriptions", "organizations_url":
+                                        "https://api.github.com/users/masonzou/orgs",
+                                        "repos_url": "https://api.github.com/users/masonzou/repos", "events_url":
+                                        "https://api.github.com/users/masonzou/events{/privacy}", "received_events_url":
+                                        "https://api.github.com/users/masonzou/received_events", "type": "User",
+                                        "user_view_type": "public", "site_admin": false }, "created_at":
+                                        "+999999999-12-31T23:59:59Z", "updated_at": "2011-06-10T07:30:27Z",
+                                        "author_association": "NONE", "body": "test", "reactions": { "url":
+                                        "https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258/reactions",
+                                        "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                        "rocket": 0, "eyes": 0 }, "performed_via_github_app": null
+                                    }
+                                ]
+                                """)));
 
         List<String> updates = gitHubIssueListClient.getUpdates(link);
 
@@ -298,226 +211,126 @@ class GitHubIssueListClientTest {
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
 
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
-        stubFor(get("/octocat/Hello-World/issues")
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[\n" + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/salex06/testrepo/issues/5\",\n"
-                                + "        \"repository_url\": \"https://api.github.com/repos/salex06/testrepo\",\n"
-                                + "        \"labels_url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/labels{/name}\",\n"
-                                + "        \"comments_url\": \"http://localhost:"
-                                + port + "/octocat/Hello-World/issues/5/comments\",\n"
-                                + "        \"events_url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/events\",\n"
-                                + "        \"html_url\": \"https://github.com/salex06/testrepo/issues/5\",\n"
-                                + "        \"id\": 2905544102,\n"
-                                + "        \"node_id\": \"I_kwDON6S4cc6tLxWm\",\n"
-                                + "        \"number\": 5,\n"
-                                + "        \"title\": \"new issue\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"salex06\",\n"
-                                + "            \"id\": 180034077,\n"
-                                + "            \"node_id\": \"U_kgDOCrsaHQ\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/180034077?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/salex06\",\n"
-                                + "            \"html_url\": \"https://github.com/salex06\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/salex06/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/salex06/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/salex06/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/salex06/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/salex06/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/salex06/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/salex06/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/salex06/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/salex06/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"labels\": [],\n"
-                                + "        \"state\": \"open\",\n"
-                                + "        \"locked\": false,\n"
-                                + "        \"assignee\": null,\n"
-                                + "        \"assignees\": [],\n"
-                                + "        \"milestone\": null,\n"
-                                + "        \"comments\": 0,\n"
-                                + "        \"created_at\": \""
-                                + LocalDateTime.of(1, 1, 1, 0, 0, 0)
-                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-                                + "\",\n" + "        \"updated_at\": \"2025-03-09T16:57:04Z\",\n"
-                                + "        \"closed_at\": null,\n"
-                                + "        \"author_association\": \"OWNER\",\n"
-                                + "        \"sub_issues_summary\": {\n"
-                                + "            \"total\": 0,\n"
-                                + "            \"completed\": 0,\n"
-                                + "            \"percent_completed\": 0\n"
-                                + "        },\n"
-                                + "        \"active_lock_reason\": null,\n"
-                                + "        \"body\": \"issue description\",\n"
-                                + "        \"closed_by\": null,\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"timeline_url\": \"https://api.github.com/repos/salex06/testrepo/issues/5/timeline\",\n"
-                                + "        \"performed_via_github_app\": null,\n"
-                                + "        \"state_reason\": null\n"
-                                + "    }\n"
-                                + "]")));
+        stubFor(
+                get("/octocat/Hello-World/issues")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                                [
+                                { "url": "https://api.github.com/repos/salex06/testrepo/issues/5",
+                                "repository_url": "https://api.github.com/repos/salex06/testrepo",
+                                "labels_url": "https://api.github.com/repos/salex06/testrepo/issues/5/labels{/name}",
+                                "comments_url": "http://localhost:8090/octocat/Hello-World/issues/5/comments",
+                                "events_url": "https://api.github.com/repos/salex06/testrepo/issues/5/events",
+                                "html_url": "https://github.com/salex06/testrepo/issues/5", "id": 2905544102, "node_id":
+                                "I_kwDON6S4cc6tLxWm", "number": 5, "title": "new issue", "user": { "login": "salex06",
+                                "id": 180034077, "node_id": "U_kgDOCrsaHQ", "avatar_url":
+                                "https://avatars.githubusercontent.com/u/180034077?v=4", "gravatar_id": "", "url":
+                                "https://api.github.com/users/salex06", "html_url": "https://github.com/salex06",
+                                "followers_url": "https://api.github.com/users/salex06/followers", "following_url":
+                                "https://api.github.com/users/salex06/following{/other_user}", "gists_url":
+                                "https://api.github.com/users/salex06/gists{/gist_id}", "starred_url":
+                                "https://api.github.com/users/salex06/starred{/owner}{/repo}", "subscriptions_url":
+                                "https://api.github.com/users/salex06/subscriptions", "organizations_url":
+                                "https://api.github.com/users/salex06/orgs", "repos_url":
+                                "https://api.github.com/users/salex06/repos", "events_url":
+                                "https://api.github.com/users/salex06/events{/privacy}",
+                                "received_events_url": "https://api.github.com/users/salex06/received_events",
+                                "type": "User", "user_view_type": "public", "site_admin": false }, "labels": [],
+                                "state": "open", "locked": false, "assignee": null, "assignees": [], "milestone": null,
+                                "comments": 0, "created_at": "0001-01-01T00:00:00Z",
+                                "updated_at": "2025-03-09T16:57:04Z", "closed_at": null, "author_association":
+                                "OWNER", "sub_issues_summary": { "total": 0, "completed": 0, "percent_completed": 0 },
+                                "active_lock_reason": null, "body": "issue description", "closed_by": null, "reactions":
+                                { "url": "https://api.github.com/repos/salex06/testrepo/issues/5/reactions",
+                                "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                "rocket": 0, "eyes": 0 },
+                                "timeline_url": "https://api.github.com/repos/salex06/testrepo/issues/5/timeline",
+                                "performed_via_github_app": null, "state_reason": null } ]
+                                """)));
 
-        stubFor(get("/octocat/Hello-World/issues/5/comments")
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[\n" + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825\",\n"
-                                + "        \"html_url\": \"https://github.com/octocat/Hello-World/pull/2#issuecomment-1146825\",\n"
-                                + "        \"issue_url\": \"https://api.github.com/repos/octocat/Hello-World/issues/2\",\n"
-                                + "        \"id\": 1146825,\n"
-                                + "        \"node_id\": \"MDEyOklzc3VlQ29tbWVudDExNDY4MjU=\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"mattstifanelli\",\n"
-                                + "            \"id\": 783382,\n"
-                                + "            \"node_id\": \"MDQ6VXNlcjc4MzM4Mg==\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/783382?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/mattstifanelli\",\n"
-                                + "            \"html_url\": \"https://github.com/mattstifanelli\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/mattstifanelli/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/mattstifanelli/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/mattstifanelli/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/mattstifanelli/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/mattstifanelli/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/mattstifanelli/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/mattstifanelli/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/mattstifanelli/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/mattstifanelli/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"created_at\": \""
-                                + LocalDateTime.of(1, 1, 1, 0, 0, 0)
-                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-                                + "\",\n" + "        \"updated_at\": \"2011-05-12T14:34:22Z\",\n"
-                                + "        \"author_association\": \"NONE\",\n"
-                                + "        \"body\": \"Let's try again via Issue tacker...\\n\",\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"performed_via_github_app\": null\n"
-                                + "    },\n"
-                                + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876\",\n"
-                                + "        \"html_url\": \"https://github.com/octocat/Hello-World/pull/3#issuecomment-1325876\",\n"
-                                + "        \"issue_url\": \"https://api.github.com/repos/octocat/Hello-World/issues/3\",\n"
-                                + "        \"id\": 1325876,\n"
-                                + "        \"node_id\": \"MDEyOklzc3VlQ29tbWVudDEzMjU4NzY=\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"shailendra75\",\n"
-                                + "            \"id\": 831975,\n"
-                                + "            \"node_id\": \"MDQ6VXNlcjgzMTk3NQ==\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/831975?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/shailendra75\",\n"
-                                + "            \"html_url\": \"https://github.com/shailendra75\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/shailendra75/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/shailendra75/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/shailendra75/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/shailendra75/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/shailendra75/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/shailendra75/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/shailendra75/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/shailendra75/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/shailendra75/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"created_at\": \"2011-06-08T10:58:32Z\",\n"
-                                + "        \"updated_at\": \"2011-06-08T10:58:32Z\",\n"
-                                + "        \"author_association\": \"NONE\",\n"
-                                + "        \"body\": \"getting famlirized with git\\n\",\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"performed_via_github_app\": null\n"
-                                + "    },\n"
-                                + "    {\n"
-                                + "        \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258\",\n"
-                                + "        \"html_url\": \"https://github.com/octocat/Hello-World/pull/1#issuecomment-1340258\",\n"
-                                + "        \"issue_url\": \"https://api.github.com/repos/octocat/Hello-World/issues/1\",\n"
-                                + "        \"id\": 1340258,\n"
-                                + "        \"node_id\": \"MDEyOklzc3VlQ29tbWVudDEzNDAyNTg=\",\n"
-                                + "        \"user\": {\n"
-                                + "            \"login\": \"masonzou\",\n"
-                                + "            \"id\": 841296,\n"
-                                + "            \"node_id\": \"MDQ6VXNlcjg0MTI5Ng==\",\n"
-                                + "            \"avatar_url\": \"https://avatars.githubusercontent.com/u/841296?v=4\",\n"
-                                + "            \"gravatar_id\": \"\",\n"
-                                + "            \"url\": \"https://api.github.com/users/masonzou\",\n"
-                                + "            \"html_url\": \"https://github.com/masonzou\",\n"
-                                + "            \"followers_url\": \"https://api.github.com/users/masonzou/followers\",\n"
-                                + "            \"following_url\": \"https://api.github.com/users/masonzou/following{/other_user}\",\n"
-                                + "            \"gists_url\": \"https://api.github.com/users/masonzou/gists{/gist_id}\",\n"
-                                + "            \"starred_url\": \"https://api.github.com/users/masonzou/starred{/owner}{/repo}\",\n"
-                                + "            \"subscriptions_url\": \"https://api.github.com/users/masonzou/subscriptions\",\n"
-                                + "            \"organizations_url\": \"https://api.github.com/users/masonzou/orgs\",\n"
-                                + "            \"repos_url\": \"https://api.github.com/users/masonzou/repos\",\n"
-                                + "            \"events_url\": \"https://api.github.com/users/masonzou/events{/privacy}\",\n"
-                                + "            \"received_events_url\": \"https://api.github.com/users/masonzou/received_events\",\n"
-                                + "            \"type\": \"User\",\n"
-                                + "            \"user_view_type\": \"public\",\n"
-                                + "            \"site_admin\": false\n"
-                                + "        },\n"
-                                + "        \"created_at\": \""
-                                + LocalDateTime.of(1, 1, 1, 0, 0, 0)
-                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"))
-                                + "\",\n" + "        \"updated_at\": \"2011-06-10T07:30:27Z\",\n"
-                                + "        \"author_association\": \"NONE\",\n"
-                                + "        \"body\": \"test\\n\",\n"
-                                + "        \"reactions\": {\n"
-                                + "            \"url\": \"https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258/reactions\",\n"
-                                + "            \"total_count\": 0,\n"
-                                + "            \"+1\": 0,\n"
-                                + "            \"-1\": 0,\n"
-                                + "            \"laugh\": 0,\n"
-                                + "            \"hooray\": 0,\n"
-                                + "            \"confused\": 0,\n"
-                                + "            \"heart\": 0,\n"
-                                + "            \"rocket\": 0,\n"
-                                + "            \"eyes\": 0\n"
-                                + "        },\n"
-                                + "        \"performed_via_github_app\": null\n"
-                                + "    }"
-                                + "]")));
+        stubFor(
+                get("/octocat/Hello-World/issues/5/comments")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                                [
+                                {
+                                "url": "https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825",
+                                "html_url": "https://github.com/octocat/Hello-World/pull/2#issuecomment-1146825",
+                                "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/2", "id": 1146825,
+                                "node_id": "MDEyOklzc3VlQ29tbWVudDExNDY4MjU=", "user": { "login": "mattstifanelli",
+                                "id": 783382, "node_id": "MDQ6VXNlcjc4MzM4Mg==", "avatar_url":
+                                "https://avatars.githubusercontent.com/u/783382?v=4", "gravatar_id": "", "url":
+                                "https://api.github.com/users/mattstifanelli", "html_url":
+                                "https://github.com/mattstifanelli", "followers_url":
+                                "https://api.github.com/users/mattstifanelli/followers", "following_url":
+                                "https://api.github.com/users/mattstifanelli/following{/other_user}", "gists_url":
+                                "https://api.github.com/users/mattstifanelli/gists{/gist_id}", "starred_url":
+                                "https://api.github.com/users/mattstifanelli/starred{/owner}{/repo}",
+                                "subscriptions_url": "https://api.github.com/users/mattstifanelli/subscriptions",
+                                "organizations_url": "https://api.github.com/users/mattstifanelli/orgs", "repos_url":
+                                "https://api.github.com/users/mattstifanelli/repos", "events_url":
+                                "https://api.github.com/users/mattstifanelli/events{/privacy}", "received_events_url":
+                                "https://api.github.com/users/mattstifanelli/received_events", "type": "User",
+                                "user_view_type": "public", "site_admin": false }, "created_at": "0001-01-01T00:00:00Z",
+                                "updated_at": "2011-05-12T14:34:22Z", "author_association": "NONE", "body":
+                                "Let's try again via Issue tacker...", "reactions": { "url":
+                                "https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825/reactions",
+                                "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }, { "url":
+                                "https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876", "html_url":
+                                "https://github.com/octocat/Hello-World/pull/3#issuecomment-1325876", "issue_url":
+                                "https://api.github.com/repos/octocat/Hello-World/issues/3", "id": 1325876, "node_id":
+                                "MDEyOklzc3VlQ29tbWVudDEzMjU4NzY=", "user": { "login": "shailendra75", "id": 831975,
+                                "node_id": "MDQ6VXNlcjgzMTk3NQ==", "avatar_url":
+                                "https://avatars.githubusercontent.com/u/831975?v=4", "gravatar_id": "", "url":
+                                "https://api.github.com/users/shailendra75",
+                                "html_url": "https://github.com/shailendra75", "followers_url":
+                                "https://api.github.com/users/shailendra75/followers", "following_url":
+                                "https://api.github.com/users/shailendra75/following{/other_user}", "gists_url":
+                                "https://api.github.com/users/shailendra75/gists{/gist_id}", "starred_url":
+                                "https://api.github.com/users/shailendra75/starred{/owner}{/repo}", "subscriptions_url":
+                                "https://api.github.com/users/shailendra75/subscriptions", "organizations_url":
+                                "https://api.github.com/users/shailendra75/orgs", "repos_url":
+                                "https://api.github.com/users/shailendra75/repos", "events_url":
+                                "https://api.github.com/users/shailendra75/events{/privacy}", "received_events_url":
+                                "https://api.github.com/users/shailendra75/received_events", "type": "User",
+                                "user_view_type": "public", "site_admin": false }, "created_at": "2011-06-08T10:58:32Z",
+                                "updated_at": "2011-06-08T10:58:32Z", "author_association": "NONE", "body":
+                                "getting famlirized with git", "reactions": { "url":
+                                "https://api.github.com/repos/octocat/Hello-World/issues/comments/1325876/reactions",
+                                "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }, { "url":
+                                "https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258",
+                                "html_url": "https://github.com/octocat/Hello-World/pull/1#issuecomment-1340258",
+                                "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/1",
+                                "id": 1340258, "node_id": "MDEyOklzc3VlQ29tbWVudDEzNDAyNTg=", "user": { "login":
+                                "masonzou", "id": 841296, "node_id": "MDQ6VXNlcjg0MTI5Ng==", "avatar_url":
+                                "https://avatars.githubusercontent.com/u/841296?v=4", "gravatar_id": "", "url":
+                                "https://api.github.com/users/masonzou", "html_url": "https://github.com/masonzou",
+                                "followers_url": "https://api.github.com/users/masonzou/followers", "following_url":
+                                "https://api.github.com/users/masonzou/following{/other_user}", "gists_url":
+                                "https://api.github.com/users/masonzou/gists{/gist_id}", "starred_url":
+                                "https://api.github.com/users/masonzou/starred{/owner}{/repo}", "subscriptions_url":
+                                "https://api.github.com/users/masonzou/subscriptions", "organizations_url":
+                                "https://api.github.com/users/masonzou/orgs", "repos_url":
+                                "https://api.github.com/users/masonzou/repos", "events_url":
+                                "https://api.github.com/users/masonzou/events{/privacy}", "received_events_url":
+                                "https://api.github.com/users/masonzou/received_events", "type": "User",
+                                "user_view_type": "public", "site_admin": false }, "created_at": "0001-01-01T00:00:00Z",
+                                "updated_at": "2011-06-10T07:30:27Z", "author_association": "NONE", "body": "test",
+                                "reactions": { "url":
+                                "https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258/reactions",
+                                "total_count": 0, "+1": 0, "-1": 0, "laugh": 0, "hooray": 0, "confused": 0, "heart": 0,
+                                "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }]
+                                """)));
 
         List<String> updates = gitHubIssueListClient.getUpdates(link);
 
