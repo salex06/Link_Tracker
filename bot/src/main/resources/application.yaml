@@ -1,5 +1,9 @@
 app:
-  telegram-token: ${TELEGRAM_TOKEN} # env variable
+  telegram-token: ${APP_TELEGRAM_TOKEN} # env variable
+  telegram-name: ${APP_TELEGRAM_NAME}
+
+scrapper:
+  base-url: "http://localhost:8081"
 
 spring:
   application:
@@ -18,3 +22,8 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui
+
+logging:
+  structured:
+    format:
+      console: ecs
