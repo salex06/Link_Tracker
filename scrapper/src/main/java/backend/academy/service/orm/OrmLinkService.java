@@ -15,6 +15,7 @@ import backend.academy.repository.orm.OrmChatLinkTagsRepository;
 import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
 import backend.academy.service.LinkService;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -174,5 +175,15 @@ public class OrmLinkService implements LinkService {
         return chatRepository.findAllById(primaryChatIds).stream()
                 .map(OrmChat::getChatId)
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public void updateLastUpdateTime(Link link, Instant updateTime) {
+        link.setLastUpdateTime(updateTime);
+        Optional<OrmLink> ormLink = linkRepository.findByLinkValue(link.getUrl());
+        if (ormLink.isEmpty()) {
+            return;
+        }
+        linkRepository.updateLink(ormLink.orElseThrow().getId(), link.getUrl(), link.getLastUpdateTime());
     }
 }

@@ -1,8 +1,7 @@
 package backend.academy.model.plain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,15 +16,10 @@ public class Link {
     private Set<Long> tgChatIds;
 
     @JsonIgnore
-    private LocalDateTime lastUpdateTime;
+    private Instant lastUpdateTime;
 
     public Link(
-            Long id,
-            String url,
-            List<String> tags,
-            List<String> filters,
-            Set<Long> tgChatIds,
-            LocalDateTime lastUpdateTime) {
+            Long id, String url, List<String> tags, List<String> filters, Set<Long> tgChatIds, Instant lastUpdateTime) {
         this.id = id;
         this.url = url;
         this.tags = tags;
@@ -40,7 +34,7 @@ public class Link {
         this.tags = tags;
         this.filters = filters;
         this.tgChatIds = tgChatIds;
-        this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
+        this.lastUpdateTime = Instant.now();
     }
 
     public Link(Long id, String url, Set<Long> tgChatIds) {
@@ -49,7 +43,7 @@ public class Link {
         this.tgChatIds = tgChatIds;
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
-        this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
+        this.lastUpdateTime = Instant.now();
     }
 
     public Link(Long id, String url) {
@@ -58,7 +52,7 @@ public class Link {
         this.tgChatIds = new HashSet<>();
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
-        this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
+        this.lastUpdateTime = Instant.now();
     }
 
     public Link() {
@@ -67,7 +61,7 @@ public class Link {
         this.tgChatIds = new HashSet<>();
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
-        this.lastUpdateTime = LocalDateTime.now(ZoneOffset.UTC);
+        this.lastUpdateTime = Instant.now();
     }
 
     public Long getId() {
@@ -82,7 +76,7 @@ public class Link {
         return tgChatIds;
     }
 
-    public LocalDateTime getLastUpdateTime() {
+    public Instant getLastUpdateTime() {
         return lastUpdateTime;
     }
 
@@ -106,7 +100,7 @@ public class Link {
         this.tgChatIds = tgChatIds;
     }
 
-    public void setLastUpdateTime(LocalDateTime lastUpdateTime) {
+    public void setLastUpdateTime(Instant lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
     }
 

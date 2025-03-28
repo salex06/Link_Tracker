@@ -7,7 +7,7 @@ import backend.academy.model.jdbc.JdbcLink;
 import backend.academy.model.mapper.link.LinkMapper;
 import backend.academy.model.orm.OrmLink;
 import backend.academy.model.plain.Link;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class StandardLinkMapperTest {
         List<String> expectedTags = List.of("tag1", "tag2");
         List<String> expectedFilters = List.of("filter1", "filter2");
         Set<Long> expectedChatIds = Set.of(1L, 2L);
-        OrmLink jdbcLink = new OrmLink(expectedId, expectedUrl, LocalDateTime.now());
+        OrmLink jdbcLink = new OrmLink(expectedId, expectedUrl, Instant.now());
 
         Link actualLink = standardLinkMapper.toPlainLink(jdbcLink, expectedTags, expectedFilters, expectedChatIds);
 

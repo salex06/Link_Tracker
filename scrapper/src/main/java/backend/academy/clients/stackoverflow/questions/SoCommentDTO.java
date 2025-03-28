@@ -5,7 +5,7 @@ import backend.academy.clients.stackoverflow.SoOwner;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Модель комментария в системе
@@ -19,9 +19,8 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SoCommentDTO(
         @JsonProperty("owner") SoOwner owner,
-        @JsonProperty("creation_date")
-                @JsonDeserialize(converter = JsonConverters.TimeStampToLocalDateTimeConverter.class)
-                LocalDateTime createdAt,
+        @JsonProperty("creation_date") @JsonDeserialize(converter = JsonConverters.TimeStampToInstantConverter.class)
+                Instant createdAt,
         @JsonProperty("post_id") Long postId,
         @JsonProperty("comment_id") Long commentId,
         @JsonProperty("body_markdown") @JsonDeserialize(converter = JsonConverters.StringTruncator.class)

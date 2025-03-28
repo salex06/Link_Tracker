@@ -6,7 +6,7 @@ import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -65,7 +65,7 @@ public class GitHubSingleIssueClient extends Client {
         }
 
         List<String> updatesList = new ArrayList<>();
-        LocalDateTime previousUpdateTime = link.getLastUpdateTime();
+        Instant previousUpdateTime = link.getLastUpdateTime();
 
         if (wasUpdated(previousUpdateTime, gitHubIssue.updatedAt())) {
             updatesList.add(
@@ -76,7 +76,7 @@ public class GitHubSingleIssueClient extends Client {
         return updatesList;
     }
 
-    private boolean wasUpdated(LocalDateTime previousUpdateTime, LocalDateTime currentUpdateTime) {
+    private boolean wasUpdated(Instant previousUpdateTime, Instant currentUpdateTime) {
         return previousUpdateTime == null || previousUpdateTime.isBefore(currentUpdateTime);
     }
 }

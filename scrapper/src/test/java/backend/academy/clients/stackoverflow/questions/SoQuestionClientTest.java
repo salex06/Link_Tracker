@@ -52,20 +52,20 @@ class SoQuestionClientTest {
 
         String expectedMessage1 = "Новый комментарий к вопросу How do I parse a string to a float or int?\r\n"
                 + "Автор: InfiniteStack\r\n"
-                + "Время создания: 2277-02-08T13:34:15\r\n"
+                + "Время создания: 2277-02-08T13:34:15Z\r\n"
                 + "Превью: Also make sure the string is actually can be converted to float[,](https://semicolon.dev/stackoverflow/question/8/how-to-convert-a-string-to-a-float-in-python) one way of doing that is to write a cust";
         String expectedMessage2 = String.format(
-                "Новый ответ к вопросу How do I parse a string to a float or int?%nАвтор: Blaze%nВремя создания: 2278-01-01T11:57:33%nПревью: <p>These two functions can encode <strong>any</strong> string to a big number and vice versa</p>\n<pre><code>alphabet = '0123456789abcdefghijklmnopqrstuvwxyz'\n"
+                "Новый ответ к вопросу How do I parse a string to a float or int?%nАвтор: Blaze%nВремя создания: 2278-01-01T11:57:33Z%nПревью: <p>These two functions can encode <strong>any</strong> string to a big number and vice versa</p>\n<pre><code>alphabet = '0123456789abcdefghijklmnopqrstuvwxyz'\n"
                         + "\n"
                         + "def string_to_int(string):\n"
                         + "    intstring");
         String expectedMessage3 = "Новый комментарий к вопросу How do I parse a string to a float or int?\r\n"
                 + "Автор: Dendi Handian\r\n"
-                + "Время создания: 2275-09-02T21:40:20\r\n"
+                + "Время создания: 2275-09-02T21:40:20Z\r\n"
                 + "Превью: @ibnɘꟻ I&#39;m aware of it, but the `-&gt;format()` gives you the ability to globally store the string format in config. So, whenever there is a request to change the format everywhere, you don&#39;t";
         String expectedMessage4 = "Новый комментарий к вопросу How do I parse a string to a float or int?\r\n"
                 + "Автор: Joseph Prosper\r\n"
-                + "Время создания: 2277-10-15T19:53:40\r\n"
+                + "Время создания: 2277-10-15T19:53:40Z\r\n"
                 + "Превью: Body example";
         Link link = new Link(1L, "https://stackoverflow.com/questions/6031003");
         stubFor(get("/questions/6031003?site=stackoverflow")

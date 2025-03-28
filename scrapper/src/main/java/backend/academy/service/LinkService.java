@@ -3,6 +3,7 @@ package backend.academy.service;
 import backend.academy.clients.Client;
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -68,4 +69,12 @@ public interface LinkService {
 
         return false;
     }
+
+    /**
+     * Обновить время последнего обновления
+     *
+     * @param link ссылка
+     * @param updateTime новое последнее время обновления
+     */
+    void updateLastUpdateTime(Link link, Instant updateTime);
 }

@@ -1,6 +1,8 @@
 package backend.academy.repository.jdbc;
 
 import backend.academy.model.jdbc.JdbcLink;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,7 @@ public class JdbcLinkRepository {
     private final RowMapper<JdbcLink> jdbcLinkRowMapper = (rs, rn) -> new JdbcLink(
             rs.getLong("id"),
             rs.getString("link_value"),
-            rs.getTimestamp("last_update").toLocalDateTime());
+            rs.getTimestamp("last_update").toInstant());
 
     /**
      * Сохранить ссылку в БД. Если ссылка уже записана в БД - обновляет запись
@@ -74,7 +76,7 @@ public class JdbcLinkRepository {
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkValue", jdbcLink.getUrl());
-        params.addValue("lastUpdate", jdbcLink.getLastUpdateTime());
+        params.addValue("lastUpdate", Timestamp.from(jdbcLink.getLastUpdateTime()));
         params.addValue("id", jdbcLink.getId());
 
         namedJdbcTemplate.update(sql, params);
@@ -183,5 +185,25 @@ public class JdbcLinkRepository {
         params.addValue("chatId", chatId);
 
         return namedJdbcTemplate.query(sql, params, jdbcLinkRowMapper);
+    }
+
+    /**
+     * Обновить ссылку
+     *
+     * @param id идентификатор ссылки
+     * @param url значение ссылки (поле обновляется)
+     * @param lastUpdateTime время последнего обновления (поле обновляется)
+     */
+    @Modifying
+    @Transactional
+    public void updateLink(Long id, String url, Instant lastUpdateTime) {
+        String sql = "UPDATE link SET link_value = :linkValue, last_update = :lastUpdate WHERE id = :id";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("linkValue", url);
+        params.addValue("id", id);
+        params.addValue("lastUpdate", Timestamp.from(lastUpdateTime));
+
+        namedJdbcTemplate.update(sql, params);
     }
 }

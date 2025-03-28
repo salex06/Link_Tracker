@@ -6,7 +6,7 @@ import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -71,10 +71,9 @@ public class GitHubRepositoryClient extends Client {
 
     private String generateUpdateText(GitHubRepositoryDTO body, Link link) {
         String updateDescription = "";
-
-        LocalDateTime previousUpdateTime = link.getLastUpdateTime();
+        Instant previousUpdateTime = link.getLastUpdateTime();
         if (wasUpdated(previousUpdateTime, body.updatedAt())) {
-            link.setLastUpdateTime(body.updatedAt());
+            // link.setLastUpdateTime(body.updatedAt());
             updateDescription =
                     String.format("Обновление репозитория %s по ссылке %s", body.repositoryName(), body.linkValue());
         }
@@ -82,7 +81,7 @@ public class GitHubRepositoryClient extends Client {
         return updateDescription;
     }
 
-    private boolean wasUpdated(LocalDateTime previousUpdateTime, LocalDateTime currentUpdateTime) {
+    private boolean wasUpdated(Instant previousUpdateTime, Instant currentUpdateTime) {
         return previousUpdateTime == null || previousUpdateTime.isBefore(currentUpdateTime);
     }
 }

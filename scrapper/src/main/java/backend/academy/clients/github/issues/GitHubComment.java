@@ -5,7 +5,7 @@ import backend.academy.clients.github.GitHubUser;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Модель комментария в issue или pull request на GitHub
@@ -22,7 +22,7 @@ public record GitHubComment(
         @JsonProperty("id") Long id,
         @JsonProperty("html_url") String url,
         @JsonProperty("user") GitHubUser user,
-        @JsonProperty("created_at") @JsonDeserialize(converter = JsonConverters.LocalDateTimeConverter.class)
-                LocalDateTime createdAt,
+        @JsonProperty("created_at") @JsonDeserialize(converter = JsonConverters.InstantTimeConverter.class)
+                Instant createdAt,
         @JsonProperty("body") @JsonDeserialize(converter = JsonConverters.StringTruncator.class) String body,
         @JsonProperty("issue_url") String issueUrl) {}

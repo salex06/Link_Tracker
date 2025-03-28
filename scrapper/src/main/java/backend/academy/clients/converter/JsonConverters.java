@@ -2,24 +2,20 @@ package backend.academy.clients.converter;
 
 import com.fasterxml.jackson.databind.util.StdConverter;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 
 public final class JsonConverters {
     private JsonConverters() {}
-    /** Конвертер времени из JSON-объекта в объект класса LocalDateTime */
-    public static class LocalDateTimeConverter extends StdConverter<String, LocalDateTime> {
+    /** Конвертер времени из JSON-объекта в объект класса Instant */
+    public static class InstantTimeConverter extends StdConverter<String, Instant> {
         /**
-         * Конвертировать в LocalDateTime
+         * Конвертировать в Instant
          *
          * @param time время в строковом виде
          * @return объекта класса {@code LocalDateTime} - сконвертированное время
          */
         @Override
-        public LocalDateTime convert(String time) {
-            Instant instant = Instant.parse(time);
-            return LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        public Instant convert(String time) {
+            return Instant.parse(time);
         }
     }
 
@@ -38,8 +34,8 @@ public final class JsonConverters {
         }
     }
 
-    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса LocalDateTime */
-    public static class TimeStampToLocalDateTimeConverter extends StdConverter<Long, LocalDateTime> {
+    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса Instant */
+    public static class TimeStampToInstantConverter extends StdConverter<Long, Instant> {
         /**
          * Конвертировать timestamp в LocalDateTime
          *
@@ -47,11 +43,11 @@ public final class JsonConverters {
          * @return объекта класса {@code LocalDateTime} - сконвертированное время
          */
         @Override
-        public LocalDateTime convert(Long seconds) {
+        public Instant convert(Long seconds) {
             if (seconds == null) {
-                return LocalDateTime.MIN;
+                return Instant.MIN;
             }
-            return LocalDateTime.ofInstant(Instant.ofEpochSecond(seconds), ZoneId.of("UTC"));
+            return Instant.ofEpochSecond(seconds);
         }
     }
 }

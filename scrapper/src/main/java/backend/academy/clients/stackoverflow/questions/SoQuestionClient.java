@@ -6,7 +6,7 @@ import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +75,6 @@ public class SoQuestionClient extends Client {
         List<String> allUpdates = new ArrayList<>();
         allUpdates.addAll(commentUpdates);
         allUpdates.addAll(answersUpdates);
-        link.setLastUpdateTime(LocalDateTime.now());
         return allUpdates;
     }
 
@@ -157,7 +156,7 @@ public class SoQuestionClient extends Client {
         return updates;
     }
 
-    private boolean wasUpdated(LocalDateTime lastUpdateTime, LocalDateTime updateTime) {
+    private boolean wasUpdated(Instant lastUpdateTime, Instant updateTime) {
         return lastUpdateTime.isBefore(updateTime);
     }
 

@@ -7,6 +7,7 @@ import backend.academy.dto.LinkUpdate;
 import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.service.LinkService;
+import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,7 @@ public class Scheduler {
         Client suitableClient = getSuitableClient(clients, link);
         List<String> updateDescription = suitableClient.getUpdates(link);
         if (!updateDescription.isEmpty()) {
+            linkService.updateLastUpdateTime(link, Instant.now());
             sendUpdates(updateDescription, link);
         }
     }

@@ -6,7 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
@@ -27,7 +27,7 @@ public class OrmLink {
     private String linkValue;
 
     @Column(name = "last_update")
-    private LocalDateTime lastUpdate = LocalDateTime.now();
+    private Instant lastUpdate = Instant.now();
 
     public OrmLink(String linkValue) {
         this.linkValue = linkValue;
@@ -49,11 +49,11 @@ public class OrmLink {
         this.linkValue = linkValue;
     }
 
-    public LocalDateTime getLastUpdate() {
+    public Instant getLastUpdate() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(LocalDateTime lastUpdate) {
+    public void setLastUpdate(Instant lastUpdate) {
         this.lastUpdate = lastUpdate;
     }
 }

@@ -5,6 +5,7 @@ import backend.academy.clients.github.GitHubUser;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 /**
@@ -22,5 +23,5 @@ public record GitHubRepositoryDTO(
         @JsonProperty("name") String repositoryName,
         @JsonProperty("owner") GitHubUser owner,
         @JsonProperty("pushed_at") LocalDateTime pushedAt,
-        @JsonProperty("updated_at") @JsonDeserialize(converter = JsonConverters.LocalDateTimeConverter.class)
-                LocalDateTime updatedAt) {}
+        @JsonProperty("updated_at") @JsonDeserialize(converter = JsonConverters.InstantTimeConverter.class)
+                Instant updatedAt) {}

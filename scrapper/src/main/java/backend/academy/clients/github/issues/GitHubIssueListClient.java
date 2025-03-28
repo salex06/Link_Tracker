@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -55,7 +55,6 @@ public class GitHubIssueListClient extends Client {
         List<String> resultList = new ArrayList<>();
         resultList.addAll(newIssues);
         resultList.addAll(newComments);
-        link.setLastUpdateTime(LocalDateTime.now());
         return resultList;
     }
 
@@ -128,7 +127,7 @@ public class GitHubIssueListClient extends Client {
         return issueUpdates;
     }
 
-    private boolean newIssue(LocalDateTime lastUpdateTime, LocalDateTime issueCreationDate) {
+    private boolean newIssue(Instant lastUpdateTime, Instant issueCreationDate) {
         return lastUpdateTime.isBefore(issueCreationDate);
     }
 
@@ -150,7 +149,7 @@ public class GitHubIssueListClient extends Client {
         });
     }
 
-    private boolean issueWasUpdated(LocalDateTime lastUpdateTime, LocalDateTime commentCreateDateTime) {
+    private boolean issueWasUpdated(Instant lastUpdateTime, Instant commentCreateDateTime) {
         return lastUpdateTime.isBefore(commentCreateDateTime);
     }
 

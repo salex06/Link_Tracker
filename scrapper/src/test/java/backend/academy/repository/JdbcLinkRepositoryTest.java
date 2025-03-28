@@ -2,12 +2,14 @@ package backend.academy.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import backend.academy.model.jdbc.JdbcLink;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +30,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -48,6 +51,11 @@ class JdbcLinkRepositoryTest {
 
     @Autowired
     private JdbcLinkRepository linkRepository;
+
+    private final RowMapper<JdbcLink> jdbcLinkRowMapper = (rs, rn) -> new JdbcLink(
+            rs.getLong("id"),
+            rs.getString("link_value"),
+            rs.getTimestamp("last_update").toInstant());
 
     @Container
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest")
@@ -249,7 +257,7 @@ class JdbcLinkRepositoryTest {
     public void save_WhenLinkInDatabase_ThenUpdateEntity() {
         Long expectedId = 2L;
         String expectedUrl = "new_url";
-        LocalDateTime expectedLocalDateTime = LocalDateTime.now();
+        Instant expectedLocalDateTime = Instant.now();
         JdbcLink link = new JdbcLink(2L, expectedUrl, expectedLocalDateTime);
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('any'), ('url')");
 
@@ -259,5 +267,23 @@ class JdbcLinkRepositoryTest {
         assertEquals(expectedId, actualLink.getId());
         assertEquals(expectedUrl, actualLink.getUrl());
         assertEquals(expectedLocalDateTime, actualLink.getLastUpdateTime());
+    }
+
+    @Test
+    public void updateLinkWorksCorrectly() {
+        Long linkId = 1L;
+        String expectedUrl = "new_url";
+        Instant expectedLocalDateTime = Instant.now();
+        jdbcTemplate.update("INSERT INTO link(link_value, last_update) VALUES ('old_url', '1970-01-01 00:00:00')");
+
+        linkRepository.updateLink(linkId, expectedUrl, expectedLocalDateTime);
+
+        JdbcLink actualLink = jdbcTemplate.queryForObject("SELECT * FROM link WHERE id = 1", jdbcLinkRowMapper);
+        assertNotNull(actualLink);
+        assertEquals(linkId, actualLink.getId());
+        assertEquals(expectedUrl, actualLink.getUrl());
+        Instant expectedTruncated = expectedLocalDateTime.truncatedTo(ChronoUnit.SECONDS);
+        Instant actualTruncated = actualLink.getLastUpdateTime().truncatedTo(ChronoUnit.SECONDS);
+        assertEquals(expectedTruncated, actualTruncated);
     }
 }

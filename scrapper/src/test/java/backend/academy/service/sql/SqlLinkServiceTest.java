@@ -18,6 +18,7 @@ import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -347,5 +348,30 @@ class SqlLinkServiceTest {
         Set<Long> actualChats = linkService.getChatIdsListeningToLink(link.getUrl());
 
         assertEquals(expectedChats, actualChats);
+    }
+
+    @Test
+    public void updateLastUpdateTime_WhenLinkNotFound_ThenReturn() {
+        String linkValue = "test";
+        Instant updateTime = Instant.now();
+        Link link = new Link(1L, linkValue);
+        when(linkRepository.getLinkByUrl(linkValue)).thenReturn(Optional.empty());
+
+        linkService.updateLastUpdateTime(link, updateTime);
+
+        verify(linkRepository, times(0)).updateLink(anyLong(), anyString(), any(Instant.class));
+    }
+
+    @Test
+    public void updateLastUpdateTime_WhenLinkExists_ThenUpdateLink() {
+        String linkValue = "test";
+        Instant updateTime = Instant.now();
+        Link link = new Link(1L, linkValue);
+        JdbcLink jdbcLink = new JdbcLink(1L, linkValue, Instant.MIN);
+        when(linkRepository.getLinkByUrl(linkValue)).thenReturn(Optional.of(jdbcLink));
+
+        linkService.updateLastUpdateTime(link, updateTime);
+
+        verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class));
     }
 }

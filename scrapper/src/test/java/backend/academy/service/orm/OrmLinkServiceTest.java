@@ -24,7 +24,7 @@ import backend.academy.repository.orm.OrmChatLinkRepository;
 import backend.academy.repository.orm.OrmChatLinkTagsRepository;
 import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -85,8 +85,7 @@ class OrmLinkServiceTest {
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         when(linkRepository.findAll(pageable))
                 .thenReturn(new PageImpl<>(List.of(
-                        new OrmLink(link1Id, link1Url, LocalDateTime.now()),
-                        new OrmLink(link2Id, link2Url, LocalDateTime.now()))));
+                        new OrmLink(link1Id, link1Url, Instant.now()), new OrmLink(link2Id, link2Url, Instant.now()))));
         when(chatLinkRepository.findAllChatIdByLinkId(link1Id)).thenReturn(expectedLink1PrimaryIds);
         when(chatLinkRepository.findAllChatIdByLinkId(link2Id)).thenReturn(expectedLink2PrimaryIds);
         when(chatRepository.findAllById(expectedLink1PrimaryIds)).thenReturn(new ArrayList<>(expectedLink1TgChats));
@@ -137,7 +136,7 @@ class OrmLinkServiceTest {
         List<OrmChat> expectedChats = List.of(new OrmChat(1L, 5L), new OrmChat(2L, 10L));
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new OrmChat(1L, 1L)));
         when(chatLinkRepository.findByChatPrimaryIdAndLinkValue(anyLong(), anyString()))
-                .thenReturn(Optional.of(new OrmLink(expectedLinkId, expectedString, LocalDateTime.now())));
+                .thenReturn(Optional.of(new OrmLink(expectedLinkId, expectedString, Instant.now())));
         when(chatLinkRepository.findAllChatIdByLinkId(expectedLinkId)).thenReturn(expectedPrimaryChatIds);
         when(chatRepository.findAllById(expectedPrimaryChatIds)).thenReturn(expectedChats);
 
@@ -196,7 +195,7 @@ class OrmLinkServiceTest {
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new OrmChat(internalChatId, chatId)));
         when(linkRepository.findByLinkValue(expectedUrl)).thenReturn(Optional.empty());
         when(linkRepository.save(any(OrmLink.class)))
-                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, LocalDateTime.now()));
+                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now()));
         when(mapper.toOrmLink(any(Link.class))).thenAnswer(invocationOnMock -> {
             Link link = invocationOnMock.getArgument(0);
             return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
@@ -235,7 +234,7 @@ class OrmLinkServiceTest {
         when(linkRepository.findByLinkValue(expectedUrl))
                 .thenReturn(Optional.of(new OrmLink(1L, expectedUrl, expectedLink.getLastUpdateTime())));
         when(linkRepository.save(any(OrmLink.class)))
-                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, LocalDateTime.now()));
+                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now()));
         when(mapper.toOrmLink(any(Link.class))).thenAnswer(invocationOnMock -> {
             Link link = invocationOnMock.getArgument(0);
             return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
@@ -274,7 +273,7 @@ class OrmLinkServiceTest {
         when(linkRepository.findByLinkValue(expectedUrl))
                 .thenReturn(Optional.of(new OrmLink(1L, expectedUrl, expectedLink.getLastUpdateTime())));
         when(linkRepository.save(any(OrmLink.class)))
-                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, LocalDateTime.now()));
+                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now()));
         when(mapper.toOrmLink(any(Link.class))).thenAnswer(invocationOnMock -> {
             Link link = invocationOnMock.getArgument(0);
             return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
@@ -312,8 +311,8 @@ class OrmLinkServiceTest {
         Long chatId = 1L;
         Long internalId = 5L;
         OrmChat chat = new OrmChat(internalId, chatId);
-        OrmLink link1 = new OrmLink(1L, "link1", LocalDateTime.now());
-        OrmLink link2 = new OrmLink(2L, "link2", LocalDateTime.now());
+        OrmLink link1 = new OrmLink(1L, "link1", Instant.now());
+        OrmLink link2 = new OrmLink(2L, "link2", Instant.now());
         List<String> expectedTagsLink1 = List.of("tag1", "tag2");
         List<String> expectedTagsLink2 = List.of("tag3", "tag4");
         List<String> expectedFiltersLink1 = List.of("filter1", "filter2");
@@ -378,7 +377,7 @@ class OrmLinkServiceTest {
 
     @Test
     public void getChatIdsListeningToLink_WhenLinkInDB_ThenReturnListOfChatIds() {
-        OrmLink link = new OrmLink(1L, "test_link", LocalDateTime.now());
+        OrmLink link = new OrmLink(1L, "test_link", Instant.now());
         Set<Long> primaryChatIds = Set.of(1L, 2L);
         OrmChat chat1 = new OrmChat(1L, 5L);
         OrmChat chat2 = new OrmChat(2L, 10L);
@@ -391,5 +390,30 @@ class OrmLinkServiceTest {
         Set<Long> actualChats = linkService.getChatIdsListeningToLink(link.getLinkValue());
 
         assertEquals(expectedChats, actualChats);
+    }
+
+    @Test
+    public void updateLastUpdateTime_WhenLinkNotFound_ThenReturn() {
+        String linkValue = "test";
+        Instant updateTime = Instant.now();
+        Link link = new Link(1L, linkValue);
+        when(linkRepository.findByLinkValue(linkValue)).thenReturn(Optional.empty());
+
+        linkService.updateLastUpdateTime(link, updateTime);
+
+        verify(linkRepository, times(0)).updateLink(anyLong(), anyString(), any(Instant.class));
+    }
+
+    @Test
+    public void updateLastUpdateTime_WhenLinkExists_ThenUpdateLink() {
+        String linkValue = "test";
+        Instant updateTime = Instant.now();
+        Link link = new Link(1L, linkValue);
+        OrmLink ormLink = new OrmLink(1L, linkValue, Instant.MIN);
+        when(linkRepository.findByLinkValue(linkValue)).thenReturn(Optional.of(ormLink));
+
+        linkService.updateLastUpdateTime(link, updateTime);
+
+        verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class));
     }
 }

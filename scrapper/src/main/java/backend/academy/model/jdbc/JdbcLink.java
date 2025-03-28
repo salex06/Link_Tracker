@@ -1,7 +1,6 @@
 package backend.academy.model.jdbc;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
@@ -18,7 +17,7 @@ public class JdbcLink {
     private String url;
 
     @Column("last_update")
-    private LocalDateTime lastUpdateTime = LocalDateTime.now(ZoneId.of("UTC"));
+    private Instant lastUpdateTime = Instant.now();
 
     public JdbcLink() {}
 
@@ -27,7 +26,7 @@ public class JdbcLink {
         this.url = url;
     }
 
-    public JdbcLink(Long id, String url, LocalDateTime lastUpdateTime) {
+    public JdbcLink(Long id, String url, Instant lastUpdateTime) {
         this.id = id;
         this.url = url;
         this.lastUpdateTime = lastUpdateTime;
@@ -49,11 +48,11 @@ public class JdbcLink {
         this.url = url;
     }
 
-    public LocalDateTime getLastUpdateTime() {
+    public Instant getLastUpdateTime() {
         return lastUpdateTime;
     }
 
-    public void setLastUpdateTime(LocalDateTime lastUpdateTime) {
+    public void setLastUpdateTime(Instant lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
     }
 }

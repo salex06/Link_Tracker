@@ -8,6 +8,7 @@ import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
 import backend.academy.service.LinkService;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -151,5 +152,16 @@ public class SqlLinkService implements LinkService {
         List<JdbcTgChat> chats = chatRepository.getChatsByLink(link.getId());
 
         return chats.stream().map(JdbcTgChat::chatId).collect(Collectors.toSet());
+    }
+
+    @Override
+    public void updateLastUpdateTime(Link link, Instant updateTime) {
+        link.setLastUpdateTime(updateTime);
+        Optional<JdbcLink> optJdbcLink = linkRepository.getLinkByUrl(link.getUrl());
+        if (optJdbcLink.isEmpty()) {
+            return;
+        }
+        JdbcLink jdbcLink = optJdbcLink.orElseThrow();
+        linkRepository.updateLink(jdbcLink.getId(), link.getUrl(), link.getLastUpdateTime());
     }
 }
