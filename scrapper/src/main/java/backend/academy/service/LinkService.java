@@ -79,4 +79,6 @@ public interface LinkService {
      * @param updateTime новое последнее время обновления
      */
     void updateLastUpdateTime(Link link, Instant updateTime);
+
+    List<Link> getAllLinksByChatIdAndTag(Long id, String tag);
 }

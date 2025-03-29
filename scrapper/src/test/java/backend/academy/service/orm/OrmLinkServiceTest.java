@@ -2,6 +2,7 @@ package backend.academy.service.orm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -418,5 +419,44 @@ class OrmLinkServiceTest {
         linkService.updateLastUpdateTime(link, updateTime);
 
         verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class));
+    }
+
+    @Test
+    public void getAllLinksByChatIdAndTagWorksCorrectly() {
+        Long primaryChatId = 1L;
+        String tag = "tag";
+        List<Long> linkIds = List.of(1L, 2L);
+        List<OrmLink> ormLinks =
+                List.of(new OrmLink(1L, "link1", Instant.now()), new OrmLink(2L, "link2", Instant.now()));
+        List<String> tagsLink1 = List.of("tag1", "tag");
+        List<String> tagsLink2 = List.of("tag", "tag2");
+        List<Link> expectedLinks = List.of(
+                new Link(1L, "link1", tagsLink1, List.of(), Set.of()),
+                new Link(2L, "link2", tagsLink2, List.of(), Set.of()));
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new OrmChat(1L, 2L)));
+        when(chatLinkTagsRepository.findLinkIdsByChatIdAndTagValue(primaryChatId, tag))
+                .thenReturn(linkIds);
+        when(linkRepository.findAllById(linkIds)).thenReturn(ormLinks);
+        when(chatLinkTagsRepository.findTagValuesByChatPrimaryIdAndLinkId(primaryChatId, 1L))
+                .thenReturn(tagsLink1);
+        when(chatLinkTagsRepository.findTagValuesByChatPrimaryIdAndLinkId(primaryChatId, 2L))
+                .thenReturn(tagsLink2);
+        when(chatLinkFiltersRepository.findFilterValuesByChatIdAndLinkId(anyLong(), anyLong()))
+                .thenReturn(new ArrayList<>());
+        when(chatLinkRepository.findAllChatIdByLinkId(anyLong())).thenReturn(Set.of(1L, 2L));
+        when(mapper.toPlainLink(any(OrmLink.class), anyList(), anyList(), anySet()))
+                .thenAnswer(invocationOnMock -> {
+                    OrmLink link = invocationOnMock.getArgument(0);
+                    List<String> tags = invocationOnMock.getArgument(1);
+                    List<String> filters = invocationOnMock.getArgument(2);
+                    Set<Long> chatIds = invocationOnMock.getArgument(3);
+
+                    return new Link(link.getId(), link.getLinkValue(), tags, filters, chatIds);
+                });
+
+        List<Link> actualLinks = linkService.getAllLinksByChatIdAndTag(primaryChatId, tag);
+
+        assertNotNull(actualLinks);
+        assertEquals(expectedLinks, actualLinks);
     }
 }

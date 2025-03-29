@@ -51,6 +51,9 @@ public class Bot {
                 updates -> {
                     updates.forEach(update -> {
                         try {
+                            if (update.message() == null) {
+                                return;
+                            }
                             SendMessage message = tgChatProcessor.process(update);
                             execute(message);
                         } catch (ResourceAccessException e) {

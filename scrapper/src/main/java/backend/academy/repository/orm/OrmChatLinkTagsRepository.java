@@ -33,4 +33,7 @@ public interface OrmChatLinkTagsRepository extends JpaRepository<OrmChatLinkTags
      */
     @Query("SELECT t.id.tagValue FROM OrmChatLinkTags t WHERE t.chat.id = :chatId AND t.link.id = :linkId")
     List<String> findTagValuesByChatPrimaryIdAndLinkId(@Param("chatId") Long chatId, @Param("linkId") Long linkId);
+
+    @Query("SELECT t.id.linkId FROM OrmChatLinkTags t WHERE t.id.chatId = :chatId AND t.id.tagValue = :tag")
+    List<Long> findLinkIdsByChatIdAndTagValue(@Param("chatId") Long primaryChatId, @Param("tag") String tag);
 }

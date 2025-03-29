@@ -165,4 +165,29 @@ public class SqlLinkService implements LinkService {
         JdbcLink jdbcLink = optJdbcLink.orElseThrow();
         linkRepository.updateLink(jdbcLink.getId(), link.getUrl(), link.getLastUpdateTime());
     }
+
+    @Override
+    public List<Link> getAllLinksByChatIdAndTag(Long chatId, String tag) {
+        Optional<JdbcTgChat> tgChat = chatRepository.findByChatId(chatId);
+        if (tgChat.isEmpty()) {
+            return List.of();
+        }
+        Long internalId = tgChat.orElseThrow().id();
+
+        List<Link> plainLinks = new ArrayList<>();
+
+        List<Long> jdbcLinkIds = linkRepository.findAllLinkIdsByTagAndChatId(internalId, tag);
+        for (Long linkId : jdbcLinkIds) {
+            Optional<JdbcLink> jdbcLink = linkRepository.getLinkById(linkId);
+            if (jdbcLink.isEmpty()) continue;
+            JdbcLink link = jdbcLink.orElseThrow();
+            List<String> tags = chatRepository.getTags(link.getId(), internalId);
+            List<String> filters = chatRepository.getFilters(link.getId(), internalId);
+            Set<Long> chatIds = linkRepository.getChatIdsByUrl(link.getUrl());
+
+            plainLinks.add(linkMapper.toPlainLink(link, tags, filters, chatIds));
+        }
+
+        return plainLinks;
+    }
 }

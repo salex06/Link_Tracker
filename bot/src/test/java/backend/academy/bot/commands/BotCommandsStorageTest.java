@@ -28,6 +28,7 @@ class BotCommandsStorageTest {
         commandList.add(new Command("/list", false));
         commandList.add(new Command("/track", false));
         commandList.add(new Command("/untrack", true));
+        commandList.add(new Command("/listbytag", true));
         return commandList;
     }
 
@@ -45,7 +46,8 @@ class BotCommandsStorageTest {
                 Arguments.of("/help", new Command("/help", false)),
                 Arguments.of("/list", new Command("/list", false)),
                 Arguments.of("/track", new Command("/track", false)),
-                Arguments.of("/untrack linkExample", new Command("/untrack", true)));
+                Arguments.of("/untrack linkExample", new Command("/untrack", true)),
+                Arguments.of("/listbytag tagName", new Command("/listbytag", true)));
     }
 
     @Test
@@ -64,7 +66,8 @@ class BotCommandsStorageTest {
                 "/help", "Вывести все команды на экран",
                 "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
                 "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
-                "/list", "Получить список всех отслеживаемых ресурсов");
+                "/list", "Получить список всех отслеживаемых ресурсов",
+                "/listbytag", "Получить список ссылок с данным тегом");
 
         Map<String, String> actualMap = BotCommandsStorage.getCommandDescription();
 

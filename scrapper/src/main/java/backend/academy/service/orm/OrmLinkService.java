@@ -190,4 +190,29 @@ public class OrmLinkService implements LinkService {
         }
         linkRepository.updateLink(ormLink.orElseThrow().getId(), link.getUrl(), link.getLastUpdateTime());
     }
+
+    @Override
+    public List<Link> getAllLinksByChatIdAndTag(Long chatId, String tag) {
+        Optional<OrmChat> ormChat = chatRepository.findByChatId(chatId);
+        if (ormChat.isEmpty()) {
+            return List.of();
+        }
+        Long internalChatId = ormChat.orElseThrow().getId();
+
+        List<Link> plainLinks = new ArrayList<>();
+
+        List<Long> linkIds = chatLinkTagsRepository.findLinkIdsByChatIdAndTagValue(internalChatId, tag);
+        List<OrmLink> ormLinks = linkRepository.findAllById(linkIds);
+        for (OrmLink link : ormLinks) {
+            List<String> tags =
+                    chatLinkTagsRepository.findTagValuesByChatPrimaryIdAndLinkId(internalChatId, link.getId());
+            List<String> filters =
+                    chatLinkFiltersRepository.findFilterValuesByChatIdAndLinkId(internalChatId, link.getId());
+            Set<Long> chatIds = chatLinkRepository.findAllChatIdByLinkId(link.getId());
+
+            plainLinks.add(mapper.toPlainLink(link, tags, filters, chatIds));
+        }
+
+        return plainLinks;
+    }
 }

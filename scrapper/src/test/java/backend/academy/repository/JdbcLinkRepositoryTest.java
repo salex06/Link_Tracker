@@ -323,4 +323,21 @@ class JdbcLinkRepositoryTest {
         Instant actualTruncated = actualLink.getLastUpdateTime().truncatedTo(ChronoUnit.SECONDS);
         assertEquals(expectedTruncated, actualTruncated);
     }
+
+    @Test
+    public void findAllLinkIdsByTagAndChatIdWorksCorrectly() {
+        String tagValue = "expectedTag";
+        Long chatId = 1L;
+        List<Long> expectedLinkIds = List.of(1L, 2L);
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('link1'), ('link2'), ('link3')");
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1), (2)");
+        jdbcTemplate.update("INSERT INTO tg_chat_link(link_id, tg_chat_id) VALUES (1, 1), (1, 2), (2, 1)");
+        jdbcTemplate.update(
+                "INSERT INTO chat_link_tags(link_id, chat_id, tag_value) VALUES (1, 1, 'expectedTag'), (1, 2, 'tag'), (2, 1, 'expectedTag')");
+
+        List<Long> actualLinkIds = linkRepository.findAllLinkIdsByTagAndChatId(chatId, tagValue);
+
+        assertNotNull(actualLinkIds);
+        assertEquals(expectedLinkIds, actualLinkIds);
+    }
 }

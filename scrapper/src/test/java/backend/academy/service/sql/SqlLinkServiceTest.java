@@ -22,6 +22,7 @@ import backend.academy.repository.jdbc.JdbcLinkRepository;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -376,5 +377,40 @@ class SqlLinkServiceTest {
         linkService.updateLastUpdateTime(link, updateTime);
 
         verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class));
+    }
+
+    @Test
+    public void getAllLinksByChatIdAndTagWorksCorrectly() {
+        Long primaryChatId = 1L;
+        String tag = "tag";
+        List<Long> linkIds = List.of(1L, 2L);
+        List<JdbcLink> jdbcLinks = List.of(new JdbcLink(1L, "link1"), new JdbcLink(2L, "link2"));
+        List<String> tagsLink1 = List.of("tag1", "tag");
+        List<String> tagsLink2 = List.of("tag", "tag2");
+        List<Link> expectedLinks = List.of(
+                new Link(1L, "link1", tagsLink1, List.of(), Set.of()),
+                new Link(2L, "link2", tagsLink2, List.of(), Set.of()));
+        when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 2L)));
+        when(linkRepository.findAllLinkIdsByTagAndChatId(primaryChatId, tag)).thenReturn(linkIds);
+        when(linkRepository.getLinkById(1L)).thenReturn(Optional.of(jdbcLinks.get(0)));
+        when(linkRepository.getLinkById(2L)).thenReturn(Optional.of(jdbcLinks.get(1)));
+        when(chatRepository.getTags(1L, primaryChatId)).thenReturn(tagsLink1);
+        when(chatRepository.getTags(2L, primaryChatId)).thenReturn(tagsLink2);
+        when(chatRepository.getFilters(anyLong(), anyLong())).thenReturn(new ArrayList<>());
+        when(linkRepository.getChatIdsByUrl(anyString())).thenReturn(Set.of(1L, 2L));
+        when(linkMapper.toPlainLink(any(JdbcLink.class), anyList(), anyList(), anySet()))
+                .thenAnswer(invocationOnMock -> {
+                    JdbcLink link = invocationOnMock.getArgument(0);
+                    List<String> tags = invocationOnMock.getArgument(1);
+                    List<String> filters = invocationOnMock.getArgument(2);
+                    Set<Long> chatIds = invocationOnMock.getArgument(3);
+
+                    return new Link(link.getId(), link.getUrl(), tags, filters, chatIds);
+                });
+
+        List<Link> actualLinks = linkService.getAllLinksByChatIdAndTag(primaryChatId, tag);
+
+        assertNotNull(actualLinks);
+        assertEquals(expectedLinks, actualLinks);
     }
 }

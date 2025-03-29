@@ -135,6 +135,26 @@ public class JdbcLinkRepository {
     }
 
     /**
+     * Получить ссылку по идентификатору
+     *
+     * @param id идентификатор ссылки
+     * @return ссылку, если найдена, иначе - {@code Optional.empty()}
+     */
+    public Optional<JdbcLink> getLinkById(Long id) {
+        String sql = "SELECT * FROM link WHERE id = :id";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("id", id);
+
+        try {
+            JdbcLink link = namedJdbcTemplate.queryForObject(sql, params, jdbcLinkRowMapper);
+            return Optional.of(link);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Получить все чаты, отслеживающие ссылку с данным значением
      *
      * @param url значение ссылки
@@ -209,5 +229,22 @@ public class JdbcLinkRepository {
         params.addValue("lastUpdate", Timestamp.from(lastUpdateTime));
 
         namedJdbcTemplate.update(sql, params);
+    }
+
+    /**
+     * Найти все ссылки по тегу и чату
+     *
+     * @param chatId идентификатор чата
+     * @param tag значение тега
+     * @return список идентификаторов ссылок
+     */
+    public List<Long> findAllLinkIdsByTagAndChatId(Long chatId, String tag) {
+        String sql = "SELECT link_id FROM chat_link_tags WHERE chat_id = :chatId AND tag_value = :tagValue";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("chatId", chatId);
+        params.addValue("tagValue", tag);
+
+        return namedJdbcTemplate.queryForList(sql, params, Long.class);
     }
 }
