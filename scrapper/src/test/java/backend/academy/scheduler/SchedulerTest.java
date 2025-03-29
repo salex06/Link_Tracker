@@ -93,7 +93,10 @@ class SchedulerTest {
                 .thenReturn(new PageImpl<>(List.of(link1)));
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> scheduler.schedule());
-        assertEquals("No suitable clients for link: " + link1.getUrl(), ex.getMessage());
+        assertEquals(
+                "java.util.concurrent.ExecutionException: java.lang.RuntimeException: No suitable clients for link: "
+                        + link1.getUrl(),
+                ex.getMessage());
     }
 
     @Test

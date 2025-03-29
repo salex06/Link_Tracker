@@ -10,7 +10,15 @@ import backend.academy.service.LinkService;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,14 +49,61 @@ public class Scheduler {
         int pageNumber = 0;
         int pageSize = scrapperConfig.pageSize().intValue();
         Page<Link> page;
-        List<Client> clients = clientManager.availableClients();
-        do {
-            Pageable pageable = PageRequest.of(pageNumber, pageSize);
-            page = linkService.getAllLinks(pageable, Duration.of(10, ChronoUnit.SECONDS));
-            page.getContent().forEach(link -> processLink(clients, link));
 
-            pageNumber++;
-        } while (page.hasNext());
+        List<Client> clients = clientManager.availableClients();
+
+        int partCount = 4;
+        List<List<Link>> dividedBatch = IntStream.range(0, partCount)
+                .mapToObj(i -> new ArrayList<Link>())
+                .collect(Collectors.toList());
+
+        ExecutorService executorService = Executors.newFixedThreadPool(partCount);
+        List<Future<?>> futures = new ArrayList<>();
+        try {
+            do {
+                Pageable pageable = PageRequest.of(pageNumber, pageSize);
+                page = linkService.getAllLinks(pageable, Duration.of(10, ChronoUnit.SECONDS));
+                divideBatch(page.getContent(), dividedBatch);
+
+                for (List<Link> part : dividedBatch) {
+                    List<Link> partCopy = new ArrayList<>(part);
+                    Future<?> future = executorService.submit(() -> processLinks(clients, partCopy));
+                    futures.add(future);
+                }
+
+                dividedBatch.forEach(List::clear);
+                pageNumber++;
+            } while (page.hasNext());
+        } finally {
+            executorService.shutdown();
+            try {
+                executorService.awaitTermination(60, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                System.err.println("Прервано ожидание завершения потоков");
+                Thread.currentThread().interrupt();
+            }
+        }
+        futures.forEach(i -> {
+            try {
+                i.get();
+            } catch (RuntimeException | InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private void divideBatch(List<Link> content, List<List<Link>> destination) {
+        int partSize = (content.size() + 3) / 4;
+        for (int i = 0; i < content.size(); ++i) {
+            Link current = content.get(i);
+            destination.get(i / partSize).add(current);
+        }
+    }
+
+    private void processLinks(List<Client> clients, List<Link> links) {
+        for (Link link : links) {
+            processLink(clients, link);
+        }
     }
 
     private void processLink(List<Client> clients, Link link) {
