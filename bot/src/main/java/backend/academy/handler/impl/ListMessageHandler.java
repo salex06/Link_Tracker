@@ -70,6 +70,11 @@ public class ListMessageHandler implements Handler {
                 .append('\n');
         for (Link link : linksResponse.links()) {
             builder.append(++counter).append(") ").append(link.url()).append('\n');
+            builder.append("Теги: ");
+            for (String tag : link.tags()) {
+                builder.append(tag).append('\t');
+            }
+            builder.append('\n');
         }
         return builder.toString();
     }
