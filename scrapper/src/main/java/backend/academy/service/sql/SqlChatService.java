@@ -119,6 +119,8 @@ public class SqlChatService implements ChatService {
             return;
         }
         chatRepository.removeTheChatLink(jdbcTgChat.orElseThrow().id(), link.getId());
+        chatRepository.removeAllTags(link.getId(), jdbcTgChat.orElseThrow().id());
+        chatRepository.removeAllFilters(link.getId(), jdbcTgChat.orElseThrow().id());
     }
 
     @Override

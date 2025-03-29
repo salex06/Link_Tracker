@@ -24,6 +24,7 @@ import backend.academy.repository.orm.OrmChatLinkTagsRepository;
 import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
 import backend.academy.service.LinkService;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -231,14 +232,17 @@ class OrmChatServiceTest {
         Long id = 1L;
         Long chatId = 2L;
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new OrmChat(id, chatId)));
+        OrmLink ormLink = new OrmLink(1L, "url", Instant.now());
         Link link = new Link(1L, "url");
-        when(linkRepository.findByLinkValue(link.getUrl())).thenReturn(Optional.of(new OrmLink("url")));
+        when(linkRepository.findByLinkValue(link.getUrl())).thenReturn(Optional.of(ormLink));
         TgChat chat = Mockito.mock(TgChat.class);
         when(chat.chatId()).thenReturn(chatId);
 
         chatService.removeTheChatLink(chat, link);
 
         verify(chatLinkRepository, times(1)).deleteById(any(OrmChatLinkIdEmbedded.class));
+        verify(tagsRepository, times(1)).deleteByChatPrimaryIdAndLinkId(anyLong(), anyLong());
+        verify(filtersRepository, times(1)).deleteByChatPrimaryIdAndLinkId(anyLong(), anyLong());
     }
 
     @Test

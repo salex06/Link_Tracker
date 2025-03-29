@@ -137,6 +137,10 @@ public class OrmChatService implements ChatService {
         if (ormChat.isPresent() && ormLink.isPresent()) {
             chatLinkRepository.deleteById(new OrmChatLinkIdEmbedded(
                     ormChat.orElseThrow().getId(), ormLink.orElseThrow().getId()));
+            tagsRepository.deleteByChatPrimaryIdAndLinkId(
+                    ormChat.orElseThrow().getId(), ormLink.orElseThrow().getId());
+            filtersRepository.deleteByChatPrimaryIdAndLinkId(
+                    ormChat.orElseThrow().getId(), ormLink.orElseThrow().getId());
         }
     }
 

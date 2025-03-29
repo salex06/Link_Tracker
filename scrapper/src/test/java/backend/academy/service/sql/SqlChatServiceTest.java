@@ -214,6 +214,8 @@ class SqlChatServiceTest {
         chatService.removeTheChatLink(chat, new Link(1L, "url"));
 
         verify(chatRepository, times(1)).removeTheChatLink(anyLong(), anyLong());
+        verify(chatRepository, times(1)).removeAllTags(anyLong(), anyLong());
+        verify(chatRepository, times(1)).removeAllFilters(anyLong(), anyLong());
     }
 
     @Test
