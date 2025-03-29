@@ -128,7 +128,7 @@ public class TrackMessageCrawler implements MessageCrawler {
         TrackMessageState currentState = current.getKey();
         List<String> messages = current.getValue();
 
-        messages.add("");
+        messages.add(" ");
         SendMessage message;
         if (currentState == WAITING_FOR_TAGS) {
             currentState = WAITING_FOR_FILTERS;
