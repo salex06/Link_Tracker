@@ -23,7 +23,8 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 public class GitHubIssueListClient extends Client {
-    private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/(issues|pulls)$");
+    private static final Pattern SUPPORTED_URL =
+            Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(issues|pulls)$");
 
     public GitHubIssueListClient(
             @Qualifier("gitHubIssueListClientConverter") LinkToApiLinkConverter linkConverter,

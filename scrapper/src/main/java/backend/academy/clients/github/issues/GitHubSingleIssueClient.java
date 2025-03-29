@@ -19,7 +19,8 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 public class GitHubSingleIssueClient extends Client {
-    private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
+    private static final Pattern SUPPORTED_URL =
+            Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 
     public GitHubSingleIssueClient(
             @Qualifier("gitHubSingleIssueConverter") LinkToApiLinkConverter converter,

@@ -47,7 +47,7 @@ public class ClientBeans {
     @Bean
     LinkToApiLinkConverter gitHubRepositoryConverter() {
         return x -> {
-            Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
+            Pattern pattern = Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
@@ -61,7 +61,7 @@ public class ClientBeans {
     @Bean
     LinkToApiLinkConverter gitHubSingleIssueConverter() {
         return x -> {
-            Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
+            Pattern pattern = Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
@@ -83,7 +83,7 @@ public class ClientBeans {
     @Bean
     LinkToApiLinkConverter gitHubIssueListClientConverter() {
         return x -> {
-            Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/(issues|pulls)$");
+            Pattern pattern = Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(issues|pulls)$");
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
                 return String.format(

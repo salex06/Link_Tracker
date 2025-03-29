@@ -18,7 +18,8 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 public class GitHubRepositoryClient extends Client {
-    private static final Pattern supportedUrl = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
+    private static final Pattern supportedUrl =
+            Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 
     public GitHubRepositoryClient(
             @Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter,
