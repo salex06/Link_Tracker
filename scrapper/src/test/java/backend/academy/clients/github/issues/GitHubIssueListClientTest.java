@@ -115,19 +115,17 @@ class GitHubIssueListClientTest {
                                 """
                                         .formatted(port))));
 
-        stubFor(
-                get("/octocat/Hello-World/issues/5/comments")
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(200)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody(
-                                                """
+        stubFor(get("/octocat/Hello-World/issues/5/comments")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(
+                                """
                                 [
                                     {
                                         "url": "https://api.github.com/repos/octocat/Hello-World/issues/comments/1146825",
                                         "html_url": "https://github.com/octocat/Hello-World/pull/2#issuecomment-1146825",
-                                        "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/2", "id": 1146825,
+                                        "issue_url": "http://localhost:%d/repos/octocat/Hello-World/issues/2", "id": 1146825,
                                         "node_id": "MDEyOklzc3VlQ29tbWVudDExNDY4MjU=", "user": { "login": "mattstifanelli",
                                         "id": 783382, "node_id": "MDQ6VXNlcjc4MzM4Mg==", "avatar_url":
                                         "https://avatars.githubusercontent.com/u/783382?v=4", "gravatar_id": "", "url":
@@ -193,7 +191,113 @@ class GitHubIssueListClientTest {
                                         "rocket": 0, "eyes": 0 }, "performed_via_github_app": null
                                     }
                                 ]
-                                """)));
+                                """
+                                        .formatted(port))));
+
+        stubFor(
+                get("/repos/octocat/Hello-World/issues/2")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                                {
+                                    "url": "https://api.github.com/repos/octocat/Hello-World/issues/2",
+                                    "repository_url": "https://api.github.com/repos/octocat/Hello-World",
+                                    "labels_url": "https://api.github.com/repos/octocat/Hello-World/issues/2/labels{/name}",
+                                    "comments_url": "https://api.github.com/repos/octocat/Hello-World/issues/2/comments",
+                                    "events_url": "https://api.github.com/repos/octocat/Hello-World/issues/2/events",
+                                    "html_url": "https://github.com/octocat/Hello-World/pull/2",
+                                    "id": 889727,
+                                    "node_id": "MDExOlB1bGxSZXF1ZXN0MTQ0NjQ3",
+                                    "number": 2,
+                                    "title": "README file modified ",
+                                    "user": {
+                                        "login": "mattstifanelli",
+                                        "id": 783382,
+                                        "node_id": "MDQ6VXNlcjc4MzM4Mg==",
+                                        "avatar_url": "https://avatars.githubusercontent.com/u/783382?v=4",
+                                        "gravatar_id": "",
+                                        "url": "https://api.github.com/users/mattstifanelli",
+                                        "html_url": "https://github.com/mattstifanelli",
+                                        "followers_url": "https://api.github.com/users/mattstifanelli/followers",
+                                        "following_url": "https://api.github.com/users/mattstifanelli/following{/other_user}",
+                                        "gists_url": "https://api.github.com/users/mattstifanelli/gists{/gist_id}",
+                                        "starred_url": "https://api.github.com/users/mattstifanelli/starred{/owner}{/repo}",
+                                        "subscriptions_url": "https://api.github.com/users/mattstifanelli/subscriptions",
+                                        "organizations_url": "https://api.github.com/users/mattstifanelli/orgs",
+                                        "repos_url": "https://api.github.com/users/mattstifanelli/repos",
+                                        "events_url": "https://api.github.com/users/mattstifanelli/events{/privacy}",
+                                        "received_events_url": "https://api.github.com/users/mattstifanelli/received_events",
+                                        "type": "User",
+                                        "user_view_type": "public",
+                                        "site_admin": false
+                                    },
+                                    "labels": [],
+                                    "state": "closed",
+                                    "locked": false,
+                                    "assignee": null,
+                                    "assignees": [],
+                                    "milestone": null,
+                                    "comments": 1,
+                                    "created_at": "2011-05-12T14:32:47Z",
+                                    "updated_at": "2021-05-03T10:48:20Z",
+                                    "closed_at": "2011-05-12T14:34:22Z",
+                                    "author_association": "NONE",
+                                    "sub_issues_summary": {
+                                        "total": 0,
+                                        "completed": 0,
+                                        "percent_completed": 0
+                                    },
+                                    "active_lock_reason": null,
+                                    "draft": false,
+                                    "pull_request": {
+                                        "url": "https://api.github.com/repos/octocat/Hello-World/pulls/2",
+                                        "html_url": "https://github.com/octocat/Hello-World/pull/2",
+                                        "diff_url": "https://github.com/octocat/Hello-World/pull/2.diff",
+                                        "patch_url": "https://github.com/octocat/Hello-World/pull/2.patch",
+                                        "merged_at": null
+                                    },
+                                    "body": "My first pull request on GitHub! Yep!\\n",
+                                    "closed_by": {
+                                        "login": "mattstifanelli",
+                                        "id": 783382,
+                                        "node_id": "MDQ6VXNlcjc4MzM4Mg==",
+                                        "avatar_url": "https://avatars.githubusercontent.com/u/783382?v=4",
+                                        "gravatar_id": "",
+                                        "url": "https://api.github.com/users/mattstifanelli",
+                                        "html_url": "https://github.com/mattstifanelli",
+                                        "followers_url": "https://api.github.com/users/mattstifanelli/followers",
+                                        "following_url": "https://api.github.com/users/mattstifanelli/following{/other_user}",
+                                        "gists_url": "https://api.github.com/users/mattstifanelli/gists{/gist_id}",
+                                        "starred_url": "https://api.github.com/users/mattstifanelli/starred{/owner}{/repo}",
+                                        "subscriptions_url": "https://api.github.com/users/mattstifanelli/subscriptions",
+                                        "organizations_url": "https://api.github.com/users/mattstifanelli/orgs",
+                                        "repos_url": "https://api.github.com/users/mattstifanelli/repos",
+                                        "events_url": "https://api.github.com/users/mattstifanelli/events{/privacy}",
+                                        "received_events_url": "https://api.github.com/users/mattstifanelli/received_events",
+                                        "type": "User",
+                                        "user_view_type": "public",
+                                        "site_admin": false
+                                    },
+                                    "reactions": {
+                                        "url": "https://api.github.com/repos/octocat/Hello-World/issues/2/reactions",
+                                        "total_count": 0,
+                                        "+1": 0,
+                                        "-1": 0,
+                                        "laugh": 0,
+                                        "hooray": 0,
+                                        "confused": 0,
+                                        "heart": 0,
+                                        "rocket": 0,
+                                        "eyes": 0
+                                    },
+                                    "timeline_url": "https://api.github.com/repos/octocat/Hello-World/issues/2/timeline",
+                                    "performed_via_github_app": null,
+                                    "state_reason": null
+                                }
+            """)));
 
         List<String> updates = gitHubIssueListClient.getUpdates(link);
 
