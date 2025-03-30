@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -139,5 +140,16 @@ public class SqlChatService implements ChatService {
             return List.of();
         }
         return chatRepository.getFilters(linkId, jdbcTgChat.orElseThrow().id());
+    }
+
+    @Override
+    public void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
+        JdbcTgChat jdbcTgChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
+        Set<Link> chatLinks = linkService.getAllLinksByChatId(jdbcTgChat.chatId());
+        for (String tag : tags) {
+            for (Link link : chatLinks) {
+                chatRepository.saveTag(link.getId(), jdbcTgChat.id(), tag);
+            }
+        }
     }
 }

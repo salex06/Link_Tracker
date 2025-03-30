@@ -10,6 +10,7 @@ import backend.academy.handler.Handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +23,11 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Order(2)
 @Component
-public class TrackMessageHandler implements Handler {
+public class AddTagMessageHandler implements Handler {
     private final MessageCrawler crawler;
 
     @Autowired
-    public TrackMessageHandler(@Qualifier("trackCrawler") MessageCrawler crawler) {
+    public AddTagMessageHandler(@Qualifier("addTagCrawler") MessageCrawler crawler) {
         this.crawler = crawler;
     }
 
@@ -36,7 +37,9 @@ public class TrackMessageHandler implements Handler {
 
         Long chatId = update.message().chat().id();
         AddLinkRequest crawlerReport = crawler.terminate(chatId);
-        if (crawlerReport == null) {
+        if (crawlerReport == null
+                || crawlerReport.tags() == null
+                || crawlerReport.tags().size() != 1) {
             log.atError()
                     .setMessage("Отсутствуют данные о ресурсе для передачи")
                     .addKeyValue("chat-id", chatId)
@@ -45,17 +48,17 @@ public class TrackMessageHandler implements Handler {
         }
 
         log.atInfo()
-                .setMessage("Запрос на отслеживание ссылки")
+                .setMessage("Запрос на добавление тега для ссылки")
                 .addKeyValue("chat-id", chatId)
                 .addKeyValue("url", crawlerReport.link())
                 .addKeyValue("tags", crawlerReport.tags())
-                .addKeyValue("filters", crawlerReport.filters())
                 .log();
 
         try {
             LinkResponse linkResponse = restClient
                     .post()
-                    .uri("/links")
+                    .uri("/addtag")
+                    .header("Add-To-All", (Objects.equals(crawlerReport.link(), "ALL")) ? "true" : "false")
                     .body(crawlerReport)
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .exchange((request, response) -> {
@@ -69,20 +72,16 @@ public class TrackMessageHandler implements Handler {
                     });
 
             if (linkResponse == null) {
-                return new SendMessage(chatId, "Ошибка при ответе на запрос отслеживания");
+                return new SendMessage(chatId, "Ошибка при ответе на запрос добавления тега");
             }
 
-            return new SendMessage(
-                    chatId,
-                    String.format(
-                            "Ресурс %s добавлен для отслеживания. ID: %d", linkResponse.url(), linkResponse.id()));
+            return new SendMessage(chatId, "Тег успешно добавлен!");
         } catch (ApiErrorException e) {
             log.atError()
-                    .setMessage("Некорректные параметры при запросе на остлеживание ссылки")
+                    .setMessage("Некорректные параметры при запросе на добавление тега")
                     .addKeyValue("chat-id", chatId)
                     .addKeyValue("link", crawlerReport.link())
                     .addKeyValue("tags", crawlerReport.tags())
-                    .addKeyValue("filters", crawlerReport.filters())
                     .log();
 
             return new SendMessage(chatId, e.apiErrorResponse().description());
@@ -91,6 +90,6 @@ public class TrackMessageHandler implements Handler {
 
     @Override
     public boolean supportCommand(Command command) {
-        return command != null && Objects.equals(command.commandName(), "/track") && !command.needExtraInfo();
+        return command != null && Objects.equals(command.commandName(), "/addtag") && command.needExtraInfo();
     }
 }

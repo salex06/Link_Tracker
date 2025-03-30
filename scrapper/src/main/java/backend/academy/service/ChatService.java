@@ -92,4 +92,12 @@ public interface ChatService {
      * @return список фильтров
      */
     List<String> getFilters(Long linkId, Long chatId);
+
+    /**
+     * Добавить теги ко всем ссылкам чата
+     *
+     * @param tgChat чат
+     * @param tags набор тегов, которые требуется добавить
+     */
+    void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
 }

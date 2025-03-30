@@ -16,7 +16,8 @@ public class BotCommandsStorage {
             "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
             "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
             "/list", "Получить список всех отслеживаемых ресурсов",
-            "/listbytag", "Получить список ссылок с данным тегом");
+            "/listbytag", "Получить список ссылок с данным тегом",
+            "/addtag", "Добавить тег для ссылки");
 
     static {
         COMMANDS.add(new Command("/start", false));
@@ -25,6 +26,7 @@ public class BotCommandsStorage {
         COMMANDS.add(new Command("/track", false));
         COMMANDS.add(new Command("/untrack", true));
         COMMANDS.add(new Command("/listbytag", true));
+        COMMANDS.add(new Command("/addtag", true));
     }
 
     public static List<Command> getCommands() {

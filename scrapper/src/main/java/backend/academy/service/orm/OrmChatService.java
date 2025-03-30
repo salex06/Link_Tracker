@@ -6,6 +6,7 @@ import backend.academy.model.orm.OrmChatLink;
 import backend.academy.model.orm.OrmChatLinkFilters;
 import backend.academy.model.orm.OrmChatLinkIdEmbedded;
 import backend.academy.model.orm.OrmChatLinkTags;
+import backend.academy.model.orm.OrmChatLinkTagsIdEmbedded;
 import backend.academy.model.orm.OrmLink;
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
@@ -162,5 +163,17 @@ public class OrmChatService implements ChatService {
         }
         return filtersRepository.findFilterValuesByChatIdAndLinkId(
                 ormChat.orElseThrow().getId(), linkId);
+    }
+
+    @Override
+    public void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
+        OrmChat ormChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
+        List<OrmLink> links = chatLinkRepository.findAllByChatPrimaryId(ormChat.getId());
+        for (String tag : tags) {
+            for (OrmLink link : links) {
+                if (!tagsRepository.existsById(new OrmChatLinkTagsIdEmbedded(ormChat.getId(), link.getId(), tag)))
+                    tagsRepository.save(new OrmChatLinkTags(ormChat, link, tag));
+            }
+        }
     }
 }

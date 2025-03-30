@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
 
 class GitHubIssueListClientTest {
-    private int port = 8090;
+    private int port;
 
     @Autowired
     private static RestClient restClient;
@@ -29,8 +29,9 @@ class GitHubIssueListClientTest {
 
     @BeforeEach
     public void setupBeforeEach() {
-        wireMockServer = new WireMockServer(options().port(port));
+        wireMockServer = new WireMockServer(options().dynamicPort());
         wireMockServer.start();
+        port = wireMockServer.port();
         WireMock.configureFor("localhost", port);
     }
 
@@ -71,20 +72,18 @@ class GitHubIssueListClientTest {
             Превью: test\r
             """;
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
-        stubFor(
-                get("/octocat/Hello-World/issues")
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(200)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody(
-                                                """
+        stubFor(get("/octocat/Hello-World/issues")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(
+                                """
                                 [
                                     {
                                         "url": "https://api.github.com/repos/salex06/testrepo/issues/5",
                                         "repository_url": "https://api.github.com/repos/salex06/testrepo",
                                         "labels_url": "https://api.github.com/repos/salex06/testrepo/issues/5/labels{/name}",
-                                        "comments_url": "http://localhost:8090/octocat/Hello-World/issues/5/comments",
+                                        "comments_url": "http://localhost:%d/octocat/Hello-World/issues/5/comments",
                                         "events_url": "https://api.github.com/repos/salex06/testrepo/issues/5/events",
                                         "html_url": "https://github.com/salex06/testrepo/issues/5", "id": 2905544102,
                                         "node_id": "I_kwDON6S4cc6tLxWm", "number": 5, "title": "new issue", "user": { "login":
@@ -113,7 +112,8 @@ class GitHubIssueListClientTest {
                                         "performed_via_github_app": null, "state_reason": null
                                     }
                                 ]
-                                """)));
+                                """
+                                        .formatted(port))));
 
         stubFor(
                 get("/octocat/Hello-World/issues/5/comments")
@@ -211,19 +211,17 @@ class GitHubIssueListClientTest {
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
 
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
-        stubFor(
-                get("/octocat/Hello-World/issues")
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(200)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody(
-                                                """
+        stubFor(get("/octocat/Hello-World/issues")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(
+                                """
                                 [
                                 { "url": "https://api.github.com/repos/salex06/testrepo/issues/5",
                                 "repository_url": "https://api.github.com/repos/salex06/testrepo",
                                 "labels_url": "https://api.github.com/repos/salex06/testrepo/issues/5/labels{/name}",
-                                "comments_url": "http://localhost:8090/octocat/Hello-World/issues/5/comments",
+                                "comments_url": "http://localhost:%d/octocat/Hello-World/issues/5/comments",
                                 "events_url": "https://api.github.com/repos/salex06/testrepo/issues/5/events",
                                 "html_url": "https://github.com/salex06/testrepo/issues/5", "id": 2905544102, "node_id":
                                 "I_kwDON6S4cc6tLxWm", "number": 5, "title": "new issue", "user": { "login": "salex06",
@@ -250,7 +248,8 @@ class GitHubIssueListClientTest {
                                 "rocket": 0, "eyes": 0 },
                                 "timeline_url": "https://api.github.com/repos/salex06/testrepo/issues/5/timeline",
                                 "performed_via_github_app": null, "state_reason": null } ]
-                                """)));
+                                """
+                                        .formatted(port))));
 
         stubFor(
                 get("/octocat/Hello-World/issues/5/comments")

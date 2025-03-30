@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import backend.academy.model.jdbc.JdbcLink;
+import backend.academy.model.plain.Link;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -339,5 +340,27 @@ class JdbcLinkRepositoryTest {
 
         assertNotNull(actualLinkIds);
         assertEquals(expectedLinkIds, actualLinkIds);
+    }
+
+    @Test
+    public void getLinkById_WhenNoLinkInDb_ThenReturnEmpty() {
+        Long linkId = 4L;
+
+        Optional<JdbcLink> actualLink = linkRepository.getLinkById(linkId);
+
+        assertThat(actualLink).isEmpty();
+    }
+
+    @Test
+    public void getLinkById_WhenLinkInDb_ThenReturnLink() {
+        Long linkId = 1L;
+        String linkValue = "link";
+        jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('link')");
+
+        Optional<JdbcLink> actualLink = linkRepository.getLinkById(linkId);
+
+        assertThat(actualLink).isNotEmpty();
+        assertThat(actualLink.orElseThrow().getId()).isEqualTo(linkId);
+        assertThat(actualLink.orElseThrow().getUrl()).isEqualTo(linkValue);
     }
 }

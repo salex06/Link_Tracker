@@ -244,7 +244,7 @@ public class JdbcChatRepository {
     @Transactional
     public boolean saveTag(Long linkId, Long chatId, String tagValue) {
         try {
-            String sql = "INSERT INTO chat_link_tags VALUES (:linkId, :tagValue, :chatId)";
+            String sql = "INSERT INTO chat_link_tags VALUES (:linkId, :tagValue, :chatId) ON CONFLICT DO NOTHING";
 
             MapSqlParameterSource params = new MapSqlParameterSource();
             params.addValue("linkId", linkId);
