@@ -6,12 +6,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
-import backend.academy.crawler.impl.AddTagMessageCrawler;
+import backend.academy.crawler.impl.tags.add.AddTagMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;

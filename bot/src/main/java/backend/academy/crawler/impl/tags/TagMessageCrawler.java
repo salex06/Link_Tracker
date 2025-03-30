@@ -1,7 +1,4 @@
-package backend.academy.crawler.impl;
-
-import static backend.academy.crawler.impl.AddTagMessageCrawler.AddTagMessageState.WAITING_FOR_LINK;
-import static backend.academy.crawler.impl.AddTagMessageCrawler.CrawlValidator.*;
+package backend.academy.crawler.impl.tags;
 
 import backend.academy.crawler.DialogStateDTO;
 import backend.academy.crawler.MessageCrawler;
@@ -14,11 +11,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@Component("addTagCrawler")
-public class AddTagMessageCrawler implements MessageCrawler {
-    private final Map<Long, Map.Entry<Boolean, List<String>>> userStates = new HashMap<>();
+public class TagMessageCrawler implements MessageCrawler {
+    protected final Map<Long, Map.Entry<Boolean, List<String>>> userStates = new HashMap<>();
+    protected final TagValidator tagValidator;
+
+    @Autowired
+    protected TagMessageCrawler(TagValidator tagValidator) {
+        this.tagValidator = tagValidator;
+    }
 
     @Override
     public DialogStateDTO crawl(Update update) {
@@ -29,9 +31,9 @@ public class AddTagMessageCrawler implements MessageCrawler {
         }
 
         String previousMessageText = update.message().replyToMessage().text();
-        AddTagMessageState previousState = AddTagMessageState.fromDescription(previousMessageText);
+        TagMessageState previousState = TagMessageState.fromDescription(previousMessageText);
 
-        if (previousState == WAITING_FOR_LINK) {
+        if (previousState == TagMessageState.WAITING_FOR_LINK) {
             return setCompleted(update);
         }
         return createUndefinedResponse();
@@ -39,7 +41,7 @@ public class AddTagMessageCrawler implements MessageCrawler {
 
     @Override
     public AddLinkRequest terminate(Long id) {
-        if (!dialogWasCompletedSuccessfully(userStates, id)) {
+        if (!tagValidator.dialogWasCompletedSuccessfully(userStates, id)) {
             return null;
         }
 
@@ -57,13 +59,14 @@ public class AddTagMessageCrawler implements MessageCrawler {
         Message lastMessage = update.message();
 
         // Если это начало диалога
-        if (isStartMessage(lastMessage.text().split(" ", 2)[0])) {
+        if (tagValidator.isStartMessage(lastMessage.text().split(" ", 2)[0])) {
             // устанавливаем состояние диалога: "Ожидание ссылки"
             return createWaitingForLinkResponse(update);
         }
 
         // Если состояние диалога не найдено
-        if (dialogStateWasNotSetYet(userStates, update.message().chat().id())) {
+        if (tagValidator.dialogStateWasNotSetYet(
+                userStates, update.message().chat().id())) {
             // возвращаем пустое сообщение
             return createUndefinedResponse();
         }
@@ -94,7 +97,7 @@ public class AddTagMessageCrawler implements MessageCrawler {
         Long chatId = update.message().chat().id();
         Message lastMessage = update.message();
 
-        if (!isCorrectStartMessage(lastMessage.text())) {
+        if (!tagValidator.isCorrectStartMessage(lastMessage.text())) {
             return new DialogStateDTO(new SendMessage(chatId, "Ошибка ввода! Попробуйте снова"), false);
         }
 
@@ -104,7 +107,9 @@ public class AddTagMessageCrawler implements MessageCrawler {
 
         userStates.get(chatId).getValue().add(splittedMessage[1]);
         return new DialogStateDTO(
-                new SendMessage(chatId, WAITING_FOR_LINK.description).replyToMessageId(lastMessage.messageId()), false);
+                new SendMessage(chatId, TagMessageState.WAITING_FOR_LINK.description)
+                        .replyToMessageId(lastMessage.messageId()),
+                false);
     }
 
     private DialogStateDTO setCompleted(Update update) {
@@ -128,55 +133,28 @@ public class AddTagMessageCrawler implements MessageCrawler {
     }
 
     @Getter
-    public enum AddTagMessageState {
+    public enum TagMessageState {
         ERROR(null),
         UNDEFINED(null),
-        WAITING_FOR_LINK("Введите ссылку для тега (ALL - добавить тег для всех ссылок):"),
+        WAITING_FOR_LINK("Введите ссылку для тега (ALL - применить для всех ссылок):"),
         COMPLETED(null);
 
         private String description;
 
-        AddTagMessageState(String description) {
+        TagMessageState(String description) {
             this.description = description;
         }
 
-        private static final Map<String, AddTagMessageState> descriptionToEnum = new HashMap<>();
+        private static final Map<String, TagMessageState> descriptionToEnum = new HashMap<>();
 
         static {
-            for (AddTagMessageState state : values()) {
+            for (TagMessageState state : values()) {
                 descriptionToEnum.put(state.description(), state);
             }
         }
 
-        public static AddTagMessageState fromDescription(String description) {
+        public static TagMessageState fromDescription(String description) {
             return descriptionToEnum.getOrDefault(description, UNDEFINED);
         }
-    }
-
-    public static class CrawlValidator {
-        public static final String START_DIALOG_COMMAND = "/addtag";
-
-        private CrawlValidator() {}
-
-        public static boolean isStartMessage(String message) {
-            return message.equals(START_DIALOG_COMMAND);
-        }
-
-        public static boolean dialogStateWasNotSetYet(Map<Long, Map.Entry<Boolean, List<String>>> userStates, Long id) {
-            return !userStates.containsKey(id);
-        }
-
-        public static boolean isCorrectStartMessage(String message) {
-            return message.matches("^/addtag [a-zA-Z0-9-_]+$");
-        }
-
-        public static boolean dialogWasCompletedSuccessfully(
-                Map<Long, Map.Entry<Boolean, List<String>>> userStates, Long id) {
-            return userStates.containsKey(id)
-                    && userStates.get(id).getKey()
-                    && userStates.get(id).getValue().size() == MESSAGE_COUNT_IF_COMPLETED;
-        }
-
-        private static final int MESSAGE_COUNT_IF_COMPLETED = 2;
     }
 }

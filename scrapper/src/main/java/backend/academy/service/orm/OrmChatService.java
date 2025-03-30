@@ -176,4 +176,16 @@ public class OrmChatService implements ChatService {
             }
         }
     }
+
+    @Override
+    public void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
+        OrmChat ormChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
+        List<OrmLink> links = chatLinkRepository.findAllByChatPrimaryId(ormChat.getId());
+        for (String tag : tags) {
+            for (OrmLink link : links) {
+                if (tagsRepository.existsById(new OrmChatLinkTagsIdEmbedded(ormChat.getId(), link.getId(), tag)))
+                    tagsRepository.delete(new OrmChatLinkTags(ormChat, link, tag));
+            }
+        }
+    }
 }

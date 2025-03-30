@@ -1,12 +1,13 @@
 package backend.academy.crawler.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import backend.academy.crawler.DialogStateDTO;
+import backend.academy.crawler.impl.tags.add.AddTagMessageCrawler;
+import backend.academy.crawler.impl.tags.add.AddTagValidator;
 import backend.academy.dto.AddLinkRequest;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
@@ -15,20 +16,21 @@ import com.pengrad.telegrambot.model.User;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 class AddTagMessageCrawlerTest {
     private AddTagMessageCrawler addTagMessageCrawler;
+    private AddTagValidator addTagValidator;
 
     @BeforeEach
     void setUp() {
-        addTagMessageCrawler = new AddTagMessageCrawler();
+        addTagValidator = new AddTagValidator();
+        addTagMessageCrawler = new AddTagMessageCrawler(addTagValidator);
     }
 
     @Test
     public void test_WhenIsStartMessage_ThenCreateWaitingForLinkResponse() {
-        String expectedMessage = "Введите ссылку для тега (ALL - добавить тег для всех ссылок):";
+        String expectedMessage = "Введите ссылку для тега (ALL - применить для всех ссылок):";
         Boolean expectedState = false;
         String tagName = "myTag";
         Update update = Mockito.mock(Update.class);
@@ -46,7 +48,7 @@ class AddTagMessageCrawlerTest {
     }
 
     @Test
-    public void test_WhenDialogStateWasNotSetYet_ThenCreateUndefinedRespones() {
+    public void test_WhenDialogStateWasNotSetYet_ThenCreateUndefinedResponse() {
         Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
@@ -64,58 +66,47 @@ class AddTagMessageCrawlerTest {
 
     @Test
     public void crawl_WhenReplyToMessageIsNull_ThenReturnUndefined() {
-        try (MockedStatic<AddTagMessageCrawler.CrawlValidator> validator =
-                Mockito.mockStatic(AddTagMessageCrawler.CrawlValidator.class)) {
-            String expectedMessage = null;
-            Boolean expectedState = false;
-            Update update = Mockito.mock(Update.class);
-            Message message = Mockito.mock(Message.class);
-            Chat chat = Mockito.mock(Chat.class);
-            when(update.message()).thenReturn(message);
-            validator
-                    .when(() -> AddTagMessageCrawler.CrawlValidator.dialogStateWasNotSetYet(anyMap(), anyLong()))
-                    .thenReturn(false);
+        String expectedMessage = null;
+        Boolean expectedState = false;
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
 
-            when(message.text()).thenReturn("ALL");
-            when(message.replyToMessage()).thenReturn(null);
-            when(message.chat()).thenReturn(chat);
-            when(chat.id()).thenReturn(1L);
+        when(message.text()).thenReturn("ALL");
+        when(message.replyToMessage()).thenReturn(null);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(1L);
 
-            DialogStateDTO actualState = addTagMessageCrawler.crawl(update);
+        DialogStateDTO actualState = addTagMessageCrawler.crawl(update);
 
-            assertNull(actualState.message());
-            assertEquals(expectedState, actualState.isCompleted());
-        }
+        assertNull(actualState.message());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenReplyToYourself_ThenReturnError() {
-        try (MockedStatic<AddTagMessageCrawler.CrawlValidator> validator =
-                Mockito.mockStatic(AddTagMessageCrawler.CrawlValidator.class)) {
-            String expectedMessage = "Ошибка. Вы должны отвечать на сообщения бота";
-            Boolean expectedState = false;
-            Update update = Mockito.mock(Update.class);
-            Message message = Mockito.mock(Message.class);
-            Chat chat = Mockito.mock(Chat.class);
-            Message replyToMessage = Mockito.mock(Message.class);
-            User user = Mockito.mock(User.class);
-            when(update.message()).thenReturn(message);
-            when(message.text()).thenReturn("/any");
-            when(message.chat()).thenReturn(chat);
-            when(chat.id()).thenReturn(1L);
-            when(message.replyToMessage()).thenReturn(replyToMessage);
-            when(message.from()).thenReturn(user);
-            when(replyToMessage.from()).thenReturn(user);
-            when(user.isBot()).thenReturn(false);
-            validator
-                    .when(() -> AddTagMessageCrawler.CrawlValidator.dialogStateWasNotSetYet(anyMap(), anyLong()))
-                    .thenReturn(false);
+        setWaitingForLinkState();
+        String expectedMessage = "Ошибка. Вы должны отвечать на сообщения бота";
+        Boolean expectedState = false;
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        Message replyToMessage = Mockito.mock(Message.class);
+        User user = Mockito.mock(User.class);
+        when(update.message()).thenReturn(message);
+        when(message.text()).thenReturn("/any");
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(1L);
+        when(message.replyToMessage()).thenReturn(replyToMessage);
+        when(message.from()).thenReturn(user);
+        when(replyToMessage.from()).thenReturn(user);
+        when(user.isBot()).thenReturn(false);
 
-            DialogStateDTO actualState = addTagMessageCrawler.crawl(update);
+        DialogStateDTO actualState = addTagMessageCrawler.crawl(update);
 
-            assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-            assertEquals(expectedState, actualState.isCompleted());
-        }
+        assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -133,7 +124,7 @@ class AddTagMessageCrawlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
         when(message.replyToMessage()).thenReturn(replyToMessage);
-        when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - добавить тег для всех ссылок):");
+        when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - применить для всех ссылок):");
         when(message.from()).thenReturn(user);
         when(replyToMessage.from()).thenReturn(user);
         when(user.isBot()).thenReturn(true);
@@ -146,69 +137,52 @@ class AddTagMessageCrawlerTest {
 
     @Test
     public void terminate_WhenDialogWasNotCompleted_ThenReturnError() {
-        try (MockedStatic<AddTagMessageCrawler.CrawlValidator> validator =
-                Mockito.mockStatic(AddTagMessageCrawler.CrawlValidator.class)) {
-            Update update = Mockito.mock(Update.class);
-            Message message = Mockito.mock(Message.class);
-            Chat chat = Mockito.mock(Chat.class);
-            Message replyToMessage = Mockito.mock(Message.class);
-            User user = Mockito.mock(User.class);
-            when(update.message()).thenReturn(message);
-            when(message.text()).thenReturn("ALL");
-            when(message.chat()).thenReturn(chat);
-            when(chat.id()).thenReturn(1L);
-            when(message.replyToMessage()).thenReturn(replyToMessage);
-            when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - добавить тег для всех ссылок):");
-            when(message.from()).thenReturn(user);
-            when(replyToMessage.from()).thenReturn(user);
-            when(user.isBot()).thenReturn(true);
-            validator
-                    .when(() -> AddTagMessageCrawler.CrawlValidator.dialogWasCompletedSuccessfully(anyMap(), anyLong()))
-                    .thenReturn(false);
+        setWaitingForLinkState();
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        Message replyToMessage = Mockito.mock(Message.class);
+        User user = Mockito.mock(User.class);
+        when(update.message()).thenReturn(message);
+        when(message.text()).thenReturn("ALL");
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(1L);
+        when(message.replyToMessage()).thenReturn(replyToMessage);
+        when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - применить для всех ссылок):");
+        when(message.from()).thenReturn(user);
+        when(replyToMessage.from()).thenReturn(user);
+        when(user.isBot()).thenReturn(true);
 
-            AddLinkRequest actual = addTagMessageCrawler.terminate(chat.id());
+        AddLinkRequest actual = addTagMessageCrawler.terminate(chat.id());
 
-            assertNull(actual);
-        }
+        assertNull(actual);
     }
 
     @Test
     public void terminate_WhenDialogWasCompleted_ThenReturnSuccess() {
-        try (MockedStatic<AddTagMessageCrawler.CrawlValidator> validator =
-                Mockito.mockStatic(AddTagMessageCrawler.CrawlValidator.class)) {
-            validator
-                    .when(() -> AddTagMessageCrawler.CrawlValidator.isStartMessage(anyString()))
-                    .thenCallRealMethod();
-            validator
-                    .when(() -> AddTagMessageCrawler.CrawlValidator.isCorrectStartMessage(anyString()))
-                    .thenCallRealMethod();
-            setWaitingForLinkState();
-            setCompleted();
-            List<String> expectedTag = List.of("myTag");
-            Update update = Mockito.mock(Update.class);
-            Message message = Mockito.mock(Message.class);
-            Chat chat = Mockito.mock(Chat.class);
-            Message replyToMessage = Mockito.mock(Message.class);
-            User user = Mockito.mock(User.class);
-            when(update.message()).thenReturn(message);
-            when(message.text()).thenReturn("ALL");
-            when(message.chat()).thenReturn(chat);
-            when(chat.id()).thenReturn(1L);
-            when(message.replyToMessage()).thenReturn(replyToMessage);
-            when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - добавить тег для всех ссылок):");
-            when(message.from()).thenReturn(user);
-            when(replyToMessage.from()).thenReturn(user);
-            when(user.isBot()).thenReturn(true);
-            validator
-                    .when(() -> AddTagMessageCrawler.CrawlValidator.dialogWasCompletedSuccessfully(anyMap(), anyLong()))
-                    .thenReturn(true);
+        setWaitingForLinkState();
+        setCompleted();
+        List<String> expectedTag = List.of("myTag");
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        Message replyToMessage = Mockito.mock(Message.class);
+        User user = Mockito.mock(User.class);
+        when(update.message()).thenReturn(message);
+        when(message.text()).thenReturn("ALL");
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(1L);
+        when(message.replyToMessage()).thenReturn(replyToMessage);
+        when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - применить для всех ссылок):");
+        when(message.from()).thenReturn(user);
+        when(replyToMessage.from()).thenReturn(user);
+        when(user.isBot()).thenReturn(true);
 
-            AddLinkRequest actual = addTagMessageCrawler.terminate(chat.id());
+        AddLinkRequest actual = addTagMessageCrawler.terminate(chat.id());
 
-            assertNotNull(actual);
-            assertEquals(message.text(), actual.link());
-            assertEquals(expectedTag, actual.tags());
-        }
+        assertNotNull(actual);
+        assertEquals(message.text(), actual.link());
+        assertEquals(expectedTag, actual.tags());
     }
 
     private void setWaitingForLinkState() {
@@ -233,7 +207,7 @@ class AddTagMessageCrawlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
         when(message.replyToMessage()).thenReturn(replyToMessage);
-        when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - добавить тег для всех ссылок):");
+        when(replyToMessage.text()).thenReturn("Введите ссылку для тега (ALL - применить для всех ссылок):");
         when(message.from()).thenReturn(user);
         when(replyToMessage.from()).thenReturn(user);
         when(user.isBot()).thenReturn(true);

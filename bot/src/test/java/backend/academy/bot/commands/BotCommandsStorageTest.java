@@ -30,6 +30,7 @@ class BotCommandsStorageTest {
         commandList.add(new Command("/untrack", true));
         commandList.add(new Command("/listbytag", true));
         commandList.add(new Command("/addtag", true));
+        commandList.add(new Command("/removetag", true));
         return commandList;
     }
 
@@ -49,7 +50,8 @@ class BotCommandsStorageTest {
                 Arguments.of("/track", new Command("/track", false)),
                 Arguments.of("/untrack linkExample", new Command("/untrack", true)),
                 Arguments.of("/listbytag tagName", new Command("/listbytag", true)),
-                Arguments.of("/addtag tagName", new Command("/addtag", true)));
+                Arguments.of("/addtag tagName", new Command("/addtag", true)),
+                Arguments.of("/removetag tagName", new Command("/removetag", true)));
     }
 
     @Test
@@ -64,13 +66,22 @@ class BotCommandsStorageTest {
     @Test
     void getCommandDescriptionReturnsCorrectMap() {
         Map<String, String> expectedMap = Map.of(
-                "/start", "Запустить бота",
-                "/help", "Вывести все команды на экран",
-                "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
-                "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
-                "/list", "Получить список всех отслеживаемых ресурсов",
-                "/listbytag", "Получить список ссылок с данным тегом",
-                "/addtag", "Добавить тег для ссылки");
+                "/start",
+                "Запустить бота",
+                "/help",
+                "Вывести все команды на экран",
+                "/track",
+                "Запустить отслеживание ресурса по ссылке, следующей за командой",
+                "/untrack",
+                "Прекратить отслеживание ресурса по ссылке, следующей за командой",
+                "/list",
+                "Получить список всех отслеживаемых ресурсов",
+                "/listbytag",
+                "Получить список ссылок с данным тегом",
+                "/addtag",
+                "Добавить тег для ссылки",
+                "/removetag",
+                "Удалить тег для ссылки");
 
         Map<String, String> actualMap = BotCommandsStorage.getCommandDescription();
 

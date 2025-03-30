@@ -152,4 +152,15 @@ public class SqlChatService implements ChatService {
             }
         }
     }
+
+    @Override
+    public void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
+        JdbcTgChat jdbcTgChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
+        Set<Link> chatLinks = linkService.getAllLinksByChatId(jdbcTgChat.chatId());
+        for (String tag : tags) {
+            for (Link link : chatLinks) {
+                chatRepository.removeTag(link.getId(), jdbcTgChat.id(), tag);
+            }
+        }
+    }
 }

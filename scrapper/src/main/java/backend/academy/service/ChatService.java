@@ -100,4 +100,12 @@ public interface ChatService {
      * @param tags набор тегов, которые требуется добавить
      */
     void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
+
+    /**
+     * Удалить тег для всех ссылок чата
+     *
+     * @param tgChat чат
+     * @param tags набор тегов, которые требуется удалить
+     */
+    void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
 }

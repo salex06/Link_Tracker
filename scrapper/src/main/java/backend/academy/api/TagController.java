@@ -14,6 +14,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -76,6 +77,43 @@ public class TagController {
         newTags.add(request.tags().getFirst());
 
         chatService.updateTags(plainLink, tgChat, newTags);
+        return new ResponseEntity<>(
+                new LinkResponse(plainLink.getId(), plainLink.getUrl(), plainLink.getTags(), plainLink.getFilters()),
+                HttpStatus.OK);
+    }
+
+    @DeleteMapping("/removetag")
+    public ResponseEntity<?> removeTag(
+            @RequestHeader("Remove-To-All") Boolean isMulticast,
+            @RequestHeader("Tg-Chat-Id") Long chatId,
+            @RequestBody AddLinkRequest request) {
+        Optional<TgChat> chat = chatService.getPlainTgChatByChatId(chatId);
+        if (chat.isEmpty()) {
+            return new ResponseEntity<>(
+                    new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
+                    HttpStatus.BAD_REQUEST);
+        }
+        TgChat tgChat = chat.orElseThrow();
+
+        if (isMulticast) {
+            chatService.removeTagsToAllLinksByChatId(tgChat, request.tags());
+            return new ResponseEntity<>(new LinkResponse(null, null, null, null), HttpStatus.OK);
+        }
+
+        String linkUrl = request.link();
+        Optional<Link> link = linkService.getLink(tgChat.chatId(), linkUrl);
+        if (link.isEmpty()) {
+            return new ResponseEntity<>(
+                    new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
+                    HttpStatus.BAD_REQUEST);
+        }
+        Link plainLink = link.orElseThrow();
+
+        List<String> newTags = new ArrayList<>(plainLink.getTags());
+        newTags.remove(request.tags().getFirst());
+
+        chatService.updateTags(plainLink, tgChat, newTags);
+
         return new ResponseEntity<>(
                 new LinkResponse(plainLink.getId(), plainLink.getUrl(), plainLink.getTags(), plainLink.getFilters()),
                 HttpStatus.OK);
