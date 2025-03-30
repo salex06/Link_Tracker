@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import backend.academy.model.jdbc.JdbcLink;
-import backend.academy.model.plain.Link;
 import backend.academy.repository.jdbc.JdbcLinkRepository;
 import java.sql.Connection;
 import java.sql.SQLException;

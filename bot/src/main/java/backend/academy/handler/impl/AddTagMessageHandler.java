@@ -10,7 +10,6 @@ import backend.academy.handler.Handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,9 +57,9 @@ public class AddTagMessageHandler implements Handler {
             LinkResponse linkResponse = restClient
                     .post()
                     .uri("/addtag")
-                    .header("Add-To-All", (Objects.equals(crawlerReport.link(), "ALL")) ? "true" : "false")
-                    .body(crawlerReport)
                     .header("Tg-Chat-Id", String.valueOf(chatId))
+                    .header("Add-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
+                    .body(crawlerReport)
                     .exchange((request, response) -> {
                         if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
                             ApiErrorResponse apiErrorResponse =

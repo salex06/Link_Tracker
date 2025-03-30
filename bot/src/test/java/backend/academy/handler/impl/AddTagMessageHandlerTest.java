@@ -1,24 +1,5 @@
 package backend.academy.handler.impl;
 
-import backend.academy.bot.commands.Command;
-import backend.academy.crawler.impl.AddTagMessageCrawler;
-import backend.academy.crawler.impl.TrackMessageCrawler;
-import backend.academy.dto.AddLinkRequest;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.pengrad.telegrambot.model.Chat;
-import com.pengrad.telegrambot.model.Message;
-import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.request.SendMessage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.client.RestClient;
-import java.util.ArrayList;
-import java.util.List;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -28,6 +9,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+
+import backend.academy.bot.commands.Command;
+import backend.academy.crawler.impl.AddTagMessageCrawler;
+import backend.academy.dto.AddLinkRequest;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.pengrad.telegrambot.model.Chat;
+import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.request.SendMessage;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestClient;
 
 class AddTagMessageHandlerTest {
     private int port;
@@ -93,14 +92,14 @@ class AddTagMessageHandlerTest {
         when(message.text()).thenReturn("/addtag tagExample");
 
         stubFor(
-            post("/addtag")
-                .willReturn(
-                    aResponse()
-                        .withStatus(400)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(
-                            "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
+                post("/addtag")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
+                                                        + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
@@ -123,14 +122,14 @@ class AddTagMessageHandlerTest {
         when(message.text()).thenReturn("/addtag tagExample");
 
         stubFor(
-            post("/addtag")
-                .willReturn(
-                    aResponse()
-                        .withStatus(400)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(
-                            "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
+                post("/addtag")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
+                                                        + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
@@ -151,12 +150,12 @@ class AddTagMessageHandlerTest {
         when(message.text()).thenReturn("/addtag tagExample");
 
         stubFor(post("/addtag")
-            .willReturn(aResponse()
-                .withHeader("Tg-Chat-Id", chat.id().toString())
-                .withHeader("Add-To-All", "true")
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"id\": null,\"url\": null, \"tags\" : [\"tagExample\"], \"filters\":[]}")));
+                .willReturn(aResponse()
+                        .withHeader("Tg-Chat-Id", chat.id().toString())
+                        .withHeader("Add-To-All", "true")
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"id\": null,\"url\": null, \"tags\" : [\"tagExample\"], \"filters\":[]}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
@@ -177,12 +176,12 @@ class AddTagMessageHandlerTest {
         when(message.text()).thenReturn("/addtag tagExample");
 
         stubFor(post("/addtag")
-            .willReturn(aResponse()
-                .withHeader("Tg-Chat-Id", chat.id().toString())
-                .withHeader("Add-To-All", "false")
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
-                .withBody("{\"id\": 1,\"url\":\"linkExample\"}")));
+                .willReturn(aResponse()
+                        .withHeader("Tg-Chat-Id", chat.id().toString())
+                        .withHeader("Add-To-All", "false")
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"id\": 1,\"url\":\"linkExample\"}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
