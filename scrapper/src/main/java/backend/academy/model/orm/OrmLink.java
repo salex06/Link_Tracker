@@ -10,10 +10,6 @@ import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
-/**
- * Модель orm-сущности, представляющей ссылку. Хранит идентификатор ссылки, значение ссылки и дату последней проверки
- * обновлений
- */
 @Entity
 @Table(name = "link")
 @NoArgsConstructor

@@ -8,7 +8,6 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.NoArgsConstructor;
 
-/** Модель orm-сущности, представляющей связь между чатом, ссылкой и тегом */
 @Entity
 @Table(name = "chat_link_tags")
 @NoArgsConstructor

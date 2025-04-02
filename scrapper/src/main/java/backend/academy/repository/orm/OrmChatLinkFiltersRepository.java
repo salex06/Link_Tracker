@@ -10,27 +10,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-/** Репозиторий для взаимодействия с информацией о фильтрах, связанных с чатом и ссылкой */
 @Repository
 public interface OrmChatLinkFiltersRepository extends JpaRepository<OrmChatLinkFilters, OrmChatLinkFiltersIdEmbedded> {
-    /**
-     * Удалить фильтр по идентификатору чата и ссылки
-     *
-     * @param chatId идентификатор чата (внутренний)
-     * @param linkId идентификатор ссылки
-     */
     @Transactional
     @Modifying
     @Query("DELETE FROM OrmChatLinkFilters t WHERE t.chat.id = :chatId AND t.link.id = :linkId")
     void deleteByChatPrimaryIdAndLinkId(@Param("chatId") Long chatId, @Param("linkId") Long linkId);
 
-    /**
-     * Получить фильтры по идентификатору чата и идентификатору ссылки
-     *
-     * @param chatId идентификатор чата (внутренний)
-     * @param linkId идентификатор ссылки
-     * @return набор строк-фильтров
-     */
     @Query("SELECT t.id.filterValue FROM OrmChatLinkFilters t WHERE t.chat.id = :chatId AND t.link.id = :linkId")
     List<String> findFilterValuesByChatIdAndLinkId(@Param("chatId") Long chatId, @Param("linkId") Long linkId);
 }

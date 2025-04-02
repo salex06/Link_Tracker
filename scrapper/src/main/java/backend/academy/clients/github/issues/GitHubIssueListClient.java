@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/** Класс для отслеживания изменений в комментариях к issue или pull request на GitHub */
 @Slf4j
 @Component
 public class GitHubIssueListClient extends Client {

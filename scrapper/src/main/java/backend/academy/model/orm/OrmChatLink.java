@@ -8,10 +8,6 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.NoArgsConstructor;
 
-/**
- * Модель связующей таблицы между ссылкой на ресурс и чатом. Данная сущность содержит информацию о чате и ссылке,
- * которую данный чат отслеживает
- */
 @Entity
 @Table(name = "tg_chat_link")
 @NoArgsConstructor

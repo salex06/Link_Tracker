@@ -17,10 +17,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Репозиторий для взаимодействия с БД для сохранения, изменения, получения информации о чатах, связанных ссылках, тегах
- * и фильтрах
- */
 @Repository
 @RequiredArgsConstructor
 public class JdbcChatRepository {
@@ -64,12 +60,6 @@ public class JdbcChatRepository {
         return null;
     }
 
-    /**
-     * Проверить, существует ли чат в БД
-     *
-     * @param chatId идентификатор чата
-     * @return {@code true} - если чат содержится в БД, иначе - {@code false}
-     */
     @Transactional
     public boolean existsByChatId(Long chatId) {
         String sql = "SELECT EXISTS(SELECT 1 FROM tg_chat chat WHERE chat.chat_id = :chatId)";
@@ -80,12 +70,6 @@ public class JdbcChatRepository {
         return Boolean.TRUE.equals(namedJdbcTemplate.queryForObject(sql, params, Boolean.class));
     }
 
-    /**
-     * Найти чат по идентификатору
-     *
-     * @param chatId идентификатор чата (внешний идентификатор от telegram Api)
-     * @return объект класса JdbcTgChat, если чат существует, иначе - Optional.empty()
-     */
     @Transactional
     public Optional<JdbcTgChat> findByChatId(Long chatId) {
         String sql = "SELECT * FROM tg_chat chat WHERE chat.chat_id = :chatId";
@@ -101,12 +85,6 @@ public class JdbcChatRepository {
         }
     }
 
-    /**
-     * Найти чат по внутреннему идентификатору
-     *
-     * @param id внутренний идентификатор чата
-     * @return объект класса JdbcTgChat, если чат существует, иначе - Optional.empty()
-     */
     public Optional<JdbcTgChat> findById(Long id) {
         String sql = "SELECT * FROM tg_chat chat WHERE chat.id = :id";
 
@@ -121,11 +99,6 @@ public class JdbcChatRepository {
         }
     }
 
-    /**
-     * Удалить чат по тг-идентификатору
-     *
-     * @param chatId идентификатор от telegram Api
-     */
     @Modifying
     @Transactional
     public void deleteByChatId(Long chatId) {
@@ -137,12 +110,6 @@ public class JdbcChatRepository {
         namedJdbcTemplate.update(sql, params);
     }
 
-    /**
-     * Получить список чатов, отслеживающий ссылку с заданным идентификатором
-     *
-     * @param linkId идентификатор ссылки
-     * @return {@code List<JdbcTgChat>} - список найденных чатов
-     */
     @Transactional
     public List<JdbcTgChat> getChatsByLink(Long linkId) {
         String sql =
@@ -154,13 +121,6 @@ public class JdbcChatRepository {
         return namedJdbcTemplate.query(sql, params, jdbcChatRowMapper);
     }
 
-    /**
-     * Получить теги по идентификатору чата и ссылки
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     * @return список найденных тегов
-     */
     @Transactional
     public List<String> getTags(Long linkId, Long chatId) {
         String sql = "SELECT tag_value FROM chat_link_tags WHERE chat_id = :chatId AND link_id = :linkId";
@@ -172,13 +132,6 @@ public class JdbcChatRepository {
         return namedJdbcTemplate.queryForList(sql, params, String.class);
     }
 
-    /**
-     * Получить список фильтров по идентификатору ссылки и чата
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     * @return список фильтров
-     */
     @Transactional
     public List<String> getFilters(Long linkId, Long chatId) {
         String sql = "SELECT filter_value FROM chat_link_filters WHERE chat_id = :chatId AND link_id = :linkId";
@@ -232,14 +185,6 @@ public class JdbcChatRepository {
         namedJdbcTemplate.update(sql, params);
     }
 
-    /**
-     * Сохранить тег для ссылки и чата
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     * @param tagValue значение тега
-     * @return {@code true}, если запись сохранена, иначе - {@code false}
-     */
     @Modifying
     @Transactional
     public boolean saveTag(Long linkId, Long chatId, String tagValue) {
@@ -258,14 +203,6 @@ public class JdbcChatRepository {
         }
     }
 
-    /**
-     * Сохранить фильтр для ссылки и чата
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     * @param filterValue значение фильтра
-     * @return {@code true}, если запись сохранена, иначе - {@code false}
-     */
     @Modifying
     @Transactional
     public boolean saveFilter(Long linkId, Long chatId, String filterValue) {
@@ -284,13 +221,6 @@ public class JdbcChatRepository {
         }
     }
 
-    /**
-     * Удалить тег
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     * @param tagValue значение тега
-     */
     @Modifying
     @Transactional
     public void removeTag(Long linkId, Long chatId, String tagValue) {
@@ -305,12 +235,6 @@ public class JdbcChatRepository {
         namedJdbcTemplate.update(sql, params);
     }
 
-    /**
-     * Удалить все теги, связанные с чатом и ссылкой
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     */
     @Modifying
     @Transactional
     public void removeAllTags(Long linkId, Long chatId) {
@@ -323,13 +247,6 @@ public class JdbcChatRepository {
         namedJdbcTemplate.update(sql, params);
     }
 
-    /**
-     * Удалить фильтр
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     * @param filterValue значение фильтра
-     */
     @Modifying
     @Transactional
     public void removeFilter(Long linkId, Long chatId, String filterValue) {
@@ -344,12 +261,6 @@ public class JdbcChatRepository {
         namedJdbcTemplate.update(sql, params);
     }
 
-    /**
-     * Удалить все фильтры, связанные с чатом и ссылкой
-     *
-     * @param linkId идентификатор ссылки
-     * @param chatId идентификатор чата
-     */
     @Modifying
     @Transactional
     public void removeAllFilters(Long linkId, Long chatId) {

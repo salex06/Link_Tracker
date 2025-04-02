@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
-/**
- * Стандартный преобразователь ссылок, позволяющий с помощью конструкторов классов конвертировать различные типы ссылок
- */
 @Component
 public class StandardLinkMapper implements LinkMapper {
     @Override

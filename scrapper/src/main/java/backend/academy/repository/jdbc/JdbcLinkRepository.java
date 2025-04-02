@@ -24,7 +24,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Репозиторий, взаимодействующий с БД для получения информации о ссылках и чатах, связанных с ними */
 @Repository
 @RequiredArgsConstructor
 public class JdbcLinkRepository {

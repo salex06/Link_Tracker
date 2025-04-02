@@ -7,7 +7,6 @@ import backend.academy.model.plain.TgChat;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
-/** Интерфейс, предоставляющий методы для конвертации специфических типов чатов в обобщенные и наоборот */
 @Component
 public interface ChatMapper {
     /**

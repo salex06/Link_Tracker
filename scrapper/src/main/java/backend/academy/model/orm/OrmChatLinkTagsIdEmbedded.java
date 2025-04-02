@@ -7,10 +7,6 @@ import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
-/**
- * Класс представляет модель первичного составного ключа сущности OrmChatLinkTags. Хранит информацию об идентификаторах
- * чата и ссылки, о значении тега
- */
 @Embeddable
 @NoArgsConstructor
 @AllArgsConstructor

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
-/** Интерфейс, предоставляющий методы для преобразования специфических по реализации ссылок в "обобщенные" и наоборот */
 @Component
 public interface LinkMapper {
     /**

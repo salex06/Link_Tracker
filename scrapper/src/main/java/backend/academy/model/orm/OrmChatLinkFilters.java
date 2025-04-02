@@ -8,7 +8,6 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.NoArgsConstructor;
 
-/** Сущность для хранения данных о фильтрах, связанных с конкретными чатоми и ссылками */
 @Entity
 @Table(name = "chat_link_filters")
 @NoArgsConstructor

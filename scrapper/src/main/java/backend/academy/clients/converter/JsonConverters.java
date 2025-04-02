@@ -5,7 +5,7 @@ import java.time.Instant;
 
 public final class JsonConverters {
     private JsonConverters() {}
-    /** Конвертер времени из JSON-объекта в объект класса Instant */
+
     public static class InstantTimeConverter extends StdConverter<String, Instant> {
         /**
          * Конвертировать в Instant
@@ -19,7 +19,6 @@ public final class JsonConverters {
         }
     }
 
-    /** Преобразователь тела комментария в превью */
     public static class StringTruncator extends StdConverter<String, String> {
         /**
          * Усечь слишком большой комментарий до требуемого количества символов, чтобы превью было удобно читать
@@ -29,12 +28,10 @@ public final class JsonConverters {
          */
         @Override
         public String convert(String body) {
-            // TODO: magic number убрать (200 - максимальная длина превью по ФТ)
             return body.substring(0, Math.min(body.length(), 200));
         }
     }
 
-    /** Конвертер времени в формате timestamp (из JSON-объекта) в объект класса Instant */
     public static class TimeStampToInstantConverter extends StdConverter<Long, Instant> {
         /**
          * Конвертировать timestamp в LocalDateTime

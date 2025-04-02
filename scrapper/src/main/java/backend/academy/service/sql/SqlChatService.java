@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-/** Сервис для реализации бизнес-логики взаимодействия с чатами */
 @Service("sqlChatService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "SQL")
 public class SqlChatService implements ChatService {

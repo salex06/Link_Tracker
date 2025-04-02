@@ -15,15 +15,6 @@ public class Link {
     private List<String> filters;
     private static final AtomicLong nextId = new AtomicLong();
 
-    /**
-     * Конструктор со всеми параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     * @param tgChatIds чаты, отслеживающие ссылку
-     * @param tags теги ссылки
-     * @param filters фильтры ссылки
-     */
     public Link(Long id, String url, List<Long> tgChatIds, List<String> tags, List<String> filters) {
         this.id = id;
         this.url = url;
@@ -32,13 +23,6 @@ public class Link {
         this.filters = filters;
     }
 
-    /**
-     * Конструктор с тремя основными параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     * @param tgChatIds чаты, отслеживающие ссылку
-     */
     public Link(Long id, String url, List<Long> tgChatIds) {
         this.id = id;
         this.url = url;
@@ -47,7 +31,6 @@ public class Link {
         this.filters = new ArrayList<>();
     }
 
-    /** Конструктор по умолчанию */
     public Link() {
         this.id = null;
         this.url = null;

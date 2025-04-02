@@ -3,7 +3,6 @@ package backend.academy.processor;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 
-/** Интерфейс предоставляет метод process для обработки сообщений пользователя и формирования ответа */
 public interface Processor {
     /**
      * Обработать сообщение пользователя

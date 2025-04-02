@@ -8,7 +8,6 @@ import backend.academy.model.plain.TgChat;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
-/** Стандартный преобразователь чатов, использующий конструкторы для конвертации различных типов чатов */
 @Component
 public class StandardChatMapper implements ChatMapper {
     @Override

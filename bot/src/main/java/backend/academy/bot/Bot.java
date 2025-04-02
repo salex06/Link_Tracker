@@ -16,12 +16,6 @@ public class Bot {
     private final SetMyCommands commands;
     private final TelegramBot bot;
 
-    /**
-     * Конструктор с параметрами
-     *
-     * @param botConfig конфигурация бота (токен и имя бота)
-     * @param tgChatProcessor обработчик сообщений пользователя
-     */
     public Bot(BotConfig botConfig, Processor tgChatProcessor, SetMyCommands setMyCommands) {
         this.bot = new TelegramBot(botConfig.telegramToken());
 
@@ -37,12 +31,6 @@ public class Bot {
         bot.execute(commands);
     }
 
-    /**
-     * Параметризованный конструктор с аргументом - экземпляром бота
-     *
-     * @param telegramBot экземпляр телеграм бота
-     * @param tgChatProcessor обработчик сообщений пользователя
-     */
     @Autowired
     public Bot(TelegramBot telegramBot, Processor tgChatProcessor, SetMyCommands setMyCommands) {
         this.bot = telegramBot;

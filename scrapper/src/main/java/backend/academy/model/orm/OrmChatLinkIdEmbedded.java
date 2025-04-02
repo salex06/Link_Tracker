@@ -7,10 +7,6 @@ import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
-/**
- * Класс для представления составного первичного ключа сущности OrmChatLink. Хранит информацию об идентификаторе чата и
- * идентификаторе связанной ссылки
- */
 @Embeddable
 @AllArgsConstructor
 @NoArgsConstructor

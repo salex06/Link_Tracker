@@ -24,7 +24,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Сервис для реализации бизнес-логики взаимодействия с ссылками */
 @Service("sqlLinkService")
 @ConditionalOnProperty(prefix = "service", name = "access-type", havingValue = "SQL")
 public class SqlLinkService implements LinkService {
