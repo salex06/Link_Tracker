@@ -1,4 +1,4 @@
-package backend.academy.clients.github.repository;
+package backend.academy.clients.github.storage;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
 
-class GitHubRepositoryClientTest {
+class GitHubPersonalStorageClientTest {
     private int port = 8090;
 
     @Autowired
@@ -25,7 +25,7 @@ class GitHubRepositoryClientTest {
 
     private WireMockServer wireMockServer;
 
-    private static GitHubRepositoryClient gitHubRepositoryClient;
+    private static GitHubPersonalStorageClient gitHubPersonalStorageClient;
 
     @BeforeEach
     public void setupBeforeEach() {
@@ -47,7 +47,7 @@ class GitHubRepositoryClientTest {
     @Test
     void getUpdates_WhenRepositoryWasUpdated_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        gitHubRepositoryClient = new GitHubRepositoryClient(
+        gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient);
 
         String expectedMessage = "Обновление репозитория Hello-World по ссылке https://github.com/octocat/Hello-World";
@@ -131,7 +131,7 @@ class GitHubRepositoryClientTest {
                                 "subscribers_count": 1736 }
                                 """)));
 
-        List<String> updates = gitHubRepositoryClient.getUpdates(link);
+        List<String> updates = gitHubPersonalStorageClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
         assertThat(updates.getFirst()).isEqualTo(expectedMessage);
@@ -140,7 +140,7 @@ class GitHubRepositoryClientTest {
     @Test
     void getUpdates_WhenRepositoryWasNotUpdated_ThenReturnBlank() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        gitHubRepositoryClient = new GitHubRepositoryClient(
+        gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient);
 
         String expectedMessage = "Обновление репозитория Hello-World по ссылке https://github.com/octocat/Hello-World";
@@ -258,7 +258,7 @@ class GitHubRepositoryClientTest {
                                 "subscribers_count": 1736
                             }""")));
 
-        List<String> updates = gitHubRepositoryClient.getUpdates(link);
+        List<String> updates = gitHubPersonalStorageClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
         assertThat(updates.size()).isEqualTo(1);
@@ -268,7 +268,7 @@ class GitHubRepositoryClientTest {
     @Test
     void getUpdates_WhenRepositoryNotFound_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        gitHubRepositoryClient = new GitHubRepositoryClient(
+        gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-Worldd"), restClient);
 
         String expectedMessage = "Обновление репозитория Hello-World по ссылке https://github.com/octocat/Hello-Worldd";
@@ -288,7 +288,7 @@ class GitHubRepositoryClientTest {
                             }
                             """)));
 
-        List<String> updates = gitHubRepositoryClient.getUpdates(link);
+        List<String> updates = gitHubPersonalStorageClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }

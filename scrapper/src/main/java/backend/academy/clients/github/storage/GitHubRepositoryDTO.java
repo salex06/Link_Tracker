@@ -1,4 +1,4 @@
-package backend.academy.clients.github.repository;
+package backend.academy.clients.github.storage;
 
 import backend.academy.clients.converter.JsonConverters;
 import backend.academy.clients.github.GitHubUser;

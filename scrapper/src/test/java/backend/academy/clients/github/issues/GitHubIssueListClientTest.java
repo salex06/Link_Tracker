@@ -161,7 +161,7 @@ class GitHubIssueListClientTest {
                                         "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }, { "url":
                                         "https://api.github.com/repos/octocat/Hello-World/issues/comments/1340258",
                                         "html_url": "https://github.com/octocat/Hello-World/pull/1#issuecomment-1340258",
-                                        "issue_url": "https://api.github.com/repos/octocat/Hello-World/issues/1", "id": 1340258,
+                                        "issue_url": "http://localhost:%d/repos/octocat/Hello-World/issues/1", "id": 1340258,
                                         "node_id": "MDEyOklzc3VlQ29tbWVudDEzNDAyNTg=", "user": { "login": "masonzou", "id": 841296,
                                         "node_id": "MDQ6VXNlcjg0MTI5Ng==", "avatar_url": "https://avatars.githubusercontent.com/u/841296?v=4",
                                         "gravatar_id": "", "url": "https://api.github.com/users/masonzou", "html_url":
@@ -183,7 +183,7 @@ class GitHubIssueListClientTest {
                                     }
                                 ]
                                 """
-                                        .formatted(port))));
+                                        .formatted(port, port))));
 
         stubFor(
                 get("/repos/octocat/Hello-World/issues/2")
@@ -289,6 +289,111 @@ class GitHubIssueListClientTest {
                                     "state_reason": null
                                 }
             """)));
+
+        stubFor(
+                get("/repos/octocat/Hello-World/issues/1")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                            {
+                                "url": "https://api.github.com/repos/octocat/Hello-World/issues/1",
+                                "repository_url": "https://api.github.com/repos/octocat/Hello-World",
+                                "labels_url": "https://api.github.com/repos/octocat/Hello-World/issues/1/labels{/name}",
+                                "comments_url": "https://api.github.com/repos/octocat/Hello-World/issues/1/comments",
+                                "events_url": "https://api.github.com/repos/octocat/Hello-World/issues/1/events",
+                                "html_url": "https://github.com/octocat/Hello-World/pull/1",
+                                "id": 872858,
+                                "node_id": "MDExOlB1bGxSZXF1ZXN0MTQwOTAw",
+                                "number": 1,
+                                "title": "Edited README via GitHub",
+                                "user": {
+                                    "login": "unoju",
+                                    "id": 777449,
+                                    "node_id": "MDQ6VXNlcjc3NzQ0OQ==",
+                                    "avatar_url": "https://avatars.githubusercontent.com/u/777449?v=4",
+                                    "gravatar_id": "",
+                                    "url": "https://api.github.com/users/unoju",
+                                    "html_url": "https://github.com/unoju",
+                                    "followers_url": "https://api.github.com/users/unoju/followers",
+                                    "following_url": "https://api.github.com/users/unoju/following{/other_user}",
+                                    "gists_url": "https://api.github.com/users/unoju/gists{/gist_id}",
+                                    "starred_url": "https://api.github.com/users/unoju/starred{/owner}{/repo}",
+                                    "subscriptions_url": "https://api.github.com/users/unoju/subscriptions",
+                                    "organizations_url": "https://api.github.com/users/unoju/orgs",
+                                    "repos_url": "https://api.github.com/users/unoju/repos",
+                                    "events_url": "https://api.github.com/users/unoju/events{/privacy}",
+                                    "received_events_url": "https://api.github.com/users/unoju/received_events",
+                                    "type": "User",
+                                    "user_view_type": "public",
+                                    "site_admin": false
+                                },
+                                "labels": [],
+                                "state": "closed",
+                                "locked": false,
+                                "assignee": null,
+                                "assignees": [],
+                                "milestone": null,
+                                "comments": 57,
+                                "created_at": "2011-05-09T19:10:00Z",
+                                "updated_at": "2025-03-28T16:06:05Z",
+                                "closed_at": "2011-05-18T20:00:25Z",
+                                "author_association": "NONE",
+                                "sub_issues_summary": {
+                                    "total": 0,
+                                    "completed": 0,
+                                    "percent_completed": 0
+                                },
+                                "active_lock_reason": null,
+                                "draft": false,
+                                "pull_request": {
+                                    "url": "https://api.github.com/repos/octocat/Hello-World/pulls/1",
+                                    "html_url": "https://github.com/octocat/Hello-World/pull/1",
+                                    "diff_url": "https://github.com/octocat/Hello-World/pull/1.diff",
+                                    "patch_url": "https://github.com/octocat/Hello-World/pull/1.patch",
+                                    "merged_at": null
+                                },
+                                "body": "",
+                                "closed_by": {
+                                    "login": "octocat",
+                                    "id": 583231,
+                                    "node_id": "MDQ6VXNlcjU4MzIzMQ==",
+                                    "avatar_url": "https://avatars.githubusercontent.com/u/583231?v=4",
+                                    "gravatar_id": "",
+                                    "url": "https://api.github.com/users/octocat",
+                                    "html_url": "https://github.com/octocat",
+                                    "followers_url": "https://api.github.com/users/octocat/followers",
+                                    "following_url": "https://api.github.com/users/octocat/following{/other_user}",
+                                    "gists_url": "https://api.github.com/users/octocat/gists{/gist_id}",
+                                    "starred_url": "https://api.github.com/users/octocat/starred{/owner}{/repo}",
+                                    "subscriptions_url": "https://api.github.com/users/octocat/subscriptions",
+                                    "organizations_url": "https://api.github.com/users/octocat/orgs",
+                                    "repos_url": "https://api.github.com/users/octocat/repos",
+                                    "events_url": "https://api.github.com/users/octocat/events{/privacy}",
+                                    "received_events_url": "https://api.github.com/users/octocat/received_events",
+                                    "type": "User",
+                                    "user_view_type": "public",
+                                    "site_admin": false
+                                },
+                                "reactions": {
+                                    "url": "https://api.github.com/repos/octocat/Hello-World/issues/1/reactions",
+                                    "total_count": 5,
+                                    "+1": 0,
+                                    "-1": 0,
+                                    "laugh": 0,
+                                    "hooray": 0,
+                                    "confused": 0,
+                                    "heart": 1,
+                                    "rocket": 4,
+                                    "eyes": 0
+                                },
+                                "timeline_url": "https://api.github.com/repos/octocat/Hello-World/issues/1/timeline",
+                                "performed_via_github_app": null,
+                                "state_reason": null
+                            }
+                            """)));
 
         List<String> updates = gitHubIssueListClient.getUpdates(link);
 

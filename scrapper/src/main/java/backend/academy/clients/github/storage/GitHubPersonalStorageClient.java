@@ -1,4 +1,4 @@
-package backend.academy.clients.github.repository;
+package backend.academy.clients.github.storage;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
@@ -17,11 +17,11 @@ import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
-public class GitHubRepositoryClient extends Client {
+public class GitHubPersonalStorageClient extends Client {
     private static final Pattern supportedUrl =
             Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 
-    public GitHubRepositoryClient(
+    public GitHubPersonalStorageClient(
             @Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter,
             @Qualifier("gitHubClient") RestClient gitHubClient) {
         super(supportedUrl, converter, gitHubClient);

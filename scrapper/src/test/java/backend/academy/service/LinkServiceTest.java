@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import backend.academy.clients.Client;
-import backend.academy.clients.github.repository.GitHubRepositoryClient;
+import backend.academy.clients.github.storage.GitHubPersonalStorageClient;
 import backend.academy.clients.stackoverflow.questions.SoQuestionClient;
 import backend.academy.service.sql.SqlLinkService;
 import java.util.List;
@@ -21,7 +21,7 @@ class LinkServiceTest {
 
     @BeforeAll
     static void setUp() {
-        client = Mockito.mock(GitHubRepositoryClient.class);
+        client = Mockito.mock(GitHubPersonalStorageClient.class);
         client2 = Mockito.mock(SoQuestionClient.class);
         linkService = Mockito.mock(SqlLinkService.class);
     }
