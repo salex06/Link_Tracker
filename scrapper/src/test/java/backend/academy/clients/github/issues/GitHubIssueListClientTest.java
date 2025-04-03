@@ -51,26 +51,17 @@ class GitHubIssueListClientTest {
         gitHubIssueListClient = new GitHubIssueListClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
 
-        String expectedMessage1 =
+        String expectedMessage1 = String.format(
                 """
-            Новый issue new issue\r
-            Автор: salex06\r
-            Время создания: 31-12-+999999999 23:59 (UTC)\r
-            Превью: issue description\r""";
-        String expectedMessage2 =
+            Новый issue new issue%nАвтор: salex06%nВремя создания: 31-12-+999999999 23:59 (UTC)%nПревью: issue description""");
+        String expectedMessage2 = String.format(
                 """
-            Новый комментарий к issue README file modified \r
-            Автор: mattstifanelli\r
-            Время создания: 31-12-+999999999 23:59 (UTC)\r
-            Превью: Let's try again via Issue tacker...\r
-            """;
-        String expectedMessage3 =
+            Новый комментарий к issue README file modified %nАвтор: mattstifanelli%nВремя создания: 31-12-+999999999 23:59 (UTC)%nПревью: Let's try again via Issue tacker...
+            """);
+        String expectedMessage3 = String.format(
                 """
-            Новый комментарий к issue Edited README via GitHub\r
-            Автор: masonzou\r
-            Время создания: 31-12-+999999999 23:59 (UTC)\r
-            Превью: test\r
-            """;
+            Новый комментарий к issue Edited README via GitHub%nАвтор: masonzou%nВремя создания: 31-12-+999999999 23:59 (UTC)%nПревью: test
+            """);
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
         stubFor(get("/octocat/Hello-World/issues")
                 .willReturn(aResponse()
