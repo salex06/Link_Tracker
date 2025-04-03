@@ -55,7 +55,7 @@ public class SqlChatService implements ChatService {
         if (jdbcTgChat.isPresent()) {
             plainChat = Optional.of(chatMapper.toPlainTgChat(
                     jdbcTgChat.orElseThrow(),
-                    linkService.getAllLinksByChatId(jdbcTgChat.orElseThrow().chatId())));
+                    linkService.getAllLinksByChatId(jdbcTgChat.orElseThrow().getChatId())));
         }
         return plainChat;
     }
@@ -67,60 +67,60 @@ public class SqlChatService implements ChatService {
 
     @Override
     public void updateTags(Link link, TgChat chat, List<String> tags) {
-        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.getChatId());
         if (jdbcTgChat.isEmpty()) {
             return;
         }
         JdbcTgChat jdbcChat = jdbcTgChat.orElseThrow();
-        chatRepository.removeAllTags(link.getId(), jdbcChat.id());
+        chatRepository.removeAllTags(link.getId(), jdbcChat.getId());
         for (String tag : new HashSet<>(tags)) {
-            chatRepository.saveTag(link.getId(), jdbcChat.id(), tag);
+            chatRepository.saveTag(link.getId(), jdbcChat.getId(), tag);
         }
         link.setTags(tags);
-        chat.links().stream()
+        chat.getLinks().stream()
                 .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                 .forEach(i -> i.setTags(link.getTags()));
     }
 
     @Override
     public void updateFilters(Link link, TgChat chat, List<String> filters) {
-        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.getChatId());
         if (jdbcTgChat.isEmpty()) {
             return;
         }
         JdbcTgChat jdbcChat = jdbcTgChat.orElseThrow();
-        chatRepository.removeAllFilters(link.getId(), jdbcChat.id());
+        chatRepository.removeAllFilters(link.getId(), jdbcChat.getId());
         for (String filter : new HashSet<>(filters)) {
-            chatRepository.saveFilter(link.getId(), jdbcChat.id(), filter);
+            chatRepository.saveFilter(link.getId(), jdbcChat.getId(), filter);
         }
         link.setFilters(filters);
-        chat.links().stream()
+        chat.getLinks().stream()
                 .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                 .forEach(i -> i.setFilters(link.getFilters()));
     }
 
     @Override
     public void saveTheChatLink(TgChat chat, Link link) {
-        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.getChatId());
         if (jdbcTgChat.isEmpty()) {
             return;
         }
-        if (chat.links().stream()
+        if (chat.getLinks().stream()
                 .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                 .findAny()
                 .isEmpty())
-            chatRepository.saveTheChatLink(jdbcTgChat.orElseThrow().id(), link.getId());
+            chatRepository.saveTheChatLink(jdbcTgChat.orElseThrow().getId(), link.getId());
     }
 
     @Override
     public void removeTheChatLink(TgChat chat, Link link) {
-        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.getChatId());
         if (jdbcTgChat.isEmpty()) {
             return;
         }
-        chatRepository.removeTheChatLink(jdbcTgChat.orElseThrow().id(), link.getId());
-        chatRepository.removeAllTags(link.getId(), jdbcTgChat.orElseThrow().id());
-        chatRepository.removeAllFilters(link.getId(), jdbcTgChat.orElseThrow().id());
+        chatRepository.removeTheChatLink(jdbcTgChat.orElseThrow().getId(), link.getId());
+        chatRepository.removeAllTags(link.getId(), jdbcTgChat.orElseThrow().getId());
+        chatRepository.removeAllFilters(link.getId(), jdbcTgChat.orElseThrow().getId());
     }
 
     @Override
@@ -129,7 +129,7 @@ public class SqlChatService implements ChatService {
         if (jdbcTgChat.isEmpty()) {
             return List.of();
         }
-        return chatRepository.getTags(linkId, jdbcTgChat.orElseThrow().id());
+        return chatRepository.getTags(linkId, jdbcTgChat.orElseThrow().getId());
     }
 
     @Override
@@ -138,27 +138,27 @@ public class SqlChatService implements ChatService {
         if (jdbcTgChat.isEmpty()) {
             return List.of();
         }
-        return chatRepository.getFilters(linkId, jdbcTgChat.orElseThrow().id());
+        return chatRepository.getFilters(linkId, jdbcTgChat.orElseThrow().getId());
     }
 
     @Override
     public void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
-        JdbcTgChat jdbcTgChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
-        Set<Link> chatLinks = linkService.getAllLinksByChatId(jdbcTgChat.chatId());
+        JdbcTgChat jdbcTgChat = chatRepository.findByChatId(tgChat.getChatId()).orElseThrow();
+        Set<Link> chatLinks = linkService.getAllLinksByChatId(jdbcTgChat.getChatId());
         for (String tag : tags) {
             for (Link link : chatLinks) {
-                chatRepository.saveTag(link.getId(), jdbcTgChat.id(), tag);
+                chatRepository.saveTag(link.getId(), jdbcTgChat.getId(), tag);
             }
         }
     }
 
     @Override
     public void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
-        JdbcTgChat jdbcTgChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
-        Set<Link> chatLinks = linkService.getAllLinksByChatId(jdbcTgChat.chatId());
+        JdbcTgChat jdbcTgChat = chatRepository.findByChatId(tgChat.getChatId()).orElseThrow();
+        Set<Link> chatLinks = linkService.getAllLinksByChatId(jdbcTgChat.getChatId());
         for (String tag : tags) {
             for (Link link : chatLinks) {
-                chatRepository.removeTag(link.getId(), jdbcTgChat.id(), tag);
+                chatRepository.removeTag(link.getId(), jdbcTgChat.getId(), tag);
             }
         }
     }

@@ -86,14 +86,14 @@ public class OrmChatService implements ChatService {
     @Override
     public void updateTags(Link link, TgChat chat, List<String> tags) {
         Optional<OrmLink> ormLink = linkRepository.findByLinkValue(link.getUrl());
-        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.chatId());
+        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.getChatId());
         if (ormChat.isPresent() && ormLink.isPresent()) {
             tagsRepository.deleteByChatPrimaryIdAndLinkId(ormChat.orElseThrow().getId(), link.getId());
             for (String tag : new HashSet<>(tags)) {
                 tagsRepository.save(new OrmChatLinkTags(ormChat.orElseThrow(), ormLink.orElseThrow(), tag));
             }
             link.setTags(tags);
-            chat.links().stream()
+            chat.getLinks().stream()
                     .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                     .forEach(i -> i.setTags(link.getTags()));
         }
@@ -102,7 +102,7 @@ public class OrmChatService implements ChatService {
     @Override
     public void updateFilters(Link link, TgChat chat, List<String> filters) {
         Optional<OrmLink> ormLink = linkRepository.findByLinkValue(link.getUrl());
-        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.chatId());
+        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.getChatId());
         if (ormChat.isPresent() && ormLink.isPresent()) {
             filtersRepository.deleteByChatPrimaryIdAndLinkId(
                     ormChat.orElseThrow().getId(), link.getId());
@@ -110,7 +110,7 @@ public class OrmChatService implements ChatService {
                 filtersRepository.save(new OrmChatLinkFilters(ormChat.orElseThrow(), ormLink.orElseThrow(), filter));
             }
             link.setFilters(filters);
-            chat.links().stream()
+            chat.getLinks().stream()
                     .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                     .forEach(i -> i.setFilters(link.getFilters()));
         }
@@ -118,11 +118,11 @@ public class OrmChatService implements ChatService {
 
     @Override
     public void saveTheChatLink(TgChat chat, Link link) {
-        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.chatId());
+        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.getChatId());
         Optional<OrmLink> ormLink = linkRepository.findByLinkValue(link.getUrl());
         if (ormChat.isPresent()
                 && ormLink.isPresent()
-                && chat.links().stream()
+                && chat.getLinks().stream()
                         .filter(i -> Objects.equals(i.getUrl(), link.getUrl()))
                         .findAny()
                         .isEmpty()) {
@@ -132,7 +132,7 @@ public class OrmChatService implements ChatService {
 
     @Override
     public void removeTheChatLink(TgChat chat, Link link) {
-        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.chatId());
+        Optional<OrmChat> ormChat = chatRepository.findByChatId(chat.getChatId());
         Optional<OrmLink> ormLink = linkRepository.findByLinkValue(link.getUrl());
         if (ormChat.isPresent() && ormLink.isPresent()) {
             chatLinkRepository.deleteById(new OrmChatLinkIdEmbedded(
@@ -166,7 +166,7 @@ public class OrmChatService implements ChatService {
 
     @Override
     public void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
-        OrmChat ormChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
+        OrmChat ormChat = chatRepository.findByChatId(tgChat.getChatId()).orElseThrow();
         List<OrmLink> links = chatLinkRepository.findAllByChatPrimaryId(ormChat.getId());
         for (String tag : tags) {
             for (OrmLink link : links) {
@@ -178,7 +178,7 @@ public class OrmChatService implements ChatService {
 
     @Override
     public void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags) {
-        OrmChat ormChat = chatRepository.findByChatId(tgChat.chatId()).orElseThrow();
+        OrmChat ormChat = chatRepository.findByChatId(tgChat.getChatId()).orElseThrow();
         List<OrmLink> links = chatLinkRepository.findAllByChatPrimaryId(ormChat.getId());
         for (String tag : tags) {
             for (OrmLink link : links) {

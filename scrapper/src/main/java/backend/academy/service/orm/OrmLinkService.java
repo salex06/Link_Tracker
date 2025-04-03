@@ -104,13 +104,13 @@ public class OrmLinkService implements LinkService {
     @Override
     @Transactional
     public Link saveLink(Link link, TgChat chat) {
-        if (!chatRepository.existsById(chat.internalId())) {
+        if (!chatRepository.existsById(chat.getInternalId())) {
             return null;
         }
         OrmLink savedLink = linkRepository
                 .findByLinkValue(link.getUrl())
                 .orElseGet(() -> linkRepository.save(mapper.toOrmLink(link)));
-        OrmChat savedChat = chatRepository.findByChatId(chat.chatId()).orElseGet(() -> null);
+        OrmChat savedChat = chatRepository.findByChatId(chat.getChatId()).orElseGet(() -> null);
         if (savedChat == null) {
             return null;
         }

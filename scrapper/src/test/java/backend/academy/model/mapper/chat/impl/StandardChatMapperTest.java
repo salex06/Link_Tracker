@@ -26,9 +26,9 @@ class StandardChatMapperTest {
         TgChat actualChat = standardChatMapper.toPlainTgChat(jdbcChat, expectedLinks);
 
         assertThat(actualChat).isNotNull();
-        assertThat(actualChat.internalId()).isEqualTo((expectedId));
-        assertThat(actualChat.chatId()).isEqualTo(expectedChatId);
-        assertThat(actualChat.links()).isEqualTo(expectedLinks);
+        assertThat(actualChat.getInternalId()).isEqualTo((expectedId));
+        assertThat(actualChat.getChatId()).isEqualTo(expectedChatId);
+        assertThat(actualChat.getLinks()).isEqualTo(expectedLinks);
     }
 
     @Test
@@ -43,9 +43,9 @@ class StandardChatMapperTest {
         TgChat actualChat = standardChatMapper.toPlainTgChat(ormChat, expectedLinks);
 
         assertThat(actualChat).isNotNull();
-        assertThat(actualChat.internalId()).isEqualTo((expectedId));
-        assertThat(actualChat.chatId()).isEqualTo(expectedChatId);
-        assertThat(actualChat.links()).isEqualTo(expectedLinks);
+        assertThat(actualChat.getInternalId()).isEqualTo((expectedId));
+        assertThat(actualChat.getChatId()).isEqualTo(expectedChatId);
+        assertThat(actualChat.getLinks()).isEqualTo(expectedLinks);
     }
 
     @Test
@@ -60,8 +60,8 @@ class StandardChatMapperTest {
         JdbcTgChat actualChat = standardChatMapper.toJdbcTgChat(chat);
 
         assertThat(actualChat).isNotNull();
-        assertThat(actualChat.id()).isEqualTo(expectedId);
-        assertThat(actualChat.chatId()).isEqualTo(expectedChatId);
+        assertThat(actualChat.getId()).isEqualTo(expectedId);
+        assertThat(actualChat.getChatId()).isEqualTo(expectedChatId);
     }
 
     @Test

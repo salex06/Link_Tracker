@@ -88,8 +88,8 @@ class OrmChatServiceTest {
         TgChat chat = chatService.saveChat(chatId);
 
         assertThat(chat).isNotNull();
-        assertEquals(chatId, chat.chatId());
-        assertEquals(expectedId, chat.internalId());
+        assertEquals(chatId, chat.getChatId());
+        assertEquals(expectedId, chat.getInternalId());
     }
 
     @Test
@@ -116,9 +116,9 @@ class OrmChatServiceTest {
         Optional<TgChat> tgChat = chatService.getPlainTgChatByChatId(chatId);
 
         assertThat(tgChat).isNotEmpty();
-        assertThat(tgChat.get().internalId()).isEqualTo(id);
-        assertThat(tgChat.get().chatId()).isEqualTo(chatId);
-        assertThat(tgChat.get().links()).isEqualTo(expectedLinks);
+        assertThat(tgChat.get().getInternalId()).isEqualTo(id);
+        assertThat(tgChat.get().getChatId()).isEqualTo(chatId);
+        assertThat(tgChat.get().getLinks()).isEqualTo(expectedLinks);
     }
 
     @Test
@@ -220,7 +220,7 @@ class OrmChatServiceTest {
     public void removeTheChatLink_WhenChatDoNotExist_ThenReturn() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(1L);
+        when(chat.getChatId()).thenReturn(1L);
 
         chatService.removeTheChatLink(chat, new Link(1L, "url"));
 
@@ -236,7 +236,7 @@ class OrmChatServiceTest {
         Link link = new Link(1L, "url");
         when(linkRepository.findByLinkValue(link.getUrl())).thenReturn(Optional.of(ormLink));
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(chatId);
+        when(chat.getChatId()).thenReturn(chatId);
 
         chatService.removeTheChatLink(chat, link);
 
@@ -249,7 +249,7 @@ class OrmChatServiceTest {
     public void getTags_WhenChatDoNotExist_ThenReturnEmptyList() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(1L);
+        when(chat.getChatId()).thenReturn(1L);
 
         List<String> tags = chatService.getTags(1L, 1L);
 
@@ -260,7 +260,7 @@ class OrmChatServiceTest {
     public void getFilters_WhenChatDoNotExist_ThenReturnEmptyList() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(1L);
+        when(chat.getChatId()).thenReturn(1L);
 
         List<String> filters = chatService.getFilters(1L, 1L);
 
@@ -276,7 +276,7 @@ class OrmChatServiceTest {
         when(tagsRepository.findTagValuesByChatPrimaryIdAndLinkId(chatId, linkId))
                 .thenReturn(expectedTags);
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(chatId);
+        when(chat.getChatId()).thenReturn(chatId);
 
         List<String> tags = chatService.getTags(linkId, chatId);
 
@@ -292,7 +292,7 @@ class OrmChatServiceTest {
         when(filtersRepository.findFilterValuesByChatIdAndLinkId(chatId, linkId))
                 .thenReturn(expectedFilters);
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(chatId);
+        when(chat.getChatId()).thenReturn(chatId);
 
         List<String> filters = chatService.getFilters(linkId, chatId);
 

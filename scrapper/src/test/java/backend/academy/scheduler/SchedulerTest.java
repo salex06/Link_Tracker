@@ -51,7 +51,7 @@ class SchedulerTest {
         setUpClients();
 
         when(scrapperConfig.pageSize()).thenReturn(50L);
-        when(clientManager.availableClients()).thenReturn(clients);
+        when(clientManager.getAvailableClients()).thenReturn(clients);
 
         scheduler = new Scheduler(linkService, clientManager, notificationSender, scrapperConfig);
     }

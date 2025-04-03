@@ -6,11 +6,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "chat_link_tags")
 @NoArgsConstructor
+@Getter
+@Setter
 public class OrmChatLinkTags {
     @EmbeddedId
     private OrmChatLinkTagsIdEmbedded id;
@@ -29,37 +33,5 @@ public class OrmChatLinkTags {
         this.chat = chat;
         this.link = link;
         this.id = new OrmChatLinkTagsIdEmbedded(chat.getId(), link.getId(), tagValue);
-    }
-
-    public OrmChatLinkTagsIdEmbedded getId() {
-        return id;
-    }
-
-    public void setId(OrmChatLinkTagsIdEmbedded id) {
-        this.id = id;
-    }
-
-    public OrmChat getChat() {
-        return chat;
-    }
-
-    public void setChat(OrmChat chat) {
-        this.chat = chat;
-    }
-
-    public OrmLink getLink() {
-        return link;
-    }
-
-    public void setLink(OrmLink link) {
-        this.link = link;
-    }
-
-    public String getTagValue() {
-        return id.getTagValue();
-    }
-
-    public void setTagValue(String tagValue) {
-        this.id.setTagValue(tagValue);
     }
 }

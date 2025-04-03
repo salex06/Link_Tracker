@@ -34,7 +34,7 @@ public class HttpNotificationSender implements NotificationSender {
                 return null;
             });
         } catch (ApiErrorException e) {
-            ApiErrorResponse response = e.apiErrorResponse();
+            ApiErrorResponse response = e.getApiErrorResponse();
             log.atError()
                     .setMessage("Некорректные параметры запроса")
                     .addKeyValue("description", response.description())

@@ -46,7 +46,7 @@ public class SqlLinkService implements LinkService {
         for (JdbcLink link : jdbcLinks) {
             Set<Long> primaryChatIds = linkRepository.getChatIdsByUrl(link.getUrl());
             Set<Long> chatIds = primaryChatIds.stream()
-                    .map(i -> chatRepository.findById(i).orElseThrow().chatId())
+                    .map(i -> chatRepository.findById(i).orElseThrow().getChatId())
                     .collect(Collectors.toSet());
             plainLinks.add(linkMapper.toPlainLink(link, null, null, chatIds));
         }
@@ -61,16 +61,16 @@ public class SqlLinkService implements LinkService {
             return Optional.empty();
         }
         Optional<JdbcLink> jdbcLink =
-                linkRepository.getLinkByUrlAndChatId(chat.orElseThrow().id(), linkValue);
+                linkRepository.getLinkByUrlAndChatId(chat.orElseThrow().getId(), linkValue);
         if (jdbcLink.isEmpty()) {
             return Optional.empty();
         }
 
         JdbcLink link = jdbcLink.orElseThrow();
         List<String> tags =
-                chatRepository.getTags(link.getId(), chat.orElseThrow().id());
+                chatRepository.getTags(link.getId(), chat.orElseThrow().getId());
         List<String> filters =
-                chatRepository.getFilters(link.getId(), chat.orElseThrow().id());
+                chatRepository.getFilters(link.getId(), chat.orElseThrow().getId());
         Set<Long> chats = getChatIdsListeningToLink(link.getUrl());
 
         return Optional.of(linkMapper.toPlainLink(link, tags, filters, chats));
@@ -83,39 +83,39 @@ public class SqlLinkService implements LinkService {
                 .getLinkByUrl(link.getUrl())
                 .orElseGet(() -> linkRepository.save(linkMapper.toJdbcLink(link)));
 
-        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.chatId());
+        Optional<JdbcTgChat> jdbcTgChat = chatRepository.findByChatId(chat.getChatId());
         if (jdbcTgChat.isEmpty()) {
             return null;
         }
 
         if (linkRepository
-                .getLinkByUrlAndChatId(jdbcTgChat.orElseThrow().id(), link.getUrl())
+                .getLinkByUrlAndChatId(jdbcTgChat.orElseThrow().getId(), link.getUrl())
                 .isEmpty())
-            chatRepository.saveTheChatLink(jdbcTgChat.orElseThrow().id(), savedLink.getId());
+            chatRepository.saveTheChatLink(jdbcTgChat.orElseThrow().getId(), savedLink.getId());
 
-        chatRepository.removeAllTags(savedLink.getId(), jdbcTgChat.orElseThrow().id());
+        chatRepository.removeAllTags(savedLink.getId(), jdbcTgChat.orElseThrow().getId());
         if (!link.getTags().isEmpty()) {
             for (String tag : new HashSet<>(link.getTags())) {
                 chatRepository.saveTag(
-                        savedLink.getId(), jdbcTgChat.orElseThrow().id(), tag);
+                        savedLink.getId(), jdbcTgChat.orElseThrow().getId(), tag);
             }
         }
 
         chatRepository.removeAllFilters(
-                savedLink.getId(), jdbcTgChat.orElseThrow().id());
+                savedLink.getId(), jdbcTgChat.orElseThrow().getId());
         if (!link.getFilters().isEmpty()) {
             for (String filter : new HashSet<>(link.getFilters())) {
                 chatRepository.saveFilter(
-                        savedLink.getId(), jdbcTgChat.orElseThrow().id(), filter);
+                        savedLink.getId(), jdbcTgChat.orElseThrow().getId(), filter);
             }
         }
 
         List<String> tags = chatRepository.getTags(
-                savedLink.getId(), jdbcTgChat.orElseThrow().id());
+                savedLink.getId(), jdbcTgChat.orElseThrow().getId());
         List<String> filter = chatRepository.getFilters(
-                savedLink.getId(), jdbcTgChat.orElseThrow().id());
+                savedLink.getId(), jdbcTgChat.orElseThrow().getId());
         Set<Long> chats = chatRepository.getChatsByLink(savedLink.getId()).stream()
-                .map(JdbcTgChat::chatId)
+                .map(JdbcTgChat::getChatId)
                 .collect(Collectors.toSet());
 
         Link plainLink = linkMapper.toPlainLink(savedLink, tags, filter, chats);
@@ -130,7 +130,7 @@ public class SqlLinkService implements LinkService {
         if (chat.isEmpty()) {
             return Set.of();
         }
-        Long jdbcTgChatId = chat.orElseThrow().id();
+        Long jdbcTgChatId = chat.orElseThrow().getId();
         Set<Link> plainLinks = new HashSet<>();
         List<JdbcLink> jdbcLinks = linkRepository.getAllLinksByChatId(jdbcTgChatId);
         for (JdbcLink link : jdbcLinks) {
@@ -151,7 +151,7 @@ public class SqlLinkService implements LinkService {
         JdbcLink link = jdbcLink.orElseThrow();
         List<JdbcTgChat> chats = chatRepository.getChatsByLink(link.getId());
 
-        return chats.stream().map(JdbcTgChat::chatId).collect(Collectors.toSet());
+        return chats.stream().map(JdbcTgChat::getChatId).collect(Collectors.toSet());
     }
 
     @Override
@@ -171,7 +171,7 @@ public class SqlLinkService implements LinkService {
         if (tgChat.isEmpty()) {
             return List.of();
         }
-        Long internalId = tgChat.orElseThrow().id();
+        Long internalId = tgChat.orElseThrow().getId();
 
         List<Link> plainLinks = new ArrayList<>();
 

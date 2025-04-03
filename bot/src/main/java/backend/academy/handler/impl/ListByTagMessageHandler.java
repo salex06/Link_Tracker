@@ -62,7 +62,7 @@ public class ListByTagMessageHandler implements Handler {
                     .addKeyValue("chat-id", chatId)
                     .log();
 
-            return new SendMessage(chatId, e.apiErrorResponse().description());
+            return new SendMessage(chatId, e.getApiErrorResponse().description());
         }
     }
 
@@ -73,7 +73,7 @@ public class ListByTagMessageHandler implements Handler {
                 .append(linksResponse.size())
                 .append('\n');
         for (Link link : linksResponse.links()) {
-            builder.append(++counter).append(") ").append(link.url()).append('\n');
+            builder.append(++counter).append(") ").append(link.getUrl()).append('\n');
         }
         return builder.toString();
     }

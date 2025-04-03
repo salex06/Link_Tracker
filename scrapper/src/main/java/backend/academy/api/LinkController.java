@@ -86,7 +86,7 @@ public class LinkController {
                 .log();
         Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
         String linkUrl = addLinkRequest.link();
-        if (optChat.isPresent() && linkService.validateLink(clientManager.availableClients(), linkUrl)) {
+        if (optChat.isPresent() && linkService.validateLink(clientManager.getAvailableClients(), linkUrl)) {
             List<String> tags = addLinkRequest.tags();
             List<String> filters = addLinkRequest.filters();
             TgChat chat = optChat.orElseThrow();
@@ -121,10 +121,10 @@ public class LinkController {
         log.atInfo()
                 .setMessage("Запрос на удаление ссылки")
                 .addKeyValue("chat-id", chatId)
-                .addKeyValue("link", request.link())
+                .addKeyValue("link", request.getLink())
                 .log();
         Optional<TgChat> optChat = chatService.getPlainTgChatByChatId(chatId);
-        String url = request.link();
+        String url = request.getLink();
         Optional<Link> optLink = linkService.getLink(chatId, url);
         if (optChat.isEmpty()) {
             return new ResponseEntity<>(
@@ -133,8 +133,8 @@ public class LinkController {
         if (optLink.isPresent()) {
             TgChat chat = optChat.orElseThrow();
             Link link = optLink.orElseThrow();
-            List<String> tags = chatService.getTags(link.getId(), chat.chatId());
-            List<String> filters = chatService.getFilters(link.getId(), chat.chatId());
+            List<String> tags = chatService.getTags(link.getId(), chat.getChatId());
+            List<String> filters = chatService.getFilters(link.getId(), chat.getChatId());
             chatService.removeTheChatLink(chat, link);
             return new ResponseEntity<>(new LinkResponse(link.getId(), link.getUrl(), tags, filters), HttpStatus.OK);
         }

@@ -50,7 +50,7 @@ public class Scheduler {
         int pageSize = scrapperConfig.pageSize().intValue();
         Page<Link> page;
 
-        List<Client> clients = clientManager.availableClients();
+        List<Client> clients = clientManager.getAvailableClients();
 
         int partCount = 4;
         List<List<Link>> dividedBatch = IntStream.range(0, partCount)

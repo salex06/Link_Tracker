@@ -86,8 +86,8 @@ class JdbcChatRepositoryTest {
 
         JdbcTgChat actualChat = chatRepository.save(chat);
 
-        assertThat(actualChat.id()).isNotNull();
-        assertThat(actualChat.chatId()).isEqualTo(expectedChatId);
+        assertThat(actualChat.getId()).isNotNull();
+        assertThat(actualChat.getChatId()).isEqualTo(expectedChatId);
     }
 
     @Test
@@ -126,7 +126,7 @@ class JdbcChatRepositoryTest {
         Optional<JdbcTgChat> actualChat = chatRepository.findByChatId(chatId);
 
         assertThat(actualChat).isNotEmpty();
-        assertThat(actualChat.get().chatId()).isEqualTo(chatId);
+        assertThat(actualChat.get().getChatId()).isEqualTo(chatId);
     }
 
     @Test
@@ -158,7 +158,7 @@ class JdbcChatRepositoryTest {
         jdbcTemplate.update("INSERT INTO tg_chat_link(tg_chat_id, link_id) VALUES (2, 1), (1, 1)");
 
         List<JdbcTgChat> chats = chatRepository.getChatsByLink(linkId);
-        List<Long> actualChatIds = chats.stream().map(JdbcTgChat::chatId).toList();
+        List<Long> actualChatIds = chats.stream().map(JdbcTgChat::getChatId).toList();
 
         assertEquals(expectedChatIds, actualChatIds);
     }
@@ -350,8 +350,8 @@ class JdbcChatRepositoryTest {
         Optional<JdbcTgChat> chat = chatRepository.findById(expectedId);
 
         assertThat(chat).isNotEmpty();
-        assertThat(chat.get().id()).isEqualTo(expectedId);
-        assertThat(chat.get().chatId()).isEqualTo(expectedChatId);
+        assertThat(chat.get().getId()).isEqualTo(expectedId);
+        assertThat(chat.get().getChatId()).isEqualTo(expectedChatId);
     }
 
     @Test

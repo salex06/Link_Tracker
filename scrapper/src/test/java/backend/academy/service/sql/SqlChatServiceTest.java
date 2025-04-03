@@ -66,8 +66,8 @@ class SqlChatServiceTest {
         TgChat chat = chatService.saveChat(chatId);
 
         assertThat(chat).isNotNull();
-        assertEquals(chatId, chat.chatId());
-        assertEquals(expectedId, chat.internalId());
+        assertEquals(chatId, chat.getChatId());
+        assertEquals(expectedId, chat.getInternalId());
     }
 
     @Test
@@ -95,9 +95,9 @@ class SqlChatServiceTest {
         Optional<TgChat> tgChat = chatService.getPlainTgChatByChatId(chatId);
 
         assertThat(tgChat).isNotEmpty();
-        assertThat(tgChat.get().internalId()).isEqualTo(id);
-        assertThat(tgChat.get().chatId()).isEqualTo(chatId);
-        assertThat(tgChat.get().links()).isEqualTo(expectedLinks);
+        assertThat(tgChat.get().getInternalId()).isEqualTo(id);
+        assertThat(tgChat.get().getChatId()).isEqualTo(chatId);
+        assertThat(tgChat.get().getLinks()).isEqualTo(expectedLinks);
     }
 
     @Test
@@ -196,7 +196,7 @@ class SqlChatServiceTest {
     public void removeTheChatLink_WhenChatDoNotExist_ThenReturn() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(1L);
+        when(chat.getChatId()).thenReturn(1L);
 
         chatService.removeTheChatLink(chat, new Link(1L, "url"));
 
@@ -209,7 +209,7 @@ class SqlChatServiceTest {
         Long chatId = 2L;
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(chatId);
+        when(chat.getChatId()).thenReturn(chatId);
 
         chatService.removeTheChatLink(chat, new Link(1L, "url"));
 
@@ -222,7 +222,7 @@ class SqlChatServiceTest {
     public void getTags_WhenChatDoNotExist_ThenReturnEmptyList() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(1L);
+        when(chat.getChatId()).thenReturn(1L);
 
         List<String> tags = chatService.getTags(1L, 1L);
 
@@ -233,7 +233,7 @@ class SqlChatServiceTest {
     public void getFilters_WhenChatDoNotExist_ThenReturnEmptyList() {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(1L);
+        when(chat.getChatId()).thenReturn(1L);
 
         List<String> filters = chatService.getFilters(1L, 1L);
 
@@ -248,7 +248,7 @@ class SqlChatServiceTest {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(chatId, 12345L)));
         when(chatRepository.getTags(linkId, chatId)).thenReturn(expectedTags);
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(chatId);
+        when(chat.getChatId()).thenReturn(chatId);
 
         List<String> tags = chatService.getTags(linkId, chatId);
 
@@ -263,7 +263,7 @@ class SqlChatServiceTest {
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(chatId, 12345L)));
         when(chatRepository.getFilters(linkId, chatId)).thenReturn(expectedFilters);
         TgChat chat = Mockito.mock(TgChat.class);
-        when(chat.chatId()).thenReturn(chatId);
+        when(chat.getChatId()).thenReturn(chatId);
 
         List<String> filters = chatService.getFilters(linkId, chatId);
 

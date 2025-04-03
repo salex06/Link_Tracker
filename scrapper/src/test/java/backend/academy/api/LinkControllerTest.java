@@ -42,7 +42,7 @@ class LinkControllerTest {
     public void setup() {
         mockedClient = Mockito.mock(Client.class);
         clientManager = Mockito.mock(ClientManager.class);
-        when(clientManager.availableClients()).thenReturn(List.of(mockedClient));
+        when(clientManager.getAvailableClients()).thenReturn(List.of(mockedClient));
         when(mockedClient.supportLink(anyString())).thenReturn(true);
         linkService = Mockito.mock(LinkService.class);
         chatService = Mockito.mock(ChatService.class);

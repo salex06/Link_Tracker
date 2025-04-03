@@ -83,7 +83,7 @@ public class AddTagMessageHandler implements Handler {
                     .addKeyValue("tags", crawlerReport.tags())
                     .log();
 
-            return new SendMessage(chatId, e.apiErrorResponse().description());
+            return new SendMessage(chatId, e.getApiErrorResponse().description());
         }
     }
 

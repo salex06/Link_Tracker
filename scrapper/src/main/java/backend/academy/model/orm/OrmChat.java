@@ -7,12 +7,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "tg_chat")
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class OrmChat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,22 +26,6 @@ public class OrmChat {
     private Long chatId;
 
     public OrmChat(Long chatId) {
-        this.chatId = chatId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getChatId() {
-        return chatId;
-    }
-
-    public void setChatId(Long chatId) {
         this.chatId = chatId;
     }
 }

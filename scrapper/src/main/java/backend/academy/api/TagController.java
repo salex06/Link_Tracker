@@ -65,7 +65,7 @@ public class TagController {
             return new ResponseEntity<>(new LinkResponse(null, null, null, null), HttpStatus.OK);
         }
 
-        Optional<Link> link = linkService.getLink(tgChat.chatId(), linkUrl);
+        Optional<Link> link = linkService.getLink(tgChat.getChatId(), linkUrl);
         if (link.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),
@@ -101,7 +101,7 @@ public class TagController {
         }
 
         String linkUrl = request.link();
-        Optional<Link> link = linkService.getLink(tgChat.chatId(), linkUrl);
+        Optional<Link> link = linkService.getLink(tgChat.getChatId(), linkUrl);
         if (link.isEmpty()) {
             return new ResponseEntity<>(
                     new ApiErrorResponse("Некорректные параметры запроса", "400", "", "", new ArrayList<>()),

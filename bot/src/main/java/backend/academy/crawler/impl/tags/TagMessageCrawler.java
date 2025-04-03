@@ -149,7 +149,7 @@ public class TagMessageCrawler implements MessageCrawler {
 
         static {
             for (TagMessageState state : values()) {
-                descriptionToEnum.put(state.description(), state);
+                descriptionToEnum.put(state.description, state);
             }
         }
 

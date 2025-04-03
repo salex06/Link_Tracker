@@ -27,14 +27,8 @@ public class JdbcChatRepository {
     private final RowMapper<JdbcTgChat> jdbcChatRowMapper =
             (rs, rn) -> new JdbcTgChat(rs.getLong("id"), rs.getLong("chat_id"));
 
-    /**
-     * Сохранить чат в БД
-     *
-     * @param jdbcTgChat чат для сохранения
-     * @return сохраненный чат
-     */
     public JdbcTgChat save(JdbcTgChat jdbcTgChat) {
-        if (jdbcTgChat.id() == null) {
+        if (jdbcTgChat.getId() == null) {
             return insertEntity(jdbcTgChat);
         }
         return jdbcTgChat;
@@ -47,14 +41,14 @@ public class JdbcChatRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("chat_id", jdbcTgChat.chatId());
+        params.addValue("chat_id", jdbcTgChat.getChatId());
 
         namedJdbcTemplate.update(sql, params, keyHolder);
 
         Map<String, Object> keyMap = keyHolder.getKeys();
         if (keyMap != null && !keyMap.isEmpty()) {
             Long generatedId = (Long) keyMap.get("id");
-            jdbcTgChat.id(generatedId);
+            jdbcTgChat.setId(generatedId);
             return jdbcTgChat;
         }
         return null;

@@ -5,9 +5,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = {"id", "tgChatIds", "lastUpdateTime"})
 public class Link {
     private Long id;
     private String url;
@@ -62,67 +67,5 @@ public class Link {
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
         this.lastUpdateTime = Instant.now();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public Set<Long> getTgChatIds() {
-        return tgChatIds;
-    }
-
-    public Instant getLastUpdateTime() {
-        return lastUpdateTime;
-    }
-
-    public List<String> getTags() {
-        return tags;
-    }
-
-    public List<String> getFilters() {
-        return filters;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setTgChatIds(Set<Long> tgChatIds) {
-        this.tgChatIds = tgChatIds;
-    }
-
-    public void setLastUpdateTime(Instant lastUpdateTime) {
-        this.lastUpdateTime = lastUpdateTime;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Link link)) return false;
-        return Objects.equals(url, link.url)
-                && Objects.equals(tags, link.tags)
-                && Objects.equals(filters, link.filters);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(url, tags, filters);
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
-    }
-
-    public void setFilters(List<String> filters) {
-        this.filters = filters;
     }
 }

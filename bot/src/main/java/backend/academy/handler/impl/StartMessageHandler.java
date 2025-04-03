@@ -43,7 +43,7 @@ public class StartMessageHandler implements Handler {
 
             return new SendMessage(chatId, data);
         } catch (ApiErrorException e) {
-            ApiErrorResponse apiErrorResponse = e.apiErrorResponse();
+            ApiErrorResponse apiErrorResponse = e.getApiErrorResponse();
 
             log.atError()
                     .setMessage("Некорректные параметры запроса")

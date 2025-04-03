@@ -85,7 +85,7 @@ public class TrackMessageHandler implements Handler {
                     .addKeyValue("filters", crawlerReport.filters())
                     .log();
 
-            return new SendMessage(chatId, e.apiErrorResponse().description());
+            return new SendMessage(chatId, e.getApiErrorResponse().description());
         }
     }
 

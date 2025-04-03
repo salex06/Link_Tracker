@@ -252,7 +252,7 @@ public class TrackMessageCrawler implements MessageCrawler {
 
         static {
             for (TrackMessageState state : values()) {
-                descriptionToEnum.put(state.description(), state);
+                descriptionToEnum.put(state.getDescription(), state);
             }
         }
 
