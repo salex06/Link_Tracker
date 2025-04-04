@@ -1,6 +1,9 @@
 package backend.academy.config;
 
+import backend.academy.ScrapperConfig;
 import backend.academy.clients.ClientManager;
+import backend.academy.notifications.NotificationSender;
+import backend.academy.notifications.impl.HttpNotificationSender;
 import backend.academy.scheduler.Scheduler;
 import backend.academy.service.LinkService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,10 +21,16 @@ public class SchedulerConfig {
     }
 
     @Bean
+    public HttpNotificationSender httpNotificationSender(@Qualifier("botConnectionClient") RestClient client) {
+        return new HttpNotificationSender(client);
+    }
+
+    @Bean
     public Scheduler scheduler(
             LinkService linkService,
             ClientManager clientManager,
-            @Qualifier("botConnectionClient") RestClient botClient) {
-        return new Scheduler(linkService, clientManager, botClient);
+            @Qualifier("httpNotificationSender") NotificationSender notificationSender,
+            ScrapperConfig config) {
+        return new Scheduler(linkService, clientManager, notificationSender, config);
     }
 }

@@ -11,11 +11,22 @@ public class BotCommandsStorage {
     private static final List<Command> COMMANDS = new ArrayList<>();
 
     private static final Map<String, String> COMMAND_DESCRIPTION = Map.of(
-            "/start", "Запустить бота",
-            "/help", "Вывести все команды на экран",
-            "/track", "Запустить отслеживание ресурса по ссылке, следующей за командой",
-            "/untrack", "Прекратить отслеживание ресурса по ссылке, следующей за командой",
-            "/list", "Получить список всех отслеживаемых ресурсов");
+            "/start",
+            "Запустить бота",
+            "/help",
+            "Вывести все команды на экран",
+            "/track",
+            "Запустить отслеживание ресурса по ссылке, следующей за командой",
+            "/untrack",
+            "Прекратить отслеживание ресурса по ссылке, следующей за командой",
+            "/list",
+            "Получить список всех отслеживаемых ресурсов",
+            "/listbytag",
+            "Получить список ссылок с данным тегом",
+            "/addtag",
+            "Добавить тег для ссылки",
+            "/removetag",
+            "Удалить тег для ссылки");
 
     static {
         COMMANDS.add(new Command("/start", false));
@@ -23,6 +34,9 @@ public class BotCommandsStorage {
         COMMANDS.add(new Command("/list", false));
         COMMANDS.add(new Command("/track", false));
         COMMANDS.add(new Command("/untrack", true));
+        COMMANDS.add(new Command("/listbytag", true));
+        COMMANDS.add(new Command("/addtag", true));
+        COMMANDS.add(new Command("/removetag", true));
     }
 
     public static List<Command> getCommands() {

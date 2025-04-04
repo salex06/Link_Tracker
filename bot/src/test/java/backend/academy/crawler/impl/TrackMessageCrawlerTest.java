@@ -1,16 +1,9 @@
 package backend.academy.crawler.impl;
 
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.COMPLETED;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.ERROR;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.UNDEFINED;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_FILTERS;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_LINK;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_TAGS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import backend.academy.crawler.DialogStateDTO;
-import backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState;
 import backend.academy.dto.AddLinkRequest;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
@@ -33,7 +26,7 @@ class TrackMessageCrawlerTest {
     public void crawl_WhenRestartAndAnyStateIsSet_ThenReturnSuccessMessage() {
         setWaitingForLinkState();
         String expectedMessage = "Режим добавления ресурса для отслеживания прекращен";
-        TrackMessageState expectedState = UNDEFINED;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -45,13 +38,13 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenRestartAndNoStateIsSet_ThenReturnError() {
         String expectedMessage = "Ошибка. Нечего сбрасывать";
-        TrackMessageState expectedState = ERROR;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -63,7 +56,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -71,7 +64,7 @@ class TrackMessageCrawlerTest {
         setWaitingForLinkState();
         setWaitingForTagsState();
         String expectedMessage = "Введите фильтры (опционально):";
-        TrackMessageState expectedState = WAITING_FOR_FILTERS;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -83,13 +76,13 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenSkipCommandAndWrongState_ThenReturnError() {
         String expectedMessage = "Ошибка. Нечего пропускать";
-        TrackMessageState expectedState = ERROR;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -101,7 +94,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -109,7 +102,7 @@ class TrackMessageCrawlerTest {
         setWaitingForLinkState();
         setWaitingForTagsState();
         setWaitingForFiltersState();
-        TrackMessageState expectedState = COMPLETED;
+        Boolean expectedState = true;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -121,13 +114,13 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertNull(actualState.message());
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenTrackCommandWasEntered_ThenReturnWaitingForLinkResponse() {
         String expectedMessage = "Введите ссылку:";
-        TrackMessageState expectedState = WAITING_FOR_LINK;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -139,12 +132,12 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenTrackStateNotFound_ThenReturnUndefined() {
-        TrackMessageState expectedState = UNDEFINED;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -156,13 +149,13 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertNull(actualState.message());
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenReplyToMessageIsNull_ThenReturnUndefined() {
         String expectedMessage = null;
-        TrackMessageState expectedState = UNDEFINED;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -175,14 +168,14 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertNull(actualState.message());
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenReplyToYourself_ThenReturnError() {
         setWaitingForLinkState();
         String expectedMessage = "Ошибка. Вы должны отвечать на сообщения бота";
-        TrackMessageState expectedState = ERROR;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -200,14 +193,14 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
     public void crawl_WhenPreviousStateIsWaitingForLinkAndCorrectStateInStorage_ThenReturnSuccess() {
         setWaitingForLinkState();
         String expectedMessage = "Введите теги (опционально):";
-        TrackMessageState expectedState = WAITING_FOR_TAGS;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -226,7 +219,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -234,7 +227,7 @@ class TrackMessageCrawlerTest {
         setWaitingForLinkState();
         setWaitingForTagsState();
         String expectedMessage = "Ошибка. Попробуйте снова";
-        TrackMessageState expectedState = ERROR;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -253,7 +246,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -261,7 +254,7 @@ class TrackMessageCrawlerTest {
         setWaitingForLinkState();
         setWaitingForTagsState();
         String expectedMessage = "Введите фильтры (опционально):";
-        TrackMessageState expectedState = WAITING_FOR_FILTERS;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -280,7 +273,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -289,7 +282,7 @@ class TrackMessageCrawlerTest {
         setWaitingForTagsState();
         setWaitingForFiltersState();
         String expectedMessage = "Ошибка. Необходимо ввести теги. Попробуйте снова";
-        TrackMessageState expectedState = ERROR;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -308,7 +301,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -316,7 +309,7 @@ class TrackMessageCrawlerTest {
         setWaitingForLinkState();
         setWaitingForTagsState();
         setWaitingForFiltersState();
-        TrackMessageState expectedState = COMPLETED;
+        Boolean expectedState = true;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -335,7 +328,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertNull(actualState.message());
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test
@@ -343,7 +336,7 @@ class TrackMessageCrawlerTest {
         setWaitingForLinkState();
         setWaitingForTagsState();
         String expectedMessage = "Ошибка. Попробуйте снова";
-        TrackMessageState expectedState = ERROR;
+        Boolean expectedState = false;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -362,7 +355,7 @@ class TrackMessageCrawlerTest {
         DialogStateDTO actualState = trackMessageCrawler.crawl(update);
 
         assertEquals(expectedMessage, actualState.message().getParameters().get("text"));
-        assertEquals(expectedState, actualState.state());
+        assertEquals(expectedState, actualState.isCompleted());
     }
 
     @Test

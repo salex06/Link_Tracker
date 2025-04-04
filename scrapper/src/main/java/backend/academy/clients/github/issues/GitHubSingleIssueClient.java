@@ -2,11 +2,11 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
-import backend.academy.model.Link;
+import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -19,7 +19,8 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 public class GitHubSingleIssueClient extends Client {
-    private static final Pattern SUPPORTED_URL = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
+    private static final Pattern SUPPORTED_URL =
+            Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 
     public GitHubSingleIssueClient(
             @Qualifier("gitHubSingleIssueConverter") LinkToApiLinkConverter converter,
@@ -65,7 +66,7 @@ public class GitHubSingleIssueClient extends Client {
         }
 
         List<String> updatesList = new ArrayList<>();
-        LocalDateTime previousUpdateTime = link.getLastUpdateTime();
+        Instant previousUpdateTime = link.getLastUpdateTime();
 
         if (wasUpdated(previousUpdateTime, gitHubIssue.updatedAt())) {
             updatesList.add(
@@ -76,7 +77,7 @@ public class GitHubSingleIssueClient extends Client {
         return updatesList;
     }
 
-    private boolean wasUpdated(LocalDateTime previousUpdateTime, LocalDateTime currentUpdateTime) {
+    private boolean wasUpdated(Instant previousUpdateTime, Instant currentUpdateTime) {
         return previousUpdateTime == null || previousUpdateTime.isBefore(currentUpdateTime);
     }
 }

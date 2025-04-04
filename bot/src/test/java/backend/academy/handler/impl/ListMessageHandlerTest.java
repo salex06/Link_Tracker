@@ -61,10 +61,12 @@ class ListMessageHandlerTest {
     public void handle_WhenCorrectRequest_ThenReturnListOfTrackedResources() {
         String expectedMessage =
                 """
-            Количество отслеживаемых ресурсов: 2
-            1) https://example1.com/
-            2) https://example2.com/
-            """;
+                Количество отслеживаемых ресурсов: 2
+                1) https://example1.com/
+                Теги: tag1	tag2\t
+                2) https://example2.com/
+                Теги: tag2	tag3\t
+                """;
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -80,7 +82,23 @@ class ListMessageHandlerTest {
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                "{\"links\":[{\"id\":1,\"url\":\"https://example1.com/\", \"tags\":[], \"filters\":[]},{\"id\":2,\"url\":\"https://example2.com/\", \"tags\":[], \"filters\":[]}],\"size\":2}")));
+                                                """
+                                                {
+                                                    "links":[
+                                                        {
+                                                            "id":1,"url":"https://example1.com/",
+                                                            "tags":["tag1", "tag2"],
+                                                            "filters":[]},
+                                                        {
+                                                            "id":2,
+                                                            "url":"https://example2.com/",
+                                                            "tags":["tag2", "tag3"],
+                                                            "filters":[]
+                                                        }
+                                                    ],
+                                                    "size":2
+                                                }
+                                            """)));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
@@ -100,12 +118,20 @@ class ListMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
 
-        stubFor(get("/links")
-                .withHeader("Tg-Chat-Id", equalTo("1"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"links\":[],\"size\":0}")));
+        stubFor(
+                get("/links")
+                        .withHeader("Tg-Chat-Id", equalTo("1"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                            {
+                                "links":[],
+                                "size":0
+                            }
+                            """)));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
@@ -131,8 +157,14 @@ class ListMessageHandlerTest {
                                         .withStatus(400)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                                        + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
+                                                """
+                                                {
+                                                "description":"Некорректные параметры запроса","code":"400",
+                                                "exceptionName":"MissingRequestHeaderException", "exceptionMessage":
+                                                "Required request header 'Tg-Chat-Id' for method parameter type Long is not present",
+                                                "stacktrace": []
+                                                }
+                                            """)));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
@@ -151,12 +183,22 @@ class ListMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
 
-        stubFor(get("/links")
-                .willReturn(aResponse()
-                        .withStatus(400)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
-                                + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
+        stubFor(
+                get("/links")
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(400)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                                {
+                                    "description":"Некорректные параметры запроса",
+                                    "code":"400",
+                                    "exceptionName":"",
+                                    "exceptionMessage": "",
+                                    "stacktrace": []
+                                }
+                            """)));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);

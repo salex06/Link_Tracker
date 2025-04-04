@@ -13,6 +13,7 @@ import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -25,7 +26,7 @@ public class TrackMessageHandler implements Handler {
     private final MessageCrawler crawler;
 
     @Autowired
-    public TrackMessageHandler(MessageCrawler crawler) {
+    public TrackMessageHandler(@Qualifier("trackCrawler") MessageCrawler crawler) {
         this.crawler = crawler;
     }
 
@@ -84,7 +85,7 @@ public class TrackMessageHandler implements Handler {
                     .addKeyValue("filters", crawlerReport.filters())
                     .log();
 
-            return new SendMessage(chatId, e.apiErrorResponse().description());
+            return new SendMessage(chatId, e.getApiErrorResponse().description());
         }
     }
 

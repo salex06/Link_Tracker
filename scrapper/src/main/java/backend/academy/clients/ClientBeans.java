@@ -22,8 +22,7 @@ public class ClientBeans {
 
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
-                return String.format(
-                        "https://api.stackexchange.com/2.3/questions/%s?site=stackoverflow", matcher.group(1));
+                return String.format("https://api.stackexchange.com/2.3/questions/%s", matcher.group(1));
             }
 
             return null;
@@ -48,7 +47,7 @@ public class ClientBeans {
     @Bean
     LinkToApiLinkConverter gitHubRepositoryConverter() {
         return x -> {
-            Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)$");
+            Pattern pattern = Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
@@ -62,7 +61,7 @@ public class ClientBeans {
     @Bean
     LinkToApiLinkConverter gitHubSingleIssueConverter() {
         return x -> {
-            Pattern pattern = Pattern.compile("^https://github.com/(\\w+)/(\\w+)/issues/(\\d+)$");
+            Pattern pattern = Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 
             Matcher matcher = pattern.matcher(x);
             if (matcher.matches()) {
@@ -75,6 +74,30 @@ public class ClientBeans {
         };
     }
 
+    /**
+     * Возвращает реализацию функционального интерфейса для конвертации из ссылки на комментарии issue GitHub в ссылку
+     * на GitHub Api
+     *
+     * @return лямбда-функция, вызываемая методом convert()
+     */
+    @Bean
+    LinkToApiLinkConverter gitHubIssueListClientConverter() {
+        return x -> {
+            Pattern pattern = Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(issues|pulls)$");
+            Matcher matcher = pattern.matcher(x);
+            if (matcher.matches()) {
+                return String.format(
+                        "https://api.github.com/repos/%s/%s/%s", matcher.group(1), matcher.group(2), matcher.group(3));
+            }
+            return null;
+        };
+    }
+
+    /**
+     * Создает объект класса RestClient с установленным базовым url github api
+     *
+     * @return объект {@code RestClient} - клиент для взаимодействия с github api
+     */
     @Bean
     RestClient gitHubClient() {
         return RestClient.builder().baseUrl("https://api.github.com").build();

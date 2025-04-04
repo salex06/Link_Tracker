@@ -74,7 +74,7 @@ public class UntrackMessageHandler implements Handler {
                     .addKeyValue("chat-id", chatId)
                     .log();
 
-            return new SendMessage(chatId, e.apiErrorResponse().description());
+            return new SendMessage(chatId, e.getApiErrorResponse().description());
         }
     }
 

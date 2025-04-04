@@ -1,96 +1,44 @@
 package backend.academy.service;
 
-import backend.academy.model.Link;
-import backend.academy.model.TgChat;
-import backend.academy.repository.ChatRepository;
+import backend.academy.model.plain.Link;
+import backend.academy.model.plain.TgChat;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import org.springframework.stereotype.Service;
 
-@Service
-public class ChatService {
-    private final ChatRepository chatRepository;
+public interface ChatService {
+    TgChat saveChat(Long chatId);
 
-    public ChatService(ChatRepository chatRepository) {
-        this.chatRepository = chatRepository;
-    }
+    Optional<TgChat> getPlainTgChatByChatId(Long chatId);
 
-    public boolean saveChat(Long chatId) {
-        return chatRepository.save(chatId);
-    }
+    boolean containsChat(Long chatId);
 
-    public Optional<TgChat> getChat(Long chatId) {
-        return chatRepository.getById(chatId);
-    }
+    void deleteChatByChatId(Long chatId);
 
-    public List<TgChat> getAllChat() {
-        return chatRepository.getAll();
-    }
+    void updateTags(Link link, TgChat chat, List<String> tags);
 
-    public boolean containsChat(Long chatId) {
-        return chatRepository.getById(chatId).isPresent();
-    }
-
-    public boolean deleteChat(Long chatId) {
-        return chatRepository.remove(chatId);
-    }
+    void updateFilters(Link link, TgChat chat, List<String> filters);
 
     /**
-     * Удалить ссылку из списка отслеживаемых ссылок конкретного чата
+     * Связать ссылку с чатом (добавить ссылку как отслеживаемую данным чатом)
      *
-     * @param chatId идентификатор чата
-     * @param url значение ссылки
-     * @return {@code true}, если ссылка удалена, иначе (например, не найдена) - {@code false}
+     * @param chat чат
+     * @param link ссылка
      */
-    public boolean deleteLink(Long chatId, String url) {
-        Optional<TgChat> chat = chatRepository.getById(chatId);
-        if (chat.isEmpty()) {
-            return false;
-        }
-
-        Set<Link> chatLinks = chat.orElseThrow().links();
-        Optional<Link> link = chatLinks.stream()
-                .filter(i -> Objects.equals(i.getUrl(), url))
-                .limit(1)
-                .findFirst();
-        if (link.isEmpty()) {
-            return false;
-        }
-
-        chatLinks.remove(link.orElseThrow());
-        chat.orElseThrow().links(chatLinks);
-        return true;
-    }
+    void saveTheChatLink(TgChat chat, Link link);
 
     /**
-     * Получить набор отслеживаемых ссылко по идентификатору чата
+     * Удалить связь между ссылкой и чатом (прекратить отслеживание ссылки чатом)
      *
-     * @param chatId идентификатор чата
-     * @return множество ссылок (если чат не найден - null)
+     * @param chat чат
+     * @param link ссылка
      */
-    public Set<Link> getChatLinks(Long chatId) {
-        Optional<TgChat> tgChat = chatRepository.getById(chatId);
-        return tgChat.map(TgChat::links).orElse(null);
-    }
+    void removeTheChatLink(TgChat chat, Link link);
 
-    /**
-     * Добавить ссылку как отслеживаемую для конкретного чата
-     *
-     * @param chatId идентификатор чата
-     * @param link значение ссылки
-     * @return {@code true}, если ссылка успешно добавлена, иначе - {@code false}
-     */
-    public boolean appendLinkToChat(Long chatId, Link link) {
-        Optional<TgChat> chatWrapper = getChat(chatId);
-        if (chatWrapper.isPresent()) {
-            TgChat chat = chatWrapper.orElseThrow();
-            chat.addLink(link);
-            saveChat(chatId);
-            return true;
-        }
+    List<String> getTags(Long linkId, Long chatId);
 
-        return false;
-    }
+    List<String> getFilters(Long linkId, Long chatId);
+
+    void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
+
+    void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
 }

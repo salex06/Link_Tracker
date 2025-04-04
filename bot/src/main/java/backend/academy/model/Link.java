@@ -2,11 +2,14 @@ package backend.academy.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
+@EqualsAndHashCode
 public class Link {
     private Long id;
     private String url;
@@ -15,15 +18,6 @@ public class Link {
     private List<String> filters;
     private static final AtomicLong nextId = new AtomicLong();
 
-    /**
-     * Конструктор со всеми параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     * @param tgChatIds чаты, отслеживающие ссылку
-     * @param tags теги ссылки
-     * @param filters фильтры ссылки
-     */
     public Link(Long id, String url, List<Long> tgChatIds, List<String> tags, List<String> filters) {
         this.id = id;
         this.url = url;
@@ -32,13 +26,6 @@ public class Link {
         this.filters = filters;
     }
 
-    /**
-     * Конструктор с тремя основными параметрами
-     *
-     * @param id идентификатор ссылки
-     * @param url значение ссылки
-     * @param tgChatIds чаты, отслеживающие ссылку
-     */
     public Link(Long id, String url, List<Long> tgChatIds) {
         this.id = id;
         this.url = url;
@@ -47,7 +34,6 @@ public class Link {
         this.filters = new ArrayList<>();
     }
 
-    /** Конструктор по умолчанию */
     public Link() {
         this.id = null;
         this.url = null;
@@ -67,41 +53,5 @@ public class Link {
         this.tgChatIds = new ArrayList<>();
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Link link)) return false;
-        return Objects.equals(id, link.id)
-                && Objects.equals(url, link.url)
-                && Objects.equals(tgChatIds, link.tgChatIds)
-                && Objects.equals(tags, link.tags)
-                && Objects.equals(filters, link.filters);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, url, tgChatIds, tags, filters);
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setTgChatIds(List<Long> tgChatIds) {
-        this.tgChatIds = tgChatIds;
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
-    }
-
-    public void setFilters(List<String> filters) {
-        this.filters = filters;
     }
 }

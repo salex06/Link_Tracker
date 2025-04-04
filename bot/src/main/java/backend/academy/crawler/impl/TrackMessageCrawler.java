@@ -1,16 +1,13 @@
 package backend.academy.crawler.impl;
 
-import static backend.academy.crawler.CrawlValidator.RESTART_MESSAGE;
-import static backend.academy.crawler.CrawlValidator.SKIP_THE_SETTING;
-import static backend.academy.crawler.CrawlValidator.isTheStartMessage;
+import static backend.academy.crawler.impl.TrackMessageCrawler.CrawlValidator.RESTART_MESSAGE;
+import static backend.academy.crawler.impl.TrackMessageCrawler.CrawlValidator.SKIP_THE_SETTING;
+import static backend.academy.crawler.impl.TrackMessageCrawler.CrawlValidator.isTheStartMessage;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.COMPLETED;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.ERROR;
-import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.UNDEFINED;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_FILTERS;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_LINK;
 import static backend.academy.crawler.impl.TrackMessageCrawler.TrackMessageState.WAITING_FOR_TAGS;
 
-import backend.academy.crawler.CrawlValidator;
 import backend.academy.crawler.DialogStateDTO;
 import backend.academy.crawler.MessageCrawler;
 import backend.academy.dto.AddLinkRequest;
@@ -23,8 +20,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Getter;
+import org.springframework.stereotype.Component;
 
+@Component("trackCrawler")
 public class TrackMessageCrawler implements MessageCrawler {
     private final Map<Long, Map.Entry<TrackMessageState, List<String>>> userStates = new HashMap<>();
 
@@ -111,7 +111,7 @@ public class TrackMessageCrawler implements MessageCrawler {
         if (CrawlValidator.isAvailableToReset(userStates, chatId)) {
             userStates.remove(chatId);
             return new DialogStateDTO(
-                    new SendMessage(chatId, "Режим добавления ресурса для отслеживания прекращен"), UNDEFINED);
+                    new SendMessage(chatId, "Режим добавления ресурса для отслеживания прекращен"), false);
         }
 
         return createErrorResponse(update, "Ошибка. Нечего сбрасывать");
@@ -128,7 +128,7 @@ public class TrackMessageCrawler implements MessageCrawler {
         TrackMessageState currentState = current.getKey();
         List<String> messages = current.getValue();
 
-        messages.add("");
+        messages.add(" ");
         SendMessage message;
         if (currentState == WAITING_FOR_TAGS) {
             currentState = WAITING_FOR_FILTERS;
@@ -139,13 +139,13 @@ public class TrackMessageCrawler implements MessageCrawler {
         }
 
         userStates.put(chatId, Map.entry(currentState, messages));
-        return new DialogStateDTO(message, currentState);
+        return new DialogStateDTO(message, currentState == COMPLETED);
     }
 
     private DialogStateDTO createErrorResponse(Update update, String errorMessage) {
         Long chatId = update.message().chat().id();
 
-        return new DialogStateDTO(new SendMessage(chatId, errorMessage), ERROR);
+        return new DialogStateDTO(new SendMessage(chatId, errorMessage), false);
     }
 
     private DialogStateDTO setCompleted(Update update) {
@@ -164,7 +164,7 @@ public class TrackMessageCrawler implements MessageCrawler {
         messages.add(update.message().text());
         userStates.put(chatId, Map.entry(COMPLETED, messages));
 
-        return new DialogStateDTO(null, COMPLETED);
+        return new DialogStateDTO(null, true);
     }
 
     private DialogStateDTO createWaitingForLinkResponse(Update update) {
@@ -180,11 +180,11 @@ public class TrackMessageCrawler implements MessageCrawler {
                                 .resizeKeyboard(true)
                                 .selective(true)
                                 .oneTimeKeyboard(true)),
-                WAITING_FOR_LINK);
+                false);
     }
 
     private DialogStateDTO createUndefinedResponse() {
-        return new DialogStateDTO(null, UNDEFINED);
+        return new DialogStateDTO(null, false);
     }
 
     private DialogStateDTO createWaitingForTagsResponse(Update update) {
@@ -207,7 +207,7 @@ public class TrackMessageCrawler implements MessageCrawler {
                                 .resizeKeyboard(true)
                                 .selective(true)
                                 .oneTimeKeyboard(true)),
-                WAITING_FOR_TAGS);
+                false);
     }
 
     private DialogStateDTO createWaitingForFiltersResponse(Update update) {
@@ -230,7 +230,7 @@ public class TrackMessageCrawler implements MessageCrawler {
                                 .resizeKeyboard(true)
                                 .selective(true)
                                 .oneTimeKeyboard(true)),
-                WAITING_FOR_FILTERS);
+                false);
     }
 
     @Getter
@@ -252,12 +252,66 @@ public class TrackMessageCrawler implements MessageCrawler {
 
         static {
             for (TrackMessageState state : values()) {
-                descriptionToEnum.put(state.description(), state);
+                descriptionToEnum.put(state.getDescription(), state);
             }
         }
 
         public static TrackMessageState fromDescription(String description) {
             return descriptionToEnum.getOrDefault(description, UNDEFINED);
         }
+    }
+
+    public static class CrawlValidator {
+        public static final String START_DIALOG_COMMAND = "/track";
+        public static final String RESTART_MESSAGE = "Сбросить";
+        public static final String SKIP_THE_SETTING = "Пропустить";
+
+        private CrawlValidator() {}
+
+        public static boolean filtersAreValid(String text) {
+            return text.matches("^(\\w+:\\w+)( \\w+:\\w+)*$");
+        }
+
+        public static boolean dialogStateWasNotSetYet(
+                Map<Long, Map.Entry<TrackMessageState, List<String>>> userStates, Long chatId) {
+            return !userStates.containsKey(chatId);
+        }
+
+        public static boolean dialogWasCompletedSuccessfully(
+                Map<Long, Map.Entry<TrackMessageState, List<String>>> userStates, Long chatId) {
+
+            return userStates.containsKey(chatId)
+                    && userStates.get(chatId).getKey() == COMPLETED
+                    && userStates.get(chatId).getValue().size() == MESSAGE_COUNT_IF_COMPLETED;
+        }
+
+        public static boolean isTheStartMessage(String message) {
+            return message.equals(START_DIALOG_COMMAND);
+        }
+
+        public static boolean isSkipMessage(String message) {
+            return Objects.equals(message, SKIP_THE_SETTING);
+        }
+
+        public static boolean isRestartMessage(String message) {
+            return Objects.equals(message, RESTART_MESSAGE);
+        }
+
+        public static boolean isAvailableToReset(
+                Map<Long, Map.Entry<TrackMessageState, List<String>>> userStates, Long chatId) {
+            return userStates.containsKey(chatId);
+        }
+
+        public static boolean isAvailableToSkip(
+                Map<Long, Map.Entry<TrackMessageState, List<String>>> userStates, Long chatId) {
+            if (!userStates.containsKey(chatId)) {
+                return false;
+            }
+
+            TrackMessageState currentState = userStates.get(chatId).getKey();
+            return currentState == WAITING_FOR_TAGS || currentState == WAITING_FOR_FILTERS;
+        }
+
+        private static final int MESSAGE_COUNT_IF_COMPLETED = 3;
     }
 }
