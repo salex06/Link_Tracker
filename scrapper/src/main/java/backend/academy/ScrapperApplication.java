@@ -5,7 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.annotation.EnableKafkaRetryTopic;
 
+@EnableKafka
+@EnableKafkaRetryTopic
 @SpringBootApplication
 @EnableConfigurationProperties({ScrapperConfig.class})
 @EnableJdbcRepositories
