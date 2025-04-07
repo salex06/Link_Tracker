@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.TelegramBot;
@@ -54,7 +55,8 @@ class ListMessageHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        listMessageHandler = new ListMessageHandler();
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        listMessageHandler = new ListMessageHandler(mock);
     }
 
     @Test

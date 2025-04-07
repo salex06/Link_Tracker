@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.crawler.impl.tags.add.AddTagMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
@@ -55,7 +56,8 @@ class AddTagMessageHandlerTest {
     @BeforeEach
     public void setUp() {
         crawler = Mockito.mock(AddTagMessageCrawler.class);
-        addTagMessageHandler = new AddTagMessageHandler(crawler);
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        addTagMessageHandler = new AddTagMessageHandler(crawler, mock);
     }
 
     @Test
@@ -80,7 +82,8 @@ class AddTagMessageHandlerTest {
     public void handle_WhenHeaderWasNotPassed_ThenReturnError() {
         crawler = Mockito.mock(AddTagMessageCrawler.class);
         when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("link", List.of("tag"), new ArrayList<>()));
-        addTagMessageHandler = new AddTagMessageHandler(crawler);
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        addTagMessageHandler = new AddTagMessageHandler(crawler, mock);
         String expectedMessage = "Некорректные параметры запроса";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
@@ -110,7 +113,8 @@ class AddTagMessageHandlerTest {
     public void handle_WhenCrawlerReportIsNull_ThenReturnError() {
         crawler = Mockito.mock(AddTagMessageCrawler.class);
         when(crawler.terminate(anyLong())).thenReturn(null);
-        addTagMessageHandler = new AddTagMessageHandler(crawler);
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        addTagMessageHandler = new AddTagMessageHandler(crawler, mock);
         String expectedMessage = "Ошибка, попробуйте снова";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);

@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.TelegramBot;
@@ -55,7 +56,8 @@ class ListByTagMessageHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        listMessageHandler = new ListByTagMessageHandler();
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        listMessageHandler = new ListByTagMessageHandler(mock);
     }
 
     @Test

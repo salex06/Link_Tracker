@@ -7,6 +7,7 @@ import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkResponse;
 import backend.academy.exceptions.ApiErrorException;
 import backend.academy.handler.Handler;
+import backend.academy.service.RedisCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
@@ -24,14 +25,19 @@ import org.springframework.web.client.RestClient;
 @Component
 public class AddTagMessageHandler implements Handler {
     private final MessageCrawler crawler;
+    private final RedisCacheService redisCacheService;
 
     @Autowired
-    public AddTagMessageHandler(@Qualifier("addTagCrawler") MessageCrawler crawler) {
+    public AddTagMessageHandler(
+            @Qualifier("addTagCrawler") MessageCrawler crawler, RedisCacheService redisCachedService) {
         this.crawler = crawler;
+        this.redisCacheService = redisCachedService;
     }
 
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
+        redisCacheService.invalidateCache();
+
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();

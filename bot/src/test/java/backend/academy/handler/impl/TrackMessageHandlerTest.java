@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.crawler.impl.TrackMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
@@ -54,7 +55,8 @@ class TrackMessageHandlerTest {
     @BeforeAll
     public static void setUp() {
         crawler = Mockito.mock(TrackMessageCrawler.class);
-        trackMessageHandler = new TrackMessageHandler(crawler);
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        trackMessageHandler = new TrackMessageHandler(crawler, mock);
     }
 
     @Test

@@ -9,6 +9,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
@@ -47,7 +48,8 @@ class UntrackMessageHandlerTest {
 
     @BeforeAll
     public static void setUp() {
-        untrackMessageHandler = new UntrackMessageHandler();
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        untrackMessageHandler = new UntrackMessageHandler(mock);
     }
 
     @Test

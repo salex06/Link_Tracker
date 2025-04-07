@@ -6,10 +6,12 @@ import backend.academy.dto.LinkResponse;
 import backend.academy.dto.RemoveLinkRequest;
 import backend.academy.exceptions.ApiErrorException;
 import backend.academy.handler.Handler;
+import backend.academy.service.RedisCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
@@ -19,9 +21,14 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Order(2)
 @Component
+@RequiredArgsConstructor
 public class UntrackMessageHandler implements Handler {
+    private final RedisCacheService redisCacheService;
+
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
+        redisCacheService.invalidateCache();
+
         ObjectMapper objectMapper = new ObjectMapper();
 
         Long chatId = update.message().chat().id();
