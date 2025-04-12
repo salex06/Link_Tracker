@@ -52,7 +52,8 @@ public class KafkaErrorHandler implements CommonErrorHandler {
 
             String value = new String(valueBytes, StandardCharsets.UTF_8);
 
-            kafkaTemplate.send(dltTopic, (Long) data.key(), value);
+            Long key = (Long) data.key();
+            kafkaTemplate.send(dltTopic, key, value);
 
         } catch (Exception e) {
             log.error("Ошибка при отправке сообщения в DLT: {}", e.getMessage());
