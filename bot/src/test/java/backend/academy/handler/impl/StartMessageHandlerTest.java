@@ -59,15 +59,14 @@ class StartMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
-
         stubFor(post("/tg-chat/" + chat.id())
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "text/plain")
                         .withHeader("charset", "utf-8")
                         .withBody("Вы зарегистрированы")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualSendMessage = startMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
@@ -82,15 +81,14 @@ class StartMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
-
         stubFor(post("/tg-chat/" + chat.id())
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                 + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualSendMessage = startMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));

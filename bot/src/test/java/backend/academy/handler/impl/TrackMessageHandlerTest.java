@@ -7,6 +7,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
@@ -21,7 +23,6 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.ArrayList;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -35,6 +36,8 @@ class TrackMessageHandlerTest {
     private static RestClient restClient;
 
     private static TrackMessageCrawler crawler;
+
+    private static RedisCacheService redisCacheService;
 
     private static TrackMessageHandler trackMessageHandler;
 
@@ -52,11 +55,11 @@ class TrackMessageHandlerTest {
         wireMockServer.stop();
     }
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         crawler = Mockito.mock(TrackMessageCrawler.class);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        trackMessageHandler = new TrackMessageHandler(crawler, mock);
+        redisCacheService = Mockito.mock(RedisCacheService.class);
+        trackMessageHandler = new TrackMessageHandler(crawler, redisCacheService);
     }
 
     @Test
@@ -88,7 +91,6 @@ class TrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(null);
         when(message.text()).thenReturn("/track linkExample");
-
         stubFor(
                 post("/links")
                         .willReturn(
@@ -98,11 +100,12 @@ class TrackMessageHandlerTest {
                                         .withBody(
                                                 "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                                         + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 
     @Test
@@ -116,18 +119,18 @@ class TrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/track linkExample");
-
         stubFor(post("/links")
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                 + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 
     @Test
@@ -141,16 +144,16 @@ class TrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/start linkExample");
-
         stubFor(post("/links")
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\": 1,\"url\":\"linkExample\"}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 }

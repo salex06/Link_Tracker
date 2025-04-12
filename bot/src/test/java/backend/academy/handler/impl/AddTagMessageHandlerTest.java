@@ -7,6 +7,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
@@ -40,6 +42,8 @@ class AddTagMessageHandlerTest {
 
     private WireMockServer wireMockServer;
 
+    private RedisCacheService mockedRedisService;
+
     @BeforeEach
     public void setupBeforeEach() {
         wireMockServer = new WireMockServer(options().dynamicPort());
@@ -56,8 +60,8 @@ class AddTagMessageHandlerTest {
     @BeforeEach
     public void setUp() {
         crawler = Mockito.mock(AddTagMessageCrawler.class);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        addTagMessageHandler = new AddTagMessageHandler(crawler, mock);
+        mockedRedisService = Mockito.mock(RedisCacheService.class);
+        addTagMessageHandler = new AddTagMessageHandler(crawler, mockedRedisService);
     }
 
     @Test
@@ -82,8 +86,7 @@ class AddTagMessageHandlerTest {
     public void handle_WhenHeaderWasNotPassed_ThenReturnError() {
         crawler = Mockito.mock(AddTagMessageCrawler.class);
         when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("link", List.of("tag"), new ArrayList<>()));
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        addTagMessageHandler = new AddTagMessageHandler(crawler, mock);
+        addTagMessageHandler = new AddTagMessageHandler(crawler, mockedRedisService);
         String expectedMessage = "Некорректные параметры запроса";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
@@ -92,7 +95,6 @@ class AddTagMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(5L);
         when(message.text()).thenReturn("/addtag tagExample");
-
         stubFor(
                 post("/addtag")
                         .willReturn(
@@ -102,19 +104,16 @@ class AddTagMessageHandlerTest {
                                         .withBody(
                                                 "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                                         + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(mockedRedisService, times(1)).invalidateCache();
     }
 
     @Test
     public void handle_WhenCrawlerReportIsNull_ThenReturnError() {
-        crawler = Mockito.mock(AddTagMessageCrawler.class);
-        when(crawler.terminate(anyLong())).thenReturn(null);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        addTagMessageHandler = new AddTagMessageHandler(crawler, mock);
         String expectedMessage = "Ошибка, попробуйте снова";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
@@ -123,7 +122,6 @@ class AddTagMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(5L);
         when(message.text()).thenReturn("/addtag tagExample");
-
         stubFor(
                 post("/addtag")
                         .willReturn(
@@ -133,11 +131,12 @@ class AddTagMessageHandlerTest {
                                         .withBody(
                                                 "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                                         + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(mockedRedisService, times(1)).invalidateCache();
     }
 
     @Test
@@ -151,7 +150,6 @@ class AddTagMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/addtag tagExample");
-
         stubFor(post("/addtag")
                 .willReturn(aResponse()
                         .withHeader("Tg-Chat-Id", chat.id().toString())
@@ -159,11 +157,12 @@ class AddTagMessageHandlerTest {
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\": null,\"url\": null, \"tags\" : [\"tagExample\"], \"filters\":[]}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(mockedRedisService, times(1)).invalidateCache();
     }
 
     @Test
@@ -177,7 +176,6 @@ class AddTagMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/addtag tagExample");
-
         stubFor(post("/addtag")
                 .willReturn(aResponse()
                         .withHeader("Tg-Chat-Id", chat.id().toString())
@@ -185,10 +183,11 @@ class AddTagMessageHandlerTest {
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"id\": 1,\"url\":\"linkExample\"}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = addTagMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(mockedRedisService, times(1)).invalidateCache();
     }
 }

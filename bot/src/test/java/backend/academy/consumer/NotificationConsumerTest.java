@@ -8,7 +8,9 @@ import backend.academy.dto.LinkUpdate;
 import java.util.ArrayList;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -24,6 +26,7 @@ import org.testcontainers.kafka.KafkaContainer;
 @SpringBootTest
 @DirtiesContext
 @Testcontainers
+@ExtendWith(MockitoExtension.class)
 class NotificationConsumerTest {
     @Container
     private static final KafkaContainer kafkaContainer = new KafkaContainer("apache/kafka-native:3.8.1");
@@ -47,6 +50,7 @@ class NotificationConsumerTest {
     }
 
     @Test
+    @DirtiesContext
     public void consume_WhenCorrectMessage_ThenConsumeIsSuccessful() throws InterruptedException {
         LinkUpdate expectedLinkUpdate =
                 new LinkUpdate(390L, "https://github.com/salex06/testrepo", "Точно всё ок", new ArrayList<>());
@@ -72,19 +76,23 @@ class NotificationConsumerTest {
     }
 
     @Test
-    public void consume_WhenAnyFieldOfMessageIsNull_ThenSendToDlt() {
+    @DirtiesContext
+    public void consume_WhenAnyFieldOfMessageIsNull_ThenSendToDlt() throws InterruptedException {
         LinkUpdate expectedLinkUpdate =
                 new LinkUpdate(null, "https://github.com/salex06/testrepo", "В DLT", new ArrayList<>());
         String expectedMessage =
                 "{\"id\":null,\"url\":\"https://github.com/salex06/testrepo\",\"description\":\"В DLT\",\"tgChatIds\":[]}";
         linkUpdateKafkaTemplate.send(topicName, expectedLinkUpdate);
-        verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", null, expectedMessage);
+        Thread.sleep(1000);
+        verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", expectedMessage);
     }
 
     @Test
-    public void consume_WhenParseError_ThenSendToDlt() {
+    @DirtiesContext
+    public void consume_WhenParseError_ThenSendToDlt() throws InterruptedException {
         String expectedMessage = "123";
         stringKafkaTemplate.send(topicName, expectedMessage);
-        verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", null, expectedMessage);
+        Thread.sleep(1000);
+        verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", expectedMessage);
     }
 }
