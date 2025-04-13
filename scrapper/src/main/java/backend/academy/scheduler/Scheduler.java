@@ -4,6 +4,8 @@ import backend.academy.ScrapperConfig;
 import backend.academy.clients.Client;
 import backend.academy.clients.ClientManager;
 import backend.academy.dto.LinkUpdate;
+import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.filters.LinkFilter;
 import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.service.LinkService;
@@ -19,8 +21,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,20 +31,13 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class Scheduler {
+    private final LinkFilter filterByAuthor;
     private final LinkService linkService;
     private final ClientManager clientManager;
     private final NotificationSender notificationSender;
     private final ScrapperConfig scrapperConfig;
-
-    @Autowired
-    public Scheduler(
-            LinkService linkService, ClientManager clientManager, NotificationSender sender, ScrapperConfig config) {
-        this.linkService = linkService;
-        this.clientManager = clientManager;
-        this.notificationSender = sender;
-        this.scrapperConfig = config;
-    }
 
     @Scheduled(fixedDelay = 50000, initialDelay = 10000)
     public void schedule() {
@@ -108,10 +103,13 @@ public class Scheduler {
 
     private void processLink(List<Client> clients, Link link) {
         Client suitableClient = getSuitableClient(clients, link);
-        List<String> updateDescription = suitableClient.getUpdates(link);
-        if (!updateDescription.isEmpty()) {
+        List<LinkUpdateInfo> updateDescriptionList = suitableClient.getUpdates(link);
+        if (!updateDescriptionList.isEmpty()) {
             linkService.updateLastUpdateTime(link, Instant.now());
-            sendUpdates(updateDescription, link);
+            for (LinkUpdateInfo updateDescriptionItem : updateDescriptionList) {
+                List<Long> filteredChatIds = filterByAuthor.filterChatIds(updateDescriptionItem, link);
+                sendUpdate(updateDescriptionItem, link, filteredChatIds);
+            }
         }
     }
 
@@ -125,19 +123,13 @@ public class Scheduler {
         throw new RuntimeException("No suitable clients for link: " + link.getUrl());
     }
 
-    private void sendUpdates(List<String> updatesList, Link link) {
-        for (String updateDescription : updatesList) {
-            if (updateDescription.isEmpty()) {
-                continue;
-            }
-
-            LinkUpdate linkUpdate = new LinkUpdate(
-                    link.getId(),
-                    link.getUrl(),
-                    updateDescription,
-                    link.getTgChatIds().stream().toList());
-
-            notificationSender.send(linkUpdate);
+    private void sendUpdate(LinkUpdateInfo updateDescription, Link link, List<Long> chatIds) {
+        if (updateDescription.commonInfo().isEmpty() || chatIds.isEmpty()) {
+            return;
         }
+
+        LinkUpdate linkUpdate = new LinkUpdate(link.getId(), link.getUrl(), updateDescription.commonInfo(), chatIds);
+
+        notificationSender.send(linkUpdate);
     }
 }
