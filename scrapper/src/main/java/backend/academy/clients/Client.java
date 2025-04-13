@@ -1,6 +1,7 @@
 package backend.academy.clients;
 
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -33,7 +34,7 @@ public abstract class Client {
      * Получить обновления ресурса по данной ссылке
      *
      * @param link ссылка на ресурс для поиска обновлений
-     * @return {@code List<String>} - список описания обновлений в текстовом формате
+     * @return {@code List<LinkUpdateInfo>} - список описания обновлений
      */
-    public abstract List<String> getUpdates(Link link);
+    public abstract List<LinkUpdateInfo> getUpdates(Link link);
 }

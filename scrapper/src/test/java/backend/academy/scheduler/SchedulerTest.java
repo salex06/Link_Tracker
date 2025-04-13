@@ -12,15 +12,20 @@ import backend.academy.ScrapperConfig;
 import backend.academy.clients.Client;
 import backend.academy.clients.ClientManager;
 import backend.academy.dto.LinkUpdate;
+import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.filters.LinkFilter;
+import backend.academy.filters.impl.LinkFilterByAuthor;
 import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.notifications.impl.HttpNotificationSender;
 import backend.academy.service.LinkService;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.data.domain.PageImpl;
@@ -37,23 +42,28 @@ class SchedulerTest {
     private static ClientManager clientManager;
     private static NotificationSender notificationSender;
     private static ScrapperConfig scrapperConfig;
+    private static LinkFilter linkFilter;
     private static List<Client> clients;
     private static Client client1;
     private static Client client2;
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         linkService = Mockito.mock(LinkService.class);
         clientManager = Mockito.mock(ClientManager.class);
         notificationSender = Mockito.mock(HttpNotificationSender.class);
         scrapperConfig = Mockito.mock(ScrapperConfig.class);
-
+        linkFilter = Mockito.mock(LinkFilterByAuthor.class);
         setUpClients();
 
         when(scrapperConfig.pageSize()).thenReturn(50L);
         when(clientManager.getAvailableClients()).thenReturn(clients);
+        when(linkFilter.filterChatIds(any(LinkUpdateInfo.class), any(Link.class)))
+                .thenAnswer(i -> {
+                    return ((Link) i.getArgument(1)).getTgChatIds().stream().toList();
+                });
 
-        scheduler = new Scheduler(linkService, clientManager, notificationSender, scrapperConfig);
+        scheduler = new Scheduler(linkFilter, linkService, clientManager, notificationSender, scrapperConfig);
     }
 
     private static void setUpClients() {
@@ -67,7 +77,9 @@ class SchedulerTest {
             if (Objects.equals(link.getId(), CLIENT1_NO_UPDATES_INDICATOR)) {
                 return List.of();
             }
-            return List.of("update1", "update2");
+            return new ArrayList<>(List.of(
+                    new LinkUpdateInfo(null, null, null, null, null, "update1"),
+                    new LinkUpdateInfo(null, null, null, null, null, "update2")));
         });
 
         client2 = Mockito.mock(Client.class);
@@ -80,7 +92,9 @@ class SchedulerTest {
             if (Objects.equals(link.getId(), CLIENT2_NO_UPDATES_INDICATOR)) {
                 return List.of();
             }
-            return List.of("update3", "update4");
+            return new ArrayList<>(List.of(
+                    new LinkUpdateInfo(null, null, null, null, null, "update3"),
+                    new LinkUpdateInfo(null, null, null, null, null, "update4")));
         });
 
         clients = List.of(client1, client2);
@@ -113,11 +127,11 @@ class SchedulerTest {
     }
 
     @Test
-    public void schedule_WhenUpdatesExist_ThenSendUpdates() {
+    public void schedule_WhenUpdatesExist_ThenSendUpdate() {
         List<String> linkUpdate1 = List.of("update1", "update2");
         List<String> linkUpdate2 = List.of("update3", "update4");
-        Link link1 = new Link(5L, CLIENT1_SUPPORTED_URL, List.of("tag"), List.of("filter"), Set.of(1L));
-        Link link2 = new Link(3L, CLIENT2_SUPPORTED_URL, List.of("tag"), List.of("filter"), Set.of(1L));
+        Link link1 = new Link(5L, CLIENT1_SUPPORTED_URL, List.of("tag"), List.of("filter"), new HashSet<>(Set.of(1L)));
+        Link link2 = new Link(3L, CLIENT2_SUPPORTED_URL, List.of("tag"), List.of("filter"), new HashSet<>(Set.of(1L)));
         when(linkService.getAllLinks(any(Pageable.class), any(Duration.class)))
                 .thenReturn(new PageImpl<>(List.of(link1, link2)));
 

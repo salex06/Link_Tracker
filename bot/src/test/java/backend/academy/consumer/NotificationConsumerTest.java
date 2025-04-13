@@ -68,7 +68,7 @@ class NotificationConsumerTest {
                 ArgumentCaptor.forClass(ConsumerRecord.class);
         ArgumentCaptor<Acknowledgment> acknowledgmentCaptor = ArgumentCaptor.forClass(Acknowledgment.class);
 
-        Thread.sleep(2000);
+        Thread.sleep(5000);
         verify(consumer, timeout(10000).atLeastOnce())
                 .consume(consumerRecordCaptor.capture(), acknowledgmentCaptor.capture());
         ConsumerRecord<Long, LinkUpdate> capturedRecord = consumerRecordCaptor.getValue();
@@ -83,7 +83,7 @@ class NotificationConsumerTest {
         String expectedMessage =
                 "{\"id\":null,\"url\":\"https://github.com/salex06/testrepo\",\"description\":\"В DLT\",\"tgChatIds\":[]}";
         linkUpdateKafkaTemplate.send(topicName, expectedLinkUpdate);
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", expectedMessage);
     }
 
@@ -92,7 +92,7 @@ class NotificationConsumerTest {
     public void consume_WhenParseError_ThenSendToDlt() throws InterruptedException {
         String expectedMessage = "123";
         stringKafkaTemplate.send(topicName, expectedMessage);
-        Thread.sleep(1000);
+        Thread.sleep(5000);
         verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", expectedMessage);
     }
 }

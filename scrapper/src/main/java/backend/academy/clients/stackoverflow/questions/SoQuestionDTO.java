@@ -10,6 +10,7 @@ import java.time.Instant;
 /**
  * Объект передачи данных, представляющий отедльную запись - вопрос на StackOverflow
  *
+ * @param linkValue ссылка на вопрос
  * @param owner автор вопроса
  * @param lastActivity дата последней активности
  * @param creationDate дата создания
@@ -18,6 +19,7 @@ import java.time.Instant;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SoQuestionDTO(
+        @JsonProperty("link") String linkValue,
         @JsonProperty("owner") SoOwner owner,
         @JsonProperty("last_activity_date")
                 @JsonDeserialize(converter = JsonConverters.TimeStampToInstantConverter.class)

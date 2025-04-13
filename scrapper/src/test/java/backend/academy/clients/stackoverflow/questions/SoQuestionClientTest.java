@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -327,14 +328,14 @@ class SoQuestionClientTest {
                                         }\
                                 ]}""")));
 
-        List<String> updates = soQuestionClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = soQuestionClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
         assertThat(updates.size()).isEqualTo(4);
-        assertThat(updates.getFirst().trim()).isEqualTo(expectedMessage1.trim());
-        assertThat(updates.get(1).trim()).isEqualTo(expectedMessage2.trim());
-        assertThat(updates.get(2).trim()).isEqualTo(expectedMessage3.trim());
-        assertThat(updates.get(3).trim()).isEqualTo(expectedMessage4.trim());
+        assertThat(updates.getFirst().commonInfo().trim()).isEqualTo(expectedMessage1.trim());
+        assertThat(updates.get(1).commonInfo().trim()).isEqualTo(expectedMessage2.trim());
+        assertThat(updates.get(2).commonInfo().trim()).isEqualTo(expectedMessage3.trim());
+        assertThat(updates.get(3).commonInfo().trim()).isEqualTo(expectedMessage4.trim());
     }
 
     @Test
@@ -360,7 +361,7 @@ class SoQuestionClientTest {
                                 }
                                 """)));
 
-        List<String> updates = soQuestionClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = soQuestionClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }

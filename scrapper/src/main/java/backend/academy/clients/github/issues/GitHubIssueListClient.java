@@ -2,6 +2,7 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +33,7 @@ public class GitHubIssueListClient extends Client {
     }
 
     @Override
-    public List<String> getUpdates(Link link) {
+    public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
         String url = linkConverter.convert(link.getUrl());
@@ -44,10 +45,10 @@ public class GitHubIssueListClient extends Client {
         if (issues == null || issues.isEmpty()) {
             return List.of();
         }
-        List<String> newIssues = createListOfNewIssue(issues, link);
+        List<LinkUpdateInfo> newIssues = createListOfNewIssue(issues, link);
 
         List<List<GitHubComment>> commentsForEachIssue = getCommentsForEachIssue(objectMapper, issues);
-        List<String> newComments = new ArrayList<>();
+        List<LinkUpdateInfo> newComments = new ArrayList<>();
         for (List<GitHubComment> commentList : commentsForEachIssue) {
             if (commentList == null || commentList.isEmpty()) {
                 continue;
@@ -55,7 +56,7 @@ public class GitHubIssueListClient extends Client {
             newComments.addAll(createListOfCommentUpdates(objectMapper, link, commentList));
         }
 
-        List<String> resultList = new ArrayList<>();
+        List<LinkUpdateInfo> resultList = new ArrayList<>();
         resultList.addAll(newIssues);
         resultList.addAll(newComments);
         return resultList;
@@ -106,9 +107,9 @@ public class GitHubIssueListClient extends Client {
         });
     }
 
-    private List<String> createListOfCommentUpdates(
+    private List<LinkUpdateInfo> createListOfCommentUpdates(
             ObjectMapper objectMapper, Link link, List<GitHubComment> comments) {
-        List<String> updates = new ArrayList<>();
+        List<LinkUpdateInfo> updates = new ArrayList<>();
 
         for (GitHubComment comment : comments) {
             if (issueWasUpdated(link.getLastUpdateTime(), comment.createdAt())) {
@@ -119,8 +120,8 @@ public class GitHubIssueListClient extends Client {
         return updates;
     }
 
-    private List<String> createListOfNewIssue(List<GitHubIssue> issues, Link link) {
-        List<String> issueUpdates = new ArrayList<>();
+    private List<LinkUpdateInfo> createListOfNewIssue(List<GitHubIssue> issues, Link link) {
+        List<LinkUpdateInfo> issueUpdates = new ArrayList<>();
 
         for (GitHubIssue issue : issues) {
             if (newIssue(link.getLastUpdateTime(), issue.createdAt())) {
@@ -156,23 +157,35 @@ public class GitHubIssueListClient extends Client {
         return lastUpdateTime.isBefore(commentCreateDateTime);
     }
 
-    private String createNewCommentUpdate(GitHubComment comment, GitHubIssue issue) {
+    private LinkUpdateInfo createNewCommentUpdate(GitHubComment comment, GitHubIssue issue) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-        return String.format(
-                "Новый комментарий к issue %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
-                issue.title(),
+        return new LinkUpdateInfo(
+                comment.url(),
                 comment.user().ownerName(),
-                formatter.format(LocalDateTime.ofInstant(comment.createdAt(), ZoneId.of("UTC"))),
-                comment.body());
+                null,
+                comment.body(),
+                comment.createdAt(),
+                String.format(
+                        "Новый комментарий к issue %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                        issue.title(),
+                        comment.user().ownerName(),
+                        formatter.format(LocalDateTime.ofInstant(comment.createdAt(), ZoneId.of("UTC"))),
+                        comment.body()));
     }
 
-    private String createNewIssueUpdate(GitHubIssue issue) {
+    private LinkUpdateInfo createNewIssueUpdate(GitHubIssue issue) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-        return String.format(
-                "Новый issue %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
-                issue.title(),
+        return new LinkUpdateInfo(
+                issue.linkValue(),
                 issue.author().ownerName(),
-                formatter.format(LocalDateTime.ofInstant(issue.createdAt(), ZoneId.of("UTC"))),
-                issue.description());
+                issue.title(),
+                issue.description(),
+                issue.createdAt(),
+                String.format(
+                        "Новый issue %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                        issue.title(),
+                        issue.author().ownerName(),
+                        formatter.format(LocalDateTime.ofInstant(issue.createdAt(), ZoneId.of("UTC"))),
+                        issue.description()));
     }
 }
