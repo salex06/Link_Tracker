@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -27,7 +28,16 @@ public class OrmChat {
     @Column(name = "chat_id", unique = true, nullable = false)
     private Long chatId;
 
+    @Column(name = "send_at")
+    private LocalTime sendAt;
+
     public OrmChat(Long chatId) {
         this.chatId = chatId;
+    }
+
+    public OrmChat(Long id, Long chatId) {
+        this.id = id;
+        this.chatId = chatId;
+        this.sendAt = null;
     }
 }

@@ -298,4 +298,34 @@ class OrmChatServiceTest {
 
         assertThat(filters).isEqualTo(expectedFilters);
     }
+
+    @Test
+    public void updateTimeConfig_WhenImmediately_ThenReturnTrue() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "immediately";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenCorrectTime_ThenReturnTrue() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "10:34";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenWrongConfig_ThenReturnFalse() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "25:94";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isFalse();
+    }
 }

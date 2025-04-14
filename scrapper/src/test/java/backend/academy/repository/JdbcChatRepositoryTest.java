@@ -7,6 +7,7 @@ import backend.academy.model.jdbc.JdbcTgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -363,5 +364,31 @@ class JdbcChatRepositoryTest {
         Optional<JdbcTgChat> chat = chatRepository.findById(expectedId);
 
         assertThat(chat).isEmpty();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenNull_ThenReturnNull() {
+        Long tgChatId = 12345L;
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (12345)");
+
+        chatRepository.updateTimeConfig(tgChatId, null);
+
+        LocalTime actual =
+                jdbcTemplate.queryForObject("SELECT send_at FROM tg_chat WHERE chat_id = 12345", LocalTime.class);
+        assertNull(actual);
+    }
+
+    @Test
+    public void updateTimeConfig_WhenSpecificTime_ThenReturnLocalTime() {
+        Long tgChatId = 12345L;
+        LocalTime expectedTime = LocalTime.of(1, 0);
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (12345)");
+
+        chatRepository.updateTimeConfig(tgChatId, expectedTime);
+
+        LocalTime actualTime =
+                jdbcTemplate.queryForObject("SELECT send_at FROM tg_chat WHERE chat_id = 12345", LocalTime.class);
+        assertNotNull(actualTime);
+        assertEquals(expectedTime, actualTime);
     }
 }

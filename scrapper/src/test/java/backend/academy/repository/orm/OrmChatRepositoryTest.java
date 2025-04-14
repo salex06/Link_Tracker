@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import backend.academy.model.orm.OrmChat;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalTime;
 import java.util.Optional;
 import javax.sql.DataSource;
 import liquibase.Liquibase;
@@ -128,5 +129,31 @@ class OrmChatRepositoryTest {
 
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tg_chat", Integer.class);
         assertThat(count).isEqualTo(0);
+    }
+
+    @Test
+    public void updateTimeConfig_WhenNull_ThenReturnNull() {
+        Long tgChatId = 12345L;
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (12345)");
+
+        chatRepository.updateTimeConfig(tgChatId, null);
+
+        LocalTime actual =
+                jdbcTemplate.queryForObject("SELECT send_at FROM tg_chat WHERE chat_id = 12345", LocalTime.class);
+        assertNull(actual);
+    }
+
+    @Test
+    public void updateTimeConfig_WhenSpecificTime_ThenReturnLocalTime() {
+        Long tgChatId = 12345L;
+        LocalTime expectedTime = LocalTime.of(1, 0);
+        jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (12345)");
+
+        chatRepository.updateTimeConfig(tgChatId, expectedTime);
+
+        LocalTime actualTime =
+                jdbcTemplate.queryForObject("SELECT send_at FROM tg_chat WHERE chat_id = 12345", LocalTime.class);
+        assertNotNull(actualTime);
+        assertEquals(expectedTime, actualTime);
     }
 }

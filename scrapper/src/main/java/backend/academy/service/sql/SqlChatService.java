@@ -7,6 +7,7 @@ import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -39,7 +40,7 @@ public class SqlChatService implements ChatService {
         if (containsChat(chatId)) {
             return null;
         }
-        JdbcTgChat newChat = chatRepository.save(new JdbcTgChat(null, chatId));
+        JdbcTgChat newChat = chatRepository.save(new JdbcTgChat(null, chatId, null));
         return chatMapper.toPlainTgChat(newChat, new HashSet<>());
     }
 
@@ -161,5 +162,23 @@ public class SqlChatService implements ChatService {
                 chatRepository.removeTag(link.getId(), jdbcTgChat.getId(), tag);
             }
         }
+    }
+
+    @Override
+    public boolean updateTimeConfig(TgChat tgChat, String timeConfig) {
+        LocalTime config;
+        if (timeConfig.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+            String[] splittedConfig = timeConfig.split(":", 2);
+            int hours = Integer.parseInt(splittedConfig[0]);
+            int minutes = Integer.parseInt(splittedConfig[1]);
+            config = LocalTime.of(hours, minutes);
+        } else if (Objects.equals(timeConfig, "immediately")) {
+            config = null;
+        } else {
+            return false;
+        }
+
+        chatRepository.updateTimeConfig(tgChat.getChatId(), config);
+        return true;
     }
 }

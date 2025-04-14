@@ -17,6 +17,7 @@ import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -58,7 +59,7 @@ public class OrmChatService implements ChatService {
         if (containsChat(chatId)) {
             return null;
         }
-        OrmChat chat = chatRepository.save(new OrmChat(null, chatId));
+        OrmChat chat = chatRepository.save(new OrmChat(null, chatId, null));
         return mapper.toPlainTgChat(chat, new HashSet<>());
     }
 
@@ -186,5 +187,22 @@ public class OrmChatService implements ChatService {
                     tagsRepository.delete(new OrmChatLinkTags(ormChat, link, tag));
             }
         }
+    }
+
+    @Override
+    public boolean updateTimeConfig(TgChat tgChat, String timeConfig) {
+        LocalTime config;
+        if (Objects.equals(timeConfig, "immediately")) {
+            config = null;
+        } else if (timeConfig.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+            String[] splittedConfig = timeConfig.split(":", 2);
+            int hours = Integer.parseInt(splittedConfig[0]);
+            int minutes = Integer.parseInt(splittedConfig[1]);
+            config = LocalTime.of(hours, minutes);
+        } else {
+            return false;
+        }
+        chatRepository.updateTimeConfig(tgChat.getChatId(), config);
+        return true;
     }
 }

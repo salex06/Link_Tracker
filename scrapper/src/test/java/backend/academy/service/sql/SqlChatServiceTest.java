@@ -61,7 +61,7 @@ class SqlChatServiceTest {
         when(chatRepository.existsByChatId(chatId)).thenReturn(false);
         when(chatRepository.save(any(JdbcTgChat.class))).thenReturn(new JdbcTgChat(expectedId, chatId));
         when(chatMapper.toPlainTgChat(any(JdbcTgChat.class), anySet()))
-                .thenReturn(new TgChat(expectedId, chatId, new HashSet<>()));
+                .thenReturn(new TgChat(expectedId, chatId, null, new HashSet<>()));
 
         TgChat chat = chatService.saveChat(chatId);
 
@@ -90,7 +90,7 @@ class SqlChatServiceTest {
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
         when(linkService.getAllLinksByChatId(chatId)).thenReturn(expectedLinks);
         when(chatMapper.toPlainTgChat(any(JdbcTgChat.class), anySet()))
-                .thenReturn(new TgChat(id, chatId, expectedLinks));
+                .thenReturn(new TgChat(id, chatId, null, expectedLinks));
 
         Optional<TgChat> tgChat = chatService.getPlainTgChatByChatId(chatId);
 
@@ -107,7 +107,7 @@ class SqlChatServiceTest {
         Set<Link> expectedLinks = Set.of(
                 new Link(1L, "test_link1", List.of("tag1", "tag2"), List.of("filter1:filter1"), Set.of(chatId)),
                 new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId)));
-        TgChat chat = new TgChat(id, chatId, expectedLinks);
+        TgChat chat = new TgChat(id, chatId, null, expectedLinks);
         Link link = new Link(1L, "test_link1");
 
         chatService.saveTheChatLink(chat, link);
@@ -121,7 +121,7 @@ class SqlChatServiceTest {
         Long id = 2L;
         Set<Link> expectedLinks =
                 Set.of(new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId)));
-        TgChat chat = new TgChat(id, chatId, expectedLinks);
+        TgChat chat = new TgChat(id, chatId, null, expectedLinks);
         Link link = new Link(1L, "test_link1");
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new JdbcTgChat(1L, 1L)));
 
@@ -136,7 +136,7 @@ class SqlChatServiceTest {
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
         Set<Link> expectedLinks = Set.of(link);
-        TgChat chat = new TgChat(id, chatId, expectedLinks);
+        TgChat chat = new TgChat(id, chatId, null, expectedLinks);
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.empty());
 
         chatService.updateTags(link, chat, List.of("tags"));
@@ -150,7 +150,7 @@ class SqlChatServiceTest {
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
         Set<Link> expectedLinks = Set.of(link);
-        TgChat chat = new TgChat(id, chatId, expectedLinks);
+        TgChat chat = new TgChat(id, chatId, null, expectedLinks);
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.empty());
 
         chatService.updateFilters(link, chat, List.of("filters"));
@@ -164,7 +164,7 @@ class SqlChatServiceTest {
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
         Set<Link> expectedLinks = Set.of(link);
-        TgChat chat = new TgChat(id, chatId, expectedLinks);
+        TgChat chat = new TgChat(id, chatId, null, expectedLinks);
         List<String> expectedTags = List.of("new_tag1", "new_tag2");
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
 
@@ -181,7 +181,7 @@ class SqlChatServiceTest {
         Long chatId = 2L;
         Link link = new Link(2L, "test_link2", List.of("tag3"), List.of("filter2"), Set.of(chatId));
         Set<Link> expectedLinks = Set.of(link);
-        TgChat chat = new TgChat(id, chatId, expectedLinks);
+        TgChat chat = new TgChat(id, chatId, null, expectedLinks);
         List<String> expectedFilters = List.of("new_filter1", "new_filter2");
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new JdbcTgChat(id, chatId)));
 
@@ -268,5 +268,35 @@ class SqlChatServiceTest {
         List<String> filters = chatService.getFilters(linkId, chatId);
 
         assertThat(filters).isEqualTo(expectedFilters);
+    }
+
+    @Test
+    public void updateTimeConfig_WhenImmediately_ThenReturnTrue() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "immediately";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenCorrectTime_ThenReturnTrue() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "10:34";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenWrongConfig_ThenReturnFalse() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "25:94";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isFalse();
     }
 }

@@ -28,7 +28,8 @@ import org.testcontainers.kafka.KafkaContainer;
 @Testcontainers
 public class KafkaNotificationSenderTest {
     @Container
-    private static final KafkaContainer kafkaContainer = new KafkaContainer("apache/kafka-native:3.8.1");
+    private static final KafkaContainer kafkaContainer =
+            new KafkaContainer("apache/kafka-native:3.8.1").withExposedPorts(9092);
 
     @Autowired
     private KafkaNotificationSender kafkaSender;

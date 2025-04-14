@@ -41,4 +41,6 @@ public interface ChatService {
     void addTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
 
     void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
+
+    boolean updateTimeConfig(TgChat tgChat, String timeConfig);
 }

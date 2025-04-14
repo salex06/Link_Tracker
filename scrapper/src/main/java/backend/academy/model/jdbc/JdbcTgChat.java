@@ -1,5 +1,6 @@
 package backend.academy.model.jdbc;
 
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -19,4 +20,13 @@ public class JdbcTgChat {
 
     @Column("chat_id")
     private Long chatId;
+
+    @Column("send_at")
+    private LocalTime sendAt;
+
+    public JdbcTgChat(Long id, Long chatId) {
+        this.id = id;
+        this.chatId = chatId;
+        this.sendAt = null;
+    }
 }

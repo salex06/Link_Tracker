@@ -85,7 +85,7 @@ class BotCommandsStorageTest {
                 "/removetag",
                 "Удалить тег для ссылки",
                 "/timeconfig",
-            "Отправка уведомлений: 'immediately' (сразу) или время в формате 'HH:mm'");
+                "Отправка уведомлений: 'immediately' (сразу) или время в формате 'HH:mm'");
 
         Map<String, String> actualMap = BotCommandsStorage.getCommandDescription();
 

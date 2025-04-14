@@ -1,6 +1,7 @@
 package backend.academy.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +29,7 @@ class ChatControllerTest {
     @Test
     public void registerChat_WhenRequestIsCorrect_ThenReturnSuccessMessage() {
         String expectedMessage = "Вы зарегистрированы";
-        when(chatService.saveChat(anyLong())).thenReturn(new TgChat(1L, 1L, new HashSet<>()));
+        when(chatService.saveChat(anyLong())).thenReturn(new TgChat(1L, 1L, null, new HashSet<>()));
 
         ResponseEntity<?> response = chatController.registerChat(1L);
 
@@ -53,7 +54,7 @@ class ChatControllerTest {
     public void deleteChat_WhenRequestIsCorrect_ThenReturnSuccessMessage() {
         String expectedMessage = "Чат успешно удален";
         when(chatService.getPlainTgChatByChatId(anyLong()))
-                .thenReturn(Optional.of(new TgChat(1L, 1L, new HashSet<>())));
+                .thenReturn(Optional.of(new TgChat(1L, 1L, null, new HashSet<>())));
 
         ResponseEntity<?> response = chatController.deleteChat(1L);
 
@@ -72,5 +73,42 @@ class ChatControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
         assertThat(((ApiErrorResponse) response.getBody()).description()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void updateTimeConfiguration_WhenChatNotFound_ThenReturnErrorMessage() {
+        String expectedMessage = "Некорректные параметры запроса";
+        when(chatService.getPlainTgChatByChatId(anyLong())).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = chatController.updateTimeConfiguration(1L, "10:30");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
+        assertThat(((ApiErrorResponse) response.getBody()).description()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void updateTimeConfiguration_WhenTimeWasNotUpdated_ThenReturnErrorMessage() {
+        String expectedMessage = "Некорректные параметры запроса";
+        when(chatService.getPlainTgChatByChatId(anyLong()))
+                .thenReturn(Optional.of(new TgChat(1L, 1L, null, new HashSet<>())));
+        when(chatService.updateTimeConfig(any(), any())).thenReturn(false);
+
+        ResponseEntity<?> response = chatController.updateTimeConfiguration(1L, "wrong time");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isInstanceOf(ApiErrorResponse.class);
+        assertThat(((ApiErrorResponse) response.getBody()).description()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    public void updateTimeConfiguration_WhenChatWasFoundAndConfigWasUpdated_ThenReturnErrorMessage() {
+        when(chatService.getPlainTgChatByChatId(anyLong()))
+                .thenReturn(Optional.of(new TgChat(1L, 1L, null, new HashSet<>())));
+        when(chatService.updateTimeConfig(any(), any())).thenReturn(true);
+
+        ResponseEntity<?> response = chatController.updateTimeConfiguration(1L, "10:30");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 }
