@@ -1,0 +1,2 @@
+ALTER TABLE tg_chat
+ADD COLUMN send_at TIME;

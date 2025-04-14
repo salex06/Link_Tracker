@@ -26,7 +26,9 @@ public class BotCommandsStorage {
             "/addtag",
             "Добавить тег для ссылки",
             "/removetag",
-            "Удалить тег для ссылки");
+            "Удалить тег для ссылки",
+            "/timeconfig",
+            "Отправка уведомлений: 'immediately' (сразу) или время в формате 'HH:mm'");
 
     static {
         COMMANDS.add(new Command("/start", false));
@@ -37,6 +39,7 @@ public class BotCommandsStorage {
         COMMANDS.add(new Command("/listbytag", true));
         COMMANDS.add(new Command("/addtag", true));
         COMMANDS.add(new Command("/removetag", true));
+        COMMANDS.add(new Command("/timeconfig", true));
     }
 
     public static List<Command> getCommands() {
