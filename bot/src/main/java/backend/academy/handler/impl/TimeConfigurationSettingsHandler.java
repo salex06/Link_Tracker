@@ -91,7 +91,7 @@ public class TimeConfigurationSettingsHandler implements Handler {
         private String configDescription;
 
         public static boolean isValidConfiguration(String configuration) {
-            for (TimeConfiguration current : TimeConfiguration.values()) {
+            for (TimeConfiguration current : values()) {
                 if (configuration.matches(current.configDescription)) {
                     return true;
                 }
