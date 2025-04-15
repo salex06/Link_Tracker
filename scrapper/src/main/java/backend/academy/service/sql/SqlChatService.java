@@ -8,8 +8,10 @@ import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -180,5 +182,33 @@ public class SqlChatService implements ChatService {
 
         chatRepository.updateTimeConfig(tgChat.getChatId(), config);
         return true;
+    }
+
+    @Override
+    public List<Long> getChatIdsForImmediateDispatch(List<Long> chatIds) {
+        List<Long> result = new ArrayList<>();
+        for (Long id : chatIds) {
+            Optional<JdbcTgChat> chat = chatRepository.findByChatId(id);
+            if (chat.isEmpty()) continue;
+
+            if (chat.orElseThrow().getSendAt() == null) {
+                result.add(chat.orElseThrow().getChatId());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<Map.Entry<Long, LocalTime>> getChatIdsWithDelayedSending(List<Long> chatIds) {
+        List<Map.Entry<Long, LocalTime>> result = new ArrayList<>();
+        for (Long id : chatIds) {
+            JdbcTgChat chat = chatRepository.findByChatId(id).orElse(null);
+            if (chat == null) continue;
+
+            if (chat.getSendAt() != null) {
+                result.add(Map.entry(chat.getChatId(), chat.getSendAt()));
+            }
+        }
+        return result;
     }
 }

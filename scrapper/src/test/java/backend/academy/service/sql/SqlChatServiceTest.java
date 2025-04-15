@@ -15,8 +15,10 @@ import backend.academy.model.mapper.chat.ChatMapper;
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -298,5 +300,34 @@ class SqlChatServiceTest {
         boolean result = chatService.updateTimeConfig(chat, timeConfig);
 
         assertThat(result).isFalse();
+    }
+
+    @Test
+    public void getChatIdsForImmediateDispatchWorksCorrectly() {
+        List<Long> chatIds = List.of(1L, 2L);
+        List<Long> expectedChatIds = List.of(1L);
+        JdbcTgChat chat1 = new JdbcTgChat(10L, 1L, null);
+        JdbcTgChat chat2 = new JdbcTgChat(20L, 2L, LocalTime.now());
+        when(chatRepository.findByChatId(1L)).thenReturn(Optional.of(chat1));
+        when(chatRepository.findByChatId(2L)).thenReturn(Optional.of(chat2));
+
+        List<Long> actualChatIds = chatService.getChatIdsForImmediateDispatch(chatIds);
+
+        assertEquals(expectedChatIds, actualChatIds);
+    }
+
+    @Test
+    public void getChatIdsWithDelayedSendingWorksCorrectly() {
+        LocalTime time = LocalTime.now();
+        List<Long> chatIds = List.of(1L, 2L);
+        List<Map.Entry<Long, LocalTime>> expectedChatIds = List.of(Map.entry(2L, time));
+        JdbcTgChat chat1 = new JdbcTgChat(10L, 1L, null);
+        JdbcTgChat chat2 = new JdbcTgChat(20L, 2L, time);
+        when(chatRepository.findByChatId(1L)).thenReturn(Optional.of(chat1));
+        when(chatRepository.findByChatId(2L)).thenReturn(Optional.of(chat2));
+
+        List<Map.Entry<Long, LocalTime>> actualChatIds = chatService.getChatIdsWithDelayedSending(chatIds);
+
+        assertEquals(expectedChatIds, actualChatIds);
     }
 }

@@ -2,7 +2,9 @@ package backend.academy.service;
 
 import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ChatService {
@@ -43,4 +45,20 @@ public interface ChatService {
     void removeTagsToAllLinksByChatId(TgChat tgChat, List<String> tags);
 
     boolean updateTimeConfig(TgChat tgChat, String timeConfig);
+
+    /**
+     * Извлечь идентификаторы чатов с режимом немедленной отправки
+     *
+     * @param chatIds набор идентификаторов с разными режимами
+     * @return список идентификаторов с режимом немедленной отправки уведомлений
+     */
+    List<Long> getChatIdsForImmediateDispatch(List<Long> chatIds);
+
+    /**
+     * Извлечь идентификаторы чатов с отправкой уведомлений в режиме дайджеста
+     *
+     * @param chatIds набор идентификаторов с разными режимами
+     * @return набор пар "идентификатор - время отправки"
+     */
+    List<Map.Entry<Long, LocalTime>> getChatIdsWithDelayedSending(List<Long> chatIds);
 }

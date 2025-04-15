@@ -8,12 +8,16 @@ import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.filters.LinkFilter;
 import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
+import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -35,9 +40,11 @@ import org.springframework.stereotype.Service;
 public class Scheduler {
     private final LinkFilter filterByAuthor;
     private final LinkService linkService;
+    private final ChatService chatService;
     private final ClientManager clientManager;
     private final NotificationSender notificationSender;
     private final ScrapperConfig scrapperConfig;
+    private final RedisTemplate<String, LinkUpdate> redisTemplate;
 
     @Scheduled(fixedDelay = 50000, initialDelay = 10000)
     public void schedule() {
@@ -128,8 +135,28 @@ public class Scheduler {
             return;
         }
 
-        LinkUpdate linkUpdate = new LinkUpdate(link.getId(), link.getUrl(), updateDescription.commonInfo(), chatIds);
+        List<Long> chatIdsForImmediateDispatch = chatService.getChatIdsForImmediateDispatch(chatIds);
+        List<Map.Entry<Long, LocalTime>> chatIdsWithDelayedSending = chatService.getChatIdsWithDelayedSending(chatIds);
 
+        if (!chatIdsForImmediateDispatch.isEmpty())
+            sendImmediately(updateDescription, link, chatIdsForImmediateDispatch);
+
+        if (!chatIdsWithDelayedSending.isEmpty())
+            saveForDelayedSending(updateDescription, link, chatIdsWithDelayedSending);
+    }
+
+    private void sendImmediately(LinkUpdateInfo updateDescription, Link link, List<Long> chatIdsForImmediateDispatch) {
+        LinkUpdate linkUpdate = new LinkUpdate(
+                link.getId(), link.getUrl(), updateDescription.commonInfo(), chatIdsForImmediateDispatch);
         notificationSender.send(linkUpdate);
+    }
+
+    private void saveForDelayedSending(
+            LinkUpdateInfo updateDescription, Link link, List<Map.Entry<Long, LocalTime>> chatsWithDelayedSending) {
+        for (Map.Entry<Long, LocalTime> chat : chatsWithDelayedSending) {
+            LinkUpdate linkUpdate =
+                    new LinkUpdate(link.getId(), link.getUrl(), updateDescription.commonInfo(), List.of(chat.getKey()));
+            redisTemplate.opsForSet().add(chat.getValue().format(DateTimeFormatter.ofPattern("HH:mm")), linkUpdate);
+        }
     }
 }

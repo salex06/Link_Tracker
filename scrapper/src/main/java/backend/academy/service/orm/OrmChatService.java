@@ -18,8 +18,10 @@ import backend.academy.repository.orm.OrmLinkRepository;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -204,5 +206,32 @@ public class OrmChatService implements ChatService {
         }
         chatRepository.updateTimeConfig(tgChat.getChatId(), config);
         return true;
+    }
+
+    @Override
+    public List<Long> getChatIdsForImmediateDispatch(List<Long> chatIds) {
+        List<Long> result = new ArrayList<>();
+        chatIds.forEach(id -> {
+            Optional<OrmChat> chat = chatRepository.findByChatId(id);
+
+            if (chat.isPresent() && chat.orElseThrow().getSendAt() == null) {
+                result.add(chat.orElseThrow().getChatId());
+            }
+        });
+        return result;
+    }
+
+    @Override
+    public List<Map.Entry<Long, LocalTime>> getChatIdsWithDelayedSending(List<Long> chatIds) {
+        List<Map.Entry<Long, LocalTime>> result = new ArrayList<>();
+        chatIds.forEach(id -> {
+            Optional<OrmChat> chat = chatRepository.findByChatId(id);
+
+            if (chat.isPresent() && chat.orElseThrow().getSendAt() != null) {
+                result.add(Map.entry(
+                        chat.orElseThrow().getChatId(), chat.orElseThrow().getSendAt()));
+            }
+        });
+        return result;
     }
 }

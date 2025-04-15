@@ -3,6 +3,7 @@ package backend.academy.scheduler;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +19,7 @@ import backend.academy.filters.impl.LinkFilterByAuthor;
 import backend.academy.model.plain.Link;
 import backend.academy.notifications.NotificationSender;
 import backend.academy.notifications.impl.HttpNotificationSender;
+import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 
 class SchedulerTest {
     private static final String CLIENT1_SUPPORTED_URL = "client1";
@@ -39,7 +42,9 @@ class SchedulerTest {
     private static Scheduler scheduler;
 
     private static LinkService linkService;
+    private static ChatService chatService;
     private static ClientManager clientManager;
+    private static RedisTemplate<String, LinkUpdate> redisTemplate;
     private static NotificationSender notificationSender;
     private static ScrapperConfig scrapperConfig;
     private static LinkFilter linkFilter;
@@ -54,6 +59,7 @@ class SchedulerTest {
         notificationSender = Mockito.mock(HttpNotificationSender.class);
         scrapperConfig = Mockito.mock(ScrapperConfig.class);
         linkFilter = Mockito.mock(LinkFilterByAuthor.class);
+        chatService = Mockito.mock(ChatService.class);
         setUpClients();
 
         when(scrapperConfig.pageSize()).thenReturn(50L);
@@ -62,8 +68,11 @@ class SchedulerTest {
                 .thenAnswer(i -> {
                     return ((Link) i.getArgument(1)).getTgChatIds().stream().toList();
                 });
+        when(chatService.getChatIdsForImmediateDispatch(anyList())).thenAnswer(i -> i.<List<Long>>getArgument(0));
+        when(chatService.getChatIdsWithDelayedSending(anyList())).thenReturn(List.of());
 
-        scheduler = new Scheduler(linkFilter, linkService, clientManager, notificationSender, scrapperConfig);
+        scheduler = new Scheduler(
+                linkFilter, linkService, chatService, clientManager, notificationSender, scrapperConfig, redisTemplate);
     }
 
     private static void setUpClients() {
