@@ -40,7 +40,7 @@ public class ListMessageHandler implements Handler {
 
         String cachedResponse = redisCacheService.getValue(LIST_CACHE_PREFIX + chatId);
         if (cachedResponse != null) {
-            log.atInfo()
+            log.atDebug()
                     .setMessage("Возвращен кешированный результат")
                     .addKeyValue("command", "/list")
                     .addKeyValue("chat-id", chatId)

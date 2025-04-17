@@ -43,7 +43,7 @@ public class ListByTagMessageHandler implements Handler {
 
         String cachedResponse = redisCacheService.getValue(LIST_BY_TAG_CACHE_PREFIX + tagValue + ":" + chatId);
         if (cachedResponse != null) {
-            log.atInfo()
+            log.atDebug()
                     .setMessage("Возвращен кешированный результат")
                     .addKeyValue("command", "/list")
                     .addKeyValue("chat-id", chatId)

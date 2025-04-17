@@ -7,6 +7,8 @@ import static org.mockito.Mockito.verify;
 import backend.academy.config.properties.UserEventsProperties;
 import backend.academy.dto.LinkUpdate;
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -52,7 +55,7 @@ class NotificationConsumerTest {
     }
 
     @Test
-    public void consume_WhenCorrectMessage_ThenConsumeIsSuccessful() throws InterruptedException {
+    public void consume_WhenCorrectMessage_ThenConsumeIsSuccessful() throws InterruptedException, ExecutionException {
         LinkUpdate expectedLinkUpdate =
                 new LinkUpdate(390L, "https://github.com/salex06/testrepo", "Точно всё ок", new ArrayList<>());
         String expectedMessage =
@@ -64,35 +67,45 @@ class NotificationConsumerTest {
             	"tgChatIds": []
             }
             """;
-        stringKafkaTemplate.send(userEventsProperties.getTopic(), expectedMessage);
-        ArgumentCaptor<ConsumerRecord<Long, LinkUpdate>> consumerRecordCaptor =
-                ArgumentCaptor.forClass(ConsumerRecord.class);
-        ArgumentCaptor<Acknowledgment> acknowledgmentCaptor = ArgumentCaptor.forClass(Acknowledgment.class);
+        CompletableFuture<SendResult<Long, String>> future =
+                stringKafkaTemplate.send(userEventsProperties.getTopic(), expectedMessage);
+        var consumerRecordCaptor = ArgumentCaptor.forClass(ConsumerRecord.class);
+        var acknowledgmentCaptor = ArgumentCaptor.forClass(Acknowledgment.class);
 
         Thread.sleep(5000);
         verify(consumer, timeout(10000).atLeastOnce())
                 .consume(consumerRecordCaptor.capture(), acknowledgmentCaptor.capture());
-        ConsumerRecord<Long, LinkUpdate> capturedRecord = consumerRecordCaptor.getValue();
+        var capturedRecord = consumerRecordCaptor.getValue();
         assertEquals(expectedLinkUpdate, capturedRecord.value());
+        SendResult<Long, String> sendResult = future.get();
+        assertEquals(expectedMessage, sendResult.getProducerRecord().value());
     }
 
     @Test
-    public void consume_WhenAnyFieldOfMessageIsNull_ThenSendToDlt() throws InterruptedException {
+    public void consume_WhenAnyFieldOfMessageIsNull_ThenSendToDlt() throws InterruptedException, ExecutionException {
         LinkUpdate expectedLinkUpdate =
                 new LinkUpdate(null, "https://github.com/salex06/testrepo", "В DLT", new ArrayList<>());
         String expectedMessage =
                 "{\"id\":null,\"url\":\"https://github.com/salex06/testrepo\",\"description\":\"В DLT\",\"tgChatIds\":[]}";
-        linkUpdateKafkaTemplate.send(userEventsProperties.getTopic(), expectedLinkUpdate);
+        CompletableFuture<SendResult<Long, LinkUpdate>> future =
+                linkUpdateKafkaTemplate.send(userEventsProperties.getTopic(), expectedLinkUpdate);
+
         Thread.sleep(5000);
         verify(stringKafkaTemplate, timeout(10000)).send(userEventsProperties.getDltTopic(), expectedMessage);
+        SendResult<Long, LinkUpdate> sendResult = future.get();
+        assertEquals(expectedLinkUpdate, sendResult.getProducerRecord().value());
     }
 
     @Test
     @DirtiesContext
-    public void consume_WhenParseError_ThenSendToDlt() throws InterruptedException {
+    public void consume_WhenParseError_ThenSendToDlt() throws InterruptedException, ExecutionException {
         String expectedMessage = "123";
-        stringKafkaTemplate.send(userEventsProperties.getTopic(), expectedMessage);
+        CompletableFuture<SendResult<Long, String>> future =
+                stringKafkaTemplate.send(userEventsProperties.getTopic(), expectedMessage);
+
         Thread.sleep(5000);
         verify(stringKafkaTemplate, timeout(10000)).send(userEventsProperties.getDltTopic(), expectedMessage);
+        SendResult<Long, String> sendResult = future.get();
+        assertEquals(expectedMessage, sendResult.getProducerRecord().value());
     }
 }
