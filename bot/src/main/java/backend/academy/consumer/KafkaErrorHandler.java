@@ -1,5 +1,6 @@
 package backend.academy.consumer;
 
+import backend.academy.exceptions.NoDataKafkaConsumerException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -40,20 +41,22 @@ public class KafkaErrorHandler implements CommonErrorHandler {
                 .addKeyValue("exception", exception.getMessage())
                 .log();
         try {
-            byte[] valueBytes;
+            byte[] valueBytes = null;
 
             if (data.value() != null) {
                 valueBytes = jsonMapper.writeValueAsBytes(data.value());
-            } else if (data.headers().lastHeader("original_message") != null) {
+            }
+            if (data.headers().lastHeader("original_message") != null) {
                 valueBytes = data.headers().lastHeader("original_message").value();
-            } else {
-                throw new RuntimeException("Нет данных для отправки в dlt");
+            }
+
+            if (valueBytes == null) {
+                throw new NoDataKafkaConsumerException("Нет данных для отправки в dlt", data, exception);
             }
 
             String value = new String(valueBytes, StandardCharsets.UTF_8);
 
             kafkaTemplate.send(dltTopic, value);
-
         } catch (Exception e) {
             log.error("Ошибка при отправке сообщения в DLT: {}", e.getMessage());
         } finally {
