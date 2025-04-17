@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.annotation.TopicPartition;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +18,7 @@ public class NotificationFromResourcesMessageConsumer {
 
     @KafkaListener(
             containerFactory = "defaultConsumerFactory",
-            topicPartitions =
-                    @TopicPartition(
-                            topic = "${app.user-events.topic}",
-                            partitions = {"0"}))
+            topics = {"${app.user-events.topic}"})
     public void consume(ConsumerRecord<Long, LinkUpdate> record, Acknowledgment acknowledgment) {
         log.info(
                 """
@@ -46,11 +42,11 @@ public class NotificationFromResourcesMessageConsumer {
             throw new IllegalStateException("Ошибка валидации: одно из полей LinkUpdate - null");
         }
 
-        sendOutMessages(record.value());
+        sendMessageToTelegramChat(record.value());
         acknowledgment.acknowledge();
     }
 
-    private void sendOutMessages(LinkUpdate linkUpdate) {
+    private void sendMessageToTelegramChat(LinkUpdate linkUpdate) {
         for (Long chatId : linkUpdate.tgChatIds()) {
             String responseText = String.format(
                     "Новое уведомление от ресурса %s (ID: %d): %s",
