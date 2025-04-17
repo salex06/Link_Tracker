@@ -16,7 +16,7 @@ public class CommonKafkaConfig {
     private final KafkaProperties kafkaProperties;
 
     @Bean
-    Admin localKafkaClusterAdminClient() {
+    public Admin localKafkaClusterAdminClient() {
         return AdminClient.create(
                 Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers()));
     }

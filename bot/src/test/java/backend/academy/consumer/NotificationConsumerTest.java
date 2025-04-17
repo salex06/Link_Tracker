@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
+import backend.academy.config.properties.UserEventsProperties;
 import backend.academy.dto.LinkUpdate;
 import java.util.ArrayList;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,7 +32,8 @@ class NotificationConsumerTest {
     @Container
     private static final KafkaContainer kafkaContainer = new KafkaContainer("apache/kafka-native:3.8.1");
 
-    private static final String topicName = "notifications-from-resources";
+    @Autowired
+    private UserEventsProperties userEventsProperties;
 
     @MockitoSpyBean
     private NotificationFromResourcesMessageConsumer consumer;
@@ -50,7 +52,6 @@ class NotificationConsumerTest {
     }
 
     @Test
-    @DirtiesContext
     public void consume_WhenCorrectMessage_ThenConsumeIsSuccessful() throws InterruptedException {
         LinkUpdate expectedLinkUpdate =
                 new LinkUpdate(390L, "https://github.com/salex06/testrepo", "Точно всё ок", new ArrayList<>());
@@ -63,7 +64,7 @@ class NotificationConsumerTest {
             	"tgChatIds": []
             }
             """;
-        stringKafkaTemplate.send(topicName, expectedMessage);
+        stringKafkaTemplate.send(userEventsProperties.getTopic(), expectedMessage);
         ArgumentCaptor<ConsumerRecord<Long, LinkUpdate>> consumerRecordCaptor =
                 ArgumentCaptor.forClass(ConsumerRecord.class);
         ArgumentCaptor<Acknowledgment> acknowledgmentCaptor = ArgumentCaptor.forClass(Acknowledgment.class);
@@ -76,23 +77,22 @@ class NotificationConsumerTest {
     }
 
     @Test
-    @DirtiesContext
     public void consume_WhenAnyFieldOfMessageIsNull_ThenSendToDlt() throws InterruptedException {
         LinkUpdate expectedLinkUpdate =
                 new LinkUpdate(null, "https://github.com/salex06/testrepo", "В DLT", new ArrayList<>());
         String expectedMessage =
                 "{\"id\":null,\"url\":\"https://github.com/salex06/testrepo\",\"description\":\"В DLT\",\"tgChatIds\":[]}";
-        linkUpdateKafkaTemplate.send(topicName, expectedLinkUpdate);
+        linkUpdateKafkaTemplate.send(userEventsProperties.getTopic(), expectedLinkUpdate);
         Thread.sleep(5000);
-        verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", expectedMessage);
+        verify(stringKafkaTemplate, timeout(10000)).send(userEventsProperties.getDltTopic(), expectedMessage);
     }
 
     @Test
     @DirtiesContext
     public void consume_WhenParseError_ThenSendToDlt() throws InterruptedException {
         String expectedMessage = "123";
-        stringKafkaTemplate.send(topicName, expectedMessage);
+        stringKafkaTemplate.send(userEventsProperties.getTopic(), expectedMessage);
         Thread.sleep(5000);
-        verify(stringKafkaTemplate, timeout(10000)).send(topicName + "-dlt", expectedMessage);
+        verify(stringKafkaTemplate, timeout(10000)).send(userEventsProperties.getDltTopic(), expectedMessage);
     }
 }

@@ -1,4 +1,4 @@
-package backend.academy.config;
+package backend.academy.config.properties;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 @EqualsAndHashCode
 @Configuration
-@ConfigurationProperties("app.user-events")
-public class NotificationFromResourcesTopicProperties {
-    private String topic;
+@ConfigurationProperties("spring.kafka.consumer.properties")
+public class KafkaConsumerProperties {
+    private String groupId;
 }
