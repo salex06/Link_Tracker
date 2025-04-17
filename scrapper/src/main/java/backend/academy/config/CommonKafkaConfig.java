@@ -17,7 +17,7 @@ import org.springframework.kafka.core.KafkaAdmin;
 @RequiredArgsConstructor
 public class CommonKafkaConfig {
 
-    private final NotificationFromResourcesTopicProperties notificationFromResourcesTopicProperties;
+    private final UserEventsProperties userEventsProperties;
     private final KafkaProperties kafkaProperties;
 
     @Bean
@@ -35,6 +35,6 @@ public class CommonKafkaConfig {
     @Bean
     @SneakyThrows
     KafkaAdmin.NewTopics notificationFromResourcesTopic() {
-        return notificationFromResourcesTopicProperties.toNewTopics();
+        return userEventsProperties.toNewTopics();
     }
 }

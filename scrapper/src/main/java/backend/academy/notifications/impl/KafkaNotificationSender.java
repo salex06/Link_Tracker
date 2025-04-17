@@ -9,7 +9,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
-@Component("kafkaNotificationSender")
+@Component
 @ConditionalOnProperty(prefix = "app", name = "message-transport", havingValue = "Kafka")
 public class KafkaNotificationSender implements NotificationSender {
     private final KafkaTemplate<Long, LinkUpdate> template;

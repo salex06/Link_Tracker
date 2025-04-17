@@ -13,8 +13,7 @@ import org.springframework.kafka.core.KafkaAdmin;
 @EqualsAndHashCode
 @Configuration
 @ConfigurationProperties("app.user-events")
-public class NotificationFromResourcesTopicProperties {
-
+public class UserEventsProperties {
     private String topic;
     private int partitions;
     private short replicas;

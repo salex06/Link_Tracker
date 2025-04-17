@@ -18,7 +18,7 @@ public class DelayedSendingScheduler {
     private final RedisTemplate<String, LinkUpdate> redisTemplate;
     private final NotificationSender notificationSender;
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "${app.delayed-sending.cron}")
     public void schedule() {
         String key = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
 

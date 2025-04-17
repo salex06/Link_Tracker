@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
-@Component("httpNotificationSender")
+@Component
 @ConditionalOnProperty(prefix = "app", name = "message-transport", havingValue = "HTTP")
 public class HttpNotificationSender implements NotificationSender {
     private final RestClient botUpdatesClient;

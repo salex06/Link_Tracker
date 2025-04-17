@@ -9,6 +9,8 @@ app:
     topic: notifications-from-resources
     partitions: 3
     replicas: 2
+  delayed-sending:
+    cron: "0 * * * * *"
 
 service:
   access-type: SQL
