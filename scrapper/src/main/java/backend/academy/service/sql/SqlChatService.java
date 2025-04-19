@@ -7,8 +7,11 @@ import backend.academy.model.plain.TgChat;
 import backend.academy.repository.jdbc.JdbcChatRepository;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -39,7 +42,7 @@ public class SqlChatService implements ChatService {
         if (containsChat(chatId)) {
             return null;
         }
-        JdbcTgChat newChat = chatRepository.save(new JdbcTgChat(null, chatId));
+        JdbcTgChat newChat = chatRepository.save(new JdbcTgChat(null, chatId, null));
         return chatMapper.toPlainTgChat(newChat, new HashSet<>());
     }
 
@@ -161,5 +164,51 @@ public class SqlChatService implements ChatService {
                 chatRepository.removeTag(link.getId(), jdbcTgChat.getId(), tag);
             }
         }
+    }
+
+    @Override
+    public boolean updateTimeConfig(TgChat tgChat, String timeConfig) {
+        LocalTime config;
+        if (timeConfig.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
+            String[] splittedConfig = timeConfig.split(":", 2);
+            int hours = Integer.parseInt(splittedConfig[0]);
+            int minutes = Integer.parseInt(splittedConfig[1]);
+            config = LocalTime.of(hours, minutes);
+        } else if (Objects.equals(timeConfig, "immediately")) {
+            config = null;
+        } else {
+            return false;
+        }
+
+        chatRepository.updateTimeConfig(tgChat.getChatId(), config);
+        return true;
+    }
+
+    @Override
+    public List<Long> getChatIdsForImmediateDispatch(List<Long> chatIds) {
+        List<Long> result = new ArrayList<>();
+        for (Long id : chatIds) {
+            Optional<JdbcTgChat> chat = chatRepository.findByChatId(id);
+            if (chat.isEmpty()) continue;
+
+            if (chat.orElseThrow().getSendAt() == null) {
+                result.add(chat.orElseThrow().getChatId());
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<Map.Entry<Long, LocalTime>> getChatIdsWithDelayedSending(List<Long> chatIds) {
+        List<Map.Entry<Long, LocalTime>> result = new ArrayList<>();
+        for (Long id : chatIds) {
+            JdbcTgChat chat = chatRepository.findByChatId(id).orElse(null);
+            if (chat == null) continue;
+
+            if (chat.getSendAt() != null) {
+                result.add(Map.entry(chat.getChatId(), chat.getSendAt()));
+            }
+        }
+        return result;
     }
 }

@@ -6,9 +6,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
@@ -16,7 +19,6 @@ import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -28,6 +30,8 @@ class UntrackMessageHandlerTest {
 
     @Autowired
     private static RestClient restClient;
+
+    private static RedisCacheService redisCacheService;
 
     private static UntrackMessageHandler untrackMessageHandler;
 
@@ -45,9 +49,10 @@ class UntrackMessageHandlerTest {
         wireMockServer.stop();
     }
 
-    @BeforeAll
-    public static void setUp() {
-        untrackMessageHandler = new UntrackMessageHandler();
+    @BeforeEach
+    public void setUp() {
+        redisCacheService = Mockito.mock(RedisCacheService.class);
+        untrackMessageHandler = new UntrackMessageHandler(redisCacheService);
     }
 
     @Test
@@ -78,11 +83,12 @@ class UntrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
         when(message.text()).thenReturn("somethingWrong");
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage sendMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, sendMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 
     @Test
@@ -95,7 +101,6 @@ class UntrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(null);
         when(message.text()).thenReturn("/untrack linkExample");
-
         stubFor(
                 delete("/links")
                         .willReturn(
@@ -105,11 +110,12 @@ class UntrackMessageHandlerTest {
                                         .withBody(
                                                 "{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                                         + "\"exceptionName\":\"MissingRequestHeaderException\", \"exceptionMessage\": \"Required request header 'Tg-Chat-Id' for method parameter type Long is not present\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 
     @Test
@@ -122,18 +128,18 @@ class UntrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/untrack linkExample");
-
         stubFor(delete("/links")
                 .willReturn(aResponse()
                         .withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"description\":\"Некорректные параметры запроса\",\"code\":\"400\", "
                                 + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 
     @Test
@@ -146,7 +152,6 @@ class UntrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/untrack linkExample");
-
         stubFor(delete("/links")
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -154,9 +159,11 @@ class UntrackMessageHandlerTest {
                         .withBody("{\"id\": 1,\"url\":\"linkExample\"}")));
 
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 
     @Test
@@ -169,17 +176,17 @@ class UntrackMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/untrack linkExample");
-
         stubFor(delete("/links")
                 .willReturn(aResponse()
                         .withStatus(404)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"description\":\"Ссылка не найдена\",\"code\":\"404\", "
                                 + "\"exceptionName\":\"\", \"exceptionMessage\": \"\", \"stacktrace\": []}")));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verify(redisCacheService, times(1)).invalidateCache();
     }
 }

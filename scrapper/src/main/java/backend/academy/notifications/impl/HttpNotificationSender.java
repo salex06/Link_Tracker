@@ -6,14 +6,19 @@ import backend.academy.exceptions.ApiErrorException;
 import backend.academy.notifications.NotificationSender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
+@Component
+@ConditionalOnProperty(prefix = "app", name = "message-transport", havingValue = "HTTP")
 public class HttpNotificationSender implements NotificationSender {
     private final RestClient botUpdatesClient;
 
-    public HttpNotificationSender(RestClient client) {
+    public HttpNotificationSender(@Qualifier("botConnectionClient") RestClient client) {
         this.botUpdatesClient = client;
     }
 

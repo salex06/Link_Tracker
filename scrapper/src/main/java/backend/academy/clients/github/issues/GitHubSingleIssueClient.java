@@ -2,6 +2,7 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -29,7 +30,7 @@ public class GitHubSingleIssueClient extends Client {
     }
 
     @Override
-    public List<String> getUpdates(Link link) {
+    public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
@@ -57,21 +58,26 @@ public class GitHubSingleIssueClient extends Client {
                     return null;
                 });
 
+        link.setLastUpdateTime(Instant.now());
         return createUpdatesList(issuesList, link);
     }
 
-    private List<String> createUpdatesList(GitHubIssue gitHubIssue, Link link) {
+    private List<LinkUpdateInfo> createUpdatesList(GitHubIssue gitHubIssue, Link link) {
         if (gitHubIssue == null) {
             return List.of();
         }
 
-        List<String> updatesList = new ArrayList<>();
+        List<LinkUpdateInfo> updatesList = new ArrayList<>();
         Instant previousUpdateTime = link.getLastUpdateTime();
 
         if (wasUpdated(previousUpdateTime, gitHubIssue.updatedAt())) {
-            updatesList.add(
-                    String.format("Обновление issue #%s по ссылке %s", gitHubIssue.title(), gitHubIssue.linkValue()));
-            link.setLastUpdateTime(gitHubIssue.updatedAt());
+            updatesList.add(new LinkUpdateInfo(
+                    gitHubIssue.linkValue(),
+                    gitHubIssue.author().ownerName(),
+                    gitHubIssue.title(),
+                    gitHubIssue.description(),
+                    gitHubIssue.updatedAt(),
+                    String.format("Обновление issue #%s по ссылке %s", gitHubIssue.title(), gitHubIssue.linkValue())));
         }
 
         return updatesList;

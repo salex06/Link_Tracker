@@ -25,8 +25,10 @@ import backend.academy.repository.orm.OrmChatRepository;
 import backend.academy.repository.orm.OrmLinkRepository;
 import backend.academy.service.LinkService;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -297,5 +299,64 @@ class OrmChatServiceTest {
         List<String> filters = chatService.getFilters(linkId, chatId);
 
         assertThat(filters).isEqualTo(expectedFilters);
+    }
+
+    @Test
+    public void updateTimeConfig_WhenImmediately_ThenReturnTrue() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "immediately";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenCorrectTime_ThenReturnTrue() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "10:34";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void updateTimeConfig_WhenWrongConfig_ThenReturnFalse() {
+        TgChat chat = new TgChat(1L, 2L, new HashSet<>());
+        String timeConfig = "25:94";
+
+        boolean result = chatService.updateTimeConfig(chat, timeConfig);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    public void getChatIdsForImmediateDispatchWorksCorrectly() {
+        List<Long> chatIds = List.of(1L, 2L);
+        List<Long> expectedChatIds = List.of(1L);
+        OrmChat chat1 = new OrmChat(10L, 1L, null);
+        OrmChat chat2 = new OrmChat(20L, 2L, LocalTime.now());
+        when(chatRepository.findByChatId(1L)).thenReturn(Optional.of(chat1));
+        when(chatRepository.findByChatId(2L)).thenReturn(Optional.of(chat2));
+
+        List<Long> actualChatIds = chatService.getChatIdsForImmediateDispatch(chatIds);
+
+        assertEquals(expectedChatIds, actualChatIds);
+    }
+
+    @Test
+    public void getChatIdsWithDelayedSendingWorksCorrectly() {
+        LocalTime time = LocalTime.now();
+        List<Long> chatIds = List.of(1L, 2L);
+        List<Map.Entry<Long, LocalTime>> expectedChatIds = List.of(Map.entry(2L, time));
+        OrmChat chat1 = new OrmChat(10L, 1L, null);
+        OrmChat chat2 = new OrmChat(20L, 2L, time);
+        when(chatRepository.findByChatId(1L)).thenReturn(Optional.of(chat1));
+        when(chatRepository.findByChatId(2L)).thenReturn(Optional.of(chat2));
+
+        List<Map.Entry<Long, LocalTime>> actualChatIds = chatService.getChatIdsWithDelayedSending(chatIds);
+
+        assertEquals(expectedChatIds, actualChatIds);
     }
 }

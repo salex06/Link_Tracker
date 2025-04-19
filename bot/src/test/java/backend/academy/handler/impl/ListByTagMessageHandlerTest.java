@@ -8,12 +8,15 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
@@ -22,7 +25,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClient;
@@ -33,11 +35,11 @@ class ListByTagMessageHandlerTest {
     @Autowired
     private static RestClient restClient;
 
-    @Autowired
-    @Mock
-    TelegramBot telegramBot;
-
     private WireMockServer wireMockServer;
+
+    private static RedisCacheService redisCacheService;
+
+    private static ListByTagMessageHandler listMessageHandler;
 
     @BeforeEach
     void setupBeforeEach() {
@@ -51,15 +53,14 @@ class ListByTagMessageHandlerTest {
         wireMockServer.stop();
     }
 
-    private static ListByTagMessageHandler listMessageHandler;
-
     @BeforeAll
     public static void setUp() {
-        listMessageHandler = new ListByTagMessageHandler();
+        redisCacheService = Mockito.mock(RedisCacheService.class);
+        listMessageHandler = new ListByTagMessageHandler(redisCacheService);
     }
 
     @Test
-    public void handle_WhenCorrectRequest_ThenReturnListOfTrackedResources() {
+    public void handle_WhenCorrectRequestAndNoCachedInfo_ThenReturnListOfTrackedResources() {
         String expectedMessage =
                 """
             Количество отслеживаемых ресурсов (для тега tag1): 2
@@ -73,7 +74,9 @@ class ListByTagMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
         when(message.text()).thenReturn("tag1");
-
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        when(mock.getValue(any())).thenReturn(null);
+        ListByTagMessageHandler listMessageHandler = new ListByTagMessageHandler(mock);
         stubFor(
                 get("/linksbytag")
                         .withHeader("Tg-Chat-Id", equalTo("1"))
@@ -101,15 +104,15 @@ class ListByTagMessageHandlerTest {
                                 "size":2
                             }
                         """)));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
     }
 
     @Test
-    public void handle_WhenCorrectRequestAndNoTrackedLinks_ThenReturnEmptyLinkList() {
+    public void handle_WhenCorrectRequestAndNoTrackedLinksAndNoCachedInfo_ThenReturnEmptyLinkList() {
         String expectedMessage = """
             Количество отслеживаемых ресурсов (для тега tag): 0
             """;
@@ -121,7 +124,9 @@ class ListByTagMessageHandlerTest {
         when(chat.id()).thenReturn(1L);
         String tagValue = "tag";
         when(message.text()).thenReturn("/list " + tagValue);
-
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        when(mock.getValue(any())).thenReturn(null);
+        ListByTagMessageHandler listMessageHandler = new ListByTagMessageHandler(mock);
         stubFor(
                 get("/linksbytag")
                         .withHeader("Tg-Chat-Id", equalTo("1"))
@@ -137,15 +142,15 @@ class ListByTagMessageHandlerTest {
                                 "size":0
                             }
                             """)));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
     }
 
     @Test
-    public void handle_WhenNoPassedIdOrTag_ThenReturnErrorMessage() {
+    public void handle_WhenNoPassedIdOrTagAndNoCachedInfo_ThenReturnErrorMessage() {
         String expectedMessage = """
             Некорректные параметры запроса""";
         Update update = Mockito.mock(Update.class);
@@ -156,7 +161,9 @@ class ListByTagMessageHandlerTest {
         when(chat.id()).thenReturn(null);
         String tagValue = "tag";
         when(message.text()).thenReturn("/list " + tagValue);
-
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        when(mock.getValue(any())).thenReturn(null);
+        ListByTagMessageHandler listMessageHandler = new ListByTagMessageHandler(mock);
         stubFor(
                 get("/linksbytag")
                         .willReturn(
@@ -172,15 +179,15 @@ class ListByTagMessageHandlerTest {
                             "stacktrace": []
                             }
                         """)));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
     }
 
     @Test
-    public void handle_WhenWrongIdOrTagPassed_ThenReturnErrorMessage() {
+    public void handle_WhenWrongIdOrTagPassedAndNoCachedInfo_ThenReturnErrorMessage() {
         String expectedMessage = """
             Некорректные параметры запроса""";
         Long chatId = 50L;
@@ -192,7 +199,9 @@ class ListByTagMessageHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(chatId);
         when(message.text()).thenReturn("/list " + tagValue);
-
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        when(mock.getValue(any())).thenReturn(null);
+        ListByTagMessageHandler listMessageHandler = new ListByTagMessageHandler(mock);
         stubFor(
                 get("/linksbytag")
                         .withHeader("Tg-Chat-Id", equalTo(chatId.toString()))
@@ -211,11 +220,65 @@ class ListByTagMessageHandlerTest {
                 "stacktrace": []
             }
         """)));
-
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
+    }
+
+    @Test
+    public void handle_WhenCorrectRequestAndCachedInfoExists_ThenReturnCachedListOfTrackedResources() {
+        String expectedMessage =
+                """
+        Количество отслеживаемых ресурсов (для тега tag1): 2
+        1) https://example1.com/
+        2) https://example2.com/
+        """;
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(1L);
+        when(message.text()).thenReturn("tag1");
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        when(mock.getValue(any())).thenReturn(expectedMessage);
+        ListByTagMessageHandler listMessageHandler = new ListByTagMessageHandler(mock);
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+        restClient = Mockito.spy();
+
+        SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
+        verify(mock, times(0)).putValue(any(), any());
+        verify(restClient, times(0)).get();
+    }
+
+    @Test
+    public void handle_WhenCorrectRequestAndNoTrackedLinksAndCachedInfoExists_ThenReturnCachedEmptyLinkList() {
+        String expectedMessage = """
+            Количество отслеживаемых ресурсов (для тега tag): 0
+            """;
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(1L);
+        String tagValue = "tag";
+        when(message.text()).thenReturn("/list " + tagValue);
+        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
+        when(mock.getValue(any())).thenReturn(expectedMessage);
+        ListByTagMessageHandler listMessageHandler = new ListByTagMessageHandler(mock);
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+        restClient = Mockito.spy();
+
+        SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
+        verify(mock, times(0)).putValue(any(), any());
+        verify(restClient, times(0)).get();
     }
 
     @Test

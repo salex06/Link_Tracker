@@ -1,6 +1,7 @@
 package backend.academy.repository.orm;
 
 import backend.academy.model.orm.OrmChat;
+import java.time.LocalTime;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -19,4 +20,9 @@ public interface OrmChatRepository extends JpaRepository<OrmChat, Long> {
     @Transactional
     @Query("DELETE FROM OrmChat c WHERE c.chatId = :chatId")
     void deleteByChatId(@Param("chatId") Long chatId);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE OrmChat c SET c.sendAt = :config WHERE c.chatId = :chatId")
+    void updateTimeConfig(@Param("chatId") Long chatId, @Param("config") LocalTime config);
 }

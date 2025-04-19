@@ -12,21 +12,21 @@ import org.springframework.stereotype.Component;
 public class StandardChatMapper implements ChatMapper {
     @Override
     public TgChat toPlainTgChat(JdbcTgChat chat, Set<Link> links) {
-        return new TgChat(chat.getId(), chat.getChatId(), links);
+        return new TgChat(chat.getId(), chat.getChatId(), chat.getSendAt(), links);
     }
 
     @Override
     public JdbcTgChat toJdbcTgChat(TgChat chat) {
-        return new JdbcTgChat(chat.getInternalId(), chat.getChatId());
+        return new JdbcTgChat(chat.getInternalId(), chat.getChatId(), chat.getSendAt());
     }
 
     @Override
     public TgChat toPlainTgChat(OrmChat chat, Set<Link> links) {
-        return new TgChat(chat.getId(), chat.getChatId(), links);
+        return new TgChat(chat.getId(), chat.getChatId(), chat.getSendAt(), links);
     }
 
     @Override
     public OrmChat toOrmChat(TgChat chat) {
-        return new OrmChat(chat.getInternalId(), chat.getChatId());
+        return new OrmChat(chat.getInternalId(), chat.getChatId(), chat.getSendAt());
     }
 }

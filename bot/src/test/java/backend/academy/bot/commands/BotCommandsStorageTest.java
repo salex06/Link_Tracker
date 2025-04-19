@@ -31,6 +31,7 @@ class BotCommandsStorageTest {
         commandList.add(new Command("/listbytag", true));
         commandList.add(new Command("/addtag", true));
         commandList.add(new Command("/removetag", true));
+        commandList.add(new Command("/timeconfig", true));
         return commandList;
     }
 
@@ -51,7 +52,8 @@ class BotCommandsStorageTest {
                 Arguments.of("/untrack linkExample", new Command("/untrack", true)),
                 Arguments.of("/listbytag tagName", new Command("/listbytag", true)),
                 Arguments.of("/addtag tagName", new Command("/addtag", true)),
-                Arguments.of("/removetag tagName", new Command("/removetag", true)));
+                Arguments.of("/removetag tagName", new Command("/removetag", true)),
+                Arguments.of("/timeconfig 10:00", new Command("/timeconfig", true)));
     }
 
     @Test
@@ -81,7 +83,9 @@ class BotCommandsStorageTest {
                 "/addtag",
                 "Добавить тег для ссылки",
                 "/removetag",
-                "Удалить тег для ссылки");
+                "Удалить тег для ссылки",
+                "/timeconfig",
+                "Отправка уведомлений: 'immediately' (сразу) или время в формате 'HH:mm'");
 
         Map<String, String> actualMap = BotCommandsStorage.getCommandDescription();
 

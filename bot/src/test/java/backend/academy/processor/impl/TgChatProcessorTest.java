@@ -35,8 +35,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.client.RestClient;
 
+@DirtiesContext
 @ExtendWith(MockitoExtension.class)
 class TgChatProcessorTest {
     private static DefaultMessageHandler defaultMessageHandler;

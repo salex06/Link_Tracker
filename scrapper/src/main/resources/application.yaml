@@ -4,6 +4,13 @@ app:
     key: ${SO_TOKEN_KEY}
     access-token: ${SO_ACCESS_TOKEN}
   page-size: 50
+  message-transport: Kafka
+  user-events:
+    topic: notifications-from-resources
+    partitions: 3
+    replicas: 2
+  delayed-sending:
+    cron: "0 * * * * *"
 
 service:
   access-type: SQL
@@ -27,6 +34,15 @@ spring:
     username: postgres
     password: 123
     driverClassName: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: localhost:19092, localhost:29092
+    producer.properties:
+      acks: -1
+      batch.size: 1024
+      linger.ms: 10000
+  cloud.zookeeper:
+    config.enabled: false
+    connect-string: localhost:2181
 
 server:
   port: 8081

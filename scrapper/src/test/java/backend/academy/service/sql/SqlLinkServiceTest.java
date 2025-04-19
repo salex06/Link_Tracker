@@ -143,7 +143,7 @@ class SqlLinkServiceTest {
         List<String> expectedFilters = List.of("filter1", "filter2");
         Set<Long> expectedChatIds = Set.of(2L);
         Link expectedLink = new Link(null, expectedUrl, expectedTags, expectedFilters, expectedChatIds);
-        TgChat expectedChat = new TgChat(1L, chatId, new HashSet<>());
+        TgChat expectedChat = new TgChat(1L, chatId, null, new HashSet<>());
         when(linkRepository.getLinkByUrl(expectedUrl)).thenReturn(Optional.empty());
         when(linkRepository.save(any(JdbcLink.class))).thenReturn(new JdbcLink(expectedLinkId, expectedUrl));
         when(linkMapper.toJdbcLink(any(Link.class))).thenAnswer(invocationOnMock -> {
@@ -187,7 +187,7 @@ class SqlLinkServiceTest {
         List<String> expectedFilters = List.of("filter1", "filter2");
         Set<Long> expectedChatIds = Set.of(2L);
         Link expectedLink = new Link(null, expectedUrl, expectedTags, expectedFilters, expectedChatIds);
-        TgChat expectedChat = new TgChat(1L, chatId, new HashSet<>());
+        TgChat expectedChat = new TgChat(1L, chatId, null, new HashSet<>());
         when(linkRepository.getLinkByUrl(expectedUrl)).thenReturn(Optional.empty());
         when(linkRepository.save(any(JdbcLink.class))).thenReturn(new JdbcLink(expectedLinkId, expectedUrl));
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.empty());
@@ -206,7 +206,7 @@ class SqlLinkServiceTest {
         List<String> expectedFilters = List.of("filter1", "filter2");
         Set<Long> expectedChatIds = Set.of(2L);
         Link expectedLink = new Link(null, expectedUrl, expectedTags, expectedFilters, expectedChatIds);
-        TgChat expectedChat = new TgChat(1L, chatId, new HashSet<>());
+        TgChat expectedChat = new TgChat(1L, chatId, null, new HashSet<>());
         when(linkRepository.getLinkByUrl(expectedUrl))
                 .thenReturn(Optional.of(new JdbcLink(expectedLinkId, expectedUrl)));
         when(linkRepository.save(any(JdbcLink.class))).thenReturn(new JdbcLink(expectedLinkId, expectedUrl));
@@ -251,7 +251,7 @@ class SqlLinkServiceTest {
         List<String> expectedFilters = List.of("filter1", "filter2");
         Set<Long> expectedChatIds = Set.of(2L);
         Link expectedLink = new Link(null, expectedUrl, expectedTags, expectedFilters, expectedChatIds);
-        TgChat expectedChat = new TgChat(1L, chatId, new HashSet<>());
+        TgChat expectedChat = new TgChat(1L, chatId, null, new HashSet<>());
         when(linkRepository.getLinkByUrl(expectedUrl))
                 .thenReturn(Optional.of(new JdbcLink(expectedLinkId, expectedUrl)));
         when(linkRepository.save(any(JdbcLink.class))).thenReturn(new JdbcLink(expectedLinkId, expectedUrl));

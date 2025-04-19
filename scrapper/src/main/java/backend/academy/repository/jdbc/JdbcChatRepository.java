@@ -1,6 +1,8 @@
 package backend.academy.repository.jdbc;
 
 import backend.academy.model.jdbc.JdbcTgChat;
+import java.sql.Time;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,8 +26,10 @@ public class JdbcChatRepository {
 
     private final NamedParameterJdbcTemplate namedJdbcTemplate;
 
-    private final RowMapper<JdbcTgChat> jdbcChatRowMapper =
-            (rs, rn) -> new JdbcTgChat(rs.getLong("id"), rs.getLong("chat_id"));
+    private final RowMapper<JdbcTgChat> jdbcChatRowMapper = (rs, rn) -> {
+        Time time = rs.getTime("send_at");
+        return new JdbcTgChat(rs.getLong("id"), rs.getLong("chat_id"), time == null ? null : time.toLocalTime());
+    };
 
     public JdbcTgChat save(JdbcTgChat jdbcTgChat) {
         if (jdbcTgChat.getId() == null) {
@@ -107,7 +111,7 @@ public class JdbcChatRepository {
     @Transactional
     public List<JdbcTgChat> getChatsByLink(Long linkId) {
         String sql =
-                "SELECT id, chat_id FROM tg_chat_link INNER JOIN tg_chat ON tg_chat.id = tg_chat_id WHERE link_id = :linkId";
+                "SELECT id, chat_id, send_at FROM tg_chat_link INNER JOIN tg_chat ON tg_chat.id = tg_chat_id WHERE link_id = :linkId";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkId", linkId);
@@ -262,6 +266,18 @@ public class JdbcChatRepository {
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkId", linkId);
+        params.addValue("chatId", chatId);
+
+        namedJdbcTemplate.update(sql, params);
+    }
+
+    @Modifying
+    @Transactional
+    public void updateTimeConfig(Long chatId, LocalTime config) {
+        String sql = "UPDATE tg_chat SET send_at = :config WHERE chat_id = :chatId";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("config", config);
         params.addValue("chatId", chatId);
 
         namedJdbcTemplate.update(sql, params);

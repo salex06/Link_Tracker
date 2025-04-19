@@ -1,6 +1,11 @@
 app:
   telegram-token: ${APP_TELEGRAM_TOKEN} # env variable
   telegram-name: ${APP_TELEGRAM_NAME}
+  user-events:
+    topic: notifications-from-resources
+    dlt-topic: notifications-from-resources-dlt
+    thread-count: 1
+    auto-startup: true
 
 scrapper:
   base-url: "http://localhost:8081"
@@ -14,6 +19,24 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:29092
+    consumer.properties:
+      group-id: default-consumer
+      enable.auto.commit: false
+      auto.offset.reset: earliest
+      isolation.level: read_committed
+      fetch.min.bytes: 1024
+      fetch.max.bytes: 1048576
+      fetch.max.wait.ms: 10000
+      max.poll.interval.ms: 10000
+      max.poll.records: 10
+    cloud.zookeeper:
+      config.enabled: false
+      connect-string: localhost:2181
+  redis:
+    host: redis
+    port: 6379
 
 server:
   port: 8080

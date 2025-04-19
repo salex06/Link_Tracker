@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -395,13 +396,13 @@ class GitHubIssueListClientTest {
                             }
                             """)));
 
-        List<String> updates = gitHubIssueListClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubIssueListClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
         assertThat(updates.size()).isEqualTo(3);
-        assertThat(updates.get(0).trim()).isEqualTo(expectedMessage1.trim());
-        assertThat(updates.get(1).trim()).isEqualTo(expectedMessage2.trim());
-        assertThat(updates.get(2).trim()).isEqualTo(expectedMessage3.trim());
+        assertThat(updates.get(0).commonInfo().trim()).isEqualTo(expectedMessage1.trim());
+        assertThat(updates.get(1).commonInfo().trim()).isEqualTo(expectedMessage2.trim());
+        assertThat(updates.get(2).commonInfo().trim()).isEqualTo(expectedMessage3.trim());
     }
 
     @Test
@@ -531,7 +532,7 @@ class GitHubIssueListClientTest {
                                 "rocket": 0, "eyes": 0 }, "performed_via_github_app": null }]
                                 """)));
 
-        List<String> updates = gitHubIssueListClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubIssueListClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }
@@ -549,7 +550,7 @@ class GitHubIssueListClientTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("bad request")));
 
-        List<String> updates = gitHubIssueListClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubIssueListClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }

@@ -2,11 +2,13 @@ package backend.academy.clients.github.storage;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,7 @@ public class GitHubPersonalStorageClient extends Client {
     }
 
     @Override
-    public List<String> getUpdates(Link link) {
+    public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
@@ -59,7 +61,7 @@ public class GitHubPersonalStorageClient extends Client {
                 });
 
         if (data != null) {
-            return List.of(generateUpdateText(data, link));
+            return generateUpdateText(data, link);
         } else {
             log.atError()
                     .setMessage("Ошибка при обращении к GitHub Api")
@@ -70,13 +72,17 @@ public class GitHubPersonalStorageClient extends Client {
         }
     }
 
-    private String generateUpdateText(GitHubRepositoryDTO body, Link link) {
-        String updateDescription = "";
+    private List<LinkUpdateInfo> generateUpdateText(GitHubRepositoryDTO body, Link link) {
+        List<LinkUpdateInfo> updateDescription = new ArrayList<>();
         Instant previousUpdateTime = link.getLastUpdateTime();
         if (wasUpdated(previousUpdateTime, body.updatedAt())) {
-            // link.setLastUpdateTime(body.updatedAt());
-            updateDescription =
-                    String.format("Обновление репозитория %s по ссылке %s", body.repositoryName(), body.linkValue());
+            updateDescription.add(new LinkUpdateInfo(
+                    body.linkValue(),
+                    body.owner().ownerName(),
+                    body.repositoryName(),
+                    null,
+                    body.updatedAt(),
+                    String.format("Обновление репозитория %s по ссылке %s", body.repositoryName(), body.linkValue())));
         }
 
         return updateDescription;

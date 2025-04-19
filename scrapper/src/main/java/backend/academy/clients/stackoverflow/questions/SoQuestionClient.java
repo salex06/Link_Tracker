@@ -2,6 +2,7 @@ package backend.academy.clients.stackoverflow.questions;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -34,7 +35,7 @@ public class SoQuestionClient extends Client {
     }
 
     @Override
-    public List<String> getUpdates(Link link) {
+    public List<LinkUpdateInfo> getUpdates(Link link) {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
             return null;
@@ -53,7 +54,7 @@ public class SoQuestionClient extends Client {
 
         // Получаем комментарии к вопросу
         SoCommentListDTO commentListDTO = getCommentsForQuestion(objectMapper, url);
-        List<String> commentUpdates = new ArrayList<>();
+        List<LinkUpdateInfo> commentUpdates = new ArrayList<>();
         if (commentListDTO != null
                 && commentListDTO.items() != null
                 && !commentListDTO.items().isEmpty()) {
@@ -62,7 +63,7 @@ public class SoQuestionClient extends Client {
 
         // Получаем ответы к вопросу
         SoAnswersListDTO answersListDTO = getAnswers(objectMapper, url);
-        List<String> answersUpdates = new ArrayList<>();
+        List<LinkUpdateInfo> answersUpdates = new ArrayList<>();
         if (answersListDTO != null
                 && answersListDTO.items() != null
                 && !answersListDTO.items().isEmpty()) {
@@ -75,7 +76,7 @@ public class SoQuestionClient extends Client {
             }
         }
 
-        List<String> allUpdates = new ArrayList<>();
+        List<LinkUpdateInfo> allUpdates = new ArrayList<>();
         allUpdates.addAll(commentUpdates);
         allUpdates.addAll(answersUpdates);
         return allUpdates;
@@ -135,8 +136,9 @@ public class SoQuestionClient extends Client {
                 });
     }
 
-    private List<String> generateUpdateTextForComments(SoCommentListDTO comments, Link link, SoQuestionDTO question) {
-        List<String> updates = new ArrayList<>();
+    private List<LinkUpdateInfo> generateUpdateTextForComments(
+            SoCommentListDTO comments, Link link, SoQuestionDTO question) {
+        List<LinkUpdateInfo> updates = new ArrayList<>();
 
         for (SoCommentDTO comment : comments.items()) {
             if (wasUpdated(link.getLastUpdateTime(), comment.createdAt())) {
@@ -147,8 +149,9 @@ public class SoQuestionClient extends Client {
         return updates;
     }
 
-    private List<String> generateUpdateTextForAnswers(SoAnswersListDTO answers, Link link, SoQuestionDTO question) {
-        List<String> updates = new ArrayList<>();
+    private List<LinkUpdateInfo> generateUpdateTextForAnswers(
+            SoAnswersListDTO answers, Link link, SoQuestionDTO question) {
+        List<LinkUpdateInfo> updates = new ArrayList<>();
 
         for (SoAnswerDTO answer : answers.items()) {
             if (wasUpdated(link.getLastUpdateTime(), answer.creationDate())) {
@@ -163,23 +166,35 @@ public class SoQuestionClient extends Client {
         return lastUpdateTime.isBefore(updateTime);
     }
 
-    private String formatCommentUpdate(SoCommentDTO comment, SoQuestionDTO question) {
+    private LinkUpdateInfo formatCommentUpdate(SoCommentDTO comment, SoQuestionDTO question) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-        return String.format(
-                "Новый комментарий к вопросу %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
-                question.title(),
+        return new LinkUpdateInfo(
+                question.linkValue(),
                 comment.owner().name(),
-                formatter.format(LocalDateTime.ofInstant(comment.createdAt(), ZoneId.of("UTC"))),
-                comment.text());
+                null,
+                comment.text(),
+                comment.createdAt(),
+                String.format(
+                        "Новый комментарий к вопросу %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                        question.title(),
+                        comment.owner().name(),
+                        formatter.format(LocalDateTime.ofInstant(comment.createdAt(), ZoneId.of("UTC"))),
+                        comment.text()));
     }
 
-    private String formatAnswerUpdate(SoAnswerDTO answer, SoQuestionDTO question) {
+    private LinkUpdateInfo formatAnswerUpdate(SoAnswerDTO answer, SoQuestionDTO question) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-        return String.format(
-                "Новый ответ к вопросу %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
-                question.title(),
+        return new LinkUpdateInfo(
+                question.linkValue(),
                 answer.owner().name(),
-                formatter.format(LocalDateTime.ofInstant(answer.creationDate(), ZoneId.of("UTC"))),
-                answer.text());
+                null,
+                answer.text(),
+                answer.creationDate(),
+                String.format(
+                        "Новый ответ к вопросу %s%nАвтор: %s%nВремя создания: %s (UTC)%nПревью: %s",
+                        question.title(),
+                        answer.owner().name(),
+                        formatter.format(LocalDateTime.ofInstant(answer.creationDate(), ZoneId.of("UTC"))),
+                        answer.text()));
     }
 }

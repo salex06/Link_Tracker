@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -111,10 +112,10 @@ class GitHubSingleIssueClientTest {
                                  "performed_via_github_app": null, "state_reason": null }
                                 """)));
 
-        List<String> updates = gitHubSingleIssueClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubSingleIssueClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
-        assertThat(updates.getFirst()).isEqualTo(expectedMessage);
+        assertThat(updates.getFirst().commonInfo()).isEqualTo(expectedMessage);
     }
 
     @Test
@@ -230,7 +231,7 @@ class GitHubSingleIssueClientTest {
                             "state_reason": null
                             }""")));
 
-        List<String> updates = gitHubSingleIssueClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubSingleIssueClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }
@@ -257,7 +258,7 @@ class GitHubSingleIssueClientTest {
                                 "status":"404"}
                                 """)));
 
-        List<String> updates = gitHubSingleIssueClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubSingleIssueClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }

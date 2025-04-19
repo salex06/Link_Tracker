@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -131,19 +132,18 @@ class GitHubPersonalStorageClientTest {
                                 "subscribers_count": 1736 }
                                 """)));
 
-        List<String> updates = gitHubPersonalStorageClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubPersonalStorageClient.getUpdates(link);
 
         assertThat(updates).isNotEmpty();
-        assertThat(updates.getFirst()).isEqualTo(expectedMessage);
+        assertThat(updates.getFirst().commonInfo()).isEqualTo(expectedMessage);
     }
 
     @Test
-    void getUpdates_WhenRepositoryWasNotUpdated_ThenReturnBlank() {
+    void getUpdates_WhenRepositoryWasNotUpdated_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
                 x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient);
 
-        String expectedMessage = "Обновление репозитория Hello-World по ссылке https://github.com/octocat/Hello-World";
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/");
         stubFor(
                 get("/octocat/Hello-World/")
@@ -258,11 +258,9 @@ class GitHubPersonalStorageClientTest {
                                 "subscribers_count": 1736
                             }""")));
 
-        List<String> updates = gitHubPersonalStorageClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubPersonalStorageClient.getUpdates(link);
 
-        assertThat(updates).isNotEmpty();
-        assertThat(updates.size()).isEqualTo(1);
-        assertThat(updates.getFirst()).isBlank();
+        assertThat(updates).isEmpty();
     }
 
     @Test
@@ -288,7 +286,7 @@ class GitHubPersonalStorageClientTest {
                             }
                             """)));
 
-        List<String> updates = gitHubPersonalStorageClient.getUpdates(link);
+        List<LinkUpdateInfo> updates = gitHubPersonalStorageClient.getUpdates(link);
 
         assertThat(updates).isEmpty();
     }
