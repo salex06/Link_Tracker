@@ -11,6 +11,9 @@ app:
     replicas: 2
   delayed-sending:
     cron: "0 * * * * *"
+  stability:
+    read-timeout: 6000
+    connect-timeout: 5000
 
 service:
   access-type: SQL

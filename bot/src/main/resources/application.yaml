@@ -6,6 +6,10 @@ app:
     dlt-topic: notifications-from-resources-dlt
     thread-count: 1
     auto-startup: true
+  stability:
+      read-timeout: 6000
+      connect-timeout: 5000
+
 
 scrapper:
   base-url: "http://localhost:8081"
