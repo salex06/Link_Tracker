@@ -2,8 +2,11 @@ package backend.academy.handler.impl;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.times;
@@ -11,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -18,18 +22,29 @@ import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@SpringBootTest
 class UntrackMessageHandlerTest {
     private int port = 8089;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     private static RedisCacheService redisCacheService;
 
@@ -52,7 +67,7 @@ class UntrackMessageHandlerTest {
     @BeforeEach
     public void setUp() {
         redisCacheService = Mockito.mock(RedisCacheService.class);
-        untrackMessageHandler = new UntrackMessageHandler(redisCacheService);
+        untrackMessageHandler = new UntrackMessageHandler(redisCacheService, retryTemplate);
     }
 
     @Test
@@ -188,5 +203,129 @@ class UntrackMessageHandlerTest {
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
         verify(redisCacheService, times(1)).invalidateCache();
+    }
+
+    @Autowired
+    private ApplicationStabilityProperties properties;
+
+    private List<Integer> getAllowedHttpCodes() {
+        return properties.getRetry().getHttpCodes();
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void handle_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
+            throws Exception {
+        setupStubForRetry_AllFailed(httpCode);
+        String expectedMessage = "Ошибка при ответе на запрос отслеживания";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/untrack linkExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void handle_whenSuccessAfterRetryAndAllowedHttpCode_ThenReturnLinkResponse(Integer httpCode) throws Exception {
+        setupStubForRetry_LastSuccessful(httpCode);
+        String expectedMessage = String.format("Ресурс %s удален из отслеживаемых. ID: %d", "linkExample", 1);
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/untrack linkExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+    }
+
+    @Test
+    void handle_whenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() throws Exception {
+        String expectedMessage = String.format("Ошибка при ответе на запрос отслеживания");
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/untrack linkExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                .inScenario("DeleteLink_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(401))
+                .willSetStateTo(""));
+
+        SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(1);
+    }
+
+    public void setupStubForRetry_AllFailed(int httpCode) {
+        int maxAttempts = properties.getRetry().getMaxAttempts();
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                .inScenario("DeleteLink_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                    .inScenario("DeleteLink_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                .inScenario("DeleteLink_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(httpCode).withBody(""))
+                .willSetStateTo(""));
+    }
+
+    public void setupStubForRetry_LastSuccessful(int httpCode) {
+        int maxAttempts = properties.getRetry().getMaxAttempts();
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                .inScenario("DeleteLink_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                    .inScenario("DeleteLink_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
+                .inScenario("DeleteLink_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"id\": 1,\"url\":\"linkExample\"}"))
+                .willSetStateTo(""));
+    }
+
+    public void verifyNumberOfCall(Integer numberOfCall) {
+        WireMock.verify(numberOfCall, deleteRequestedFor(urlEqualTo("/links")));
     }
 }

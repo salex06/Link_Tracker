@@ -17,21 +17,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Order(2)
 @Component
+@SuppressWarnings("CPD-START")
 public class AddTagMessageHandler implements Handler {
     private final MessageCrawler crawler;
     private final RedisCacheService redisCacheService;
+    private final RetryTemplate retryTemplate;
 
     @Autowired
     public AddTagMessageHandler(
-            @Qualifier("addTagCrawler") MessageCrawler crawler, RedisCacheService redisCachedService) {
+            @Qualifier("addTagCrawler") MessageCrawler crawler,
+            RedisCacheService redisCachedService,
+            RetryTemplate retryTemplate) {
         this.crawler = crawler;
         this.redisCacheService = redisCachedService;
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
@@ -60,20 +67,29 @@ public class AddTagMessageHandler implements Handler {
                 .log();
 
         try {
-            LinkResponse linkResponse = restClient
-                    .post()
-                    .uri("/addtag")
-                    .header("Add-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
-                    .header("Tg-Chat-Id", String.valueOf(chatId))
-                    .body(crawlerReport)
-                    .exchange((request, response) -> {
-                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                            ApiErrorResponse apiErrorResponse =
-                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                            throw new ApiErrorException(apiErrorResponse);
-                        } else {
-                            return objectMapper.readValue(response.getBody(), LinkResponse.class);
+            LinkResponse linkResponse = retryTemplate.execute(
+                    context -> restClient
+                            .post()
+                            .uri("/addtag")
+                            .header("Add-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
+                            .header("Tg-Chat-Id", String.valueOf(chatId))
+                            .body(crawlerReport)
+                            .exchange((request, response) -> {
+                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                                    ApiErrorResponse apiErrorResponse =
+                                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                                    throw new ApiErrorException(apiErrorResponse);
+                                } else if (response.getStatusCode().isError()) {
+                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                                } else {
+                                    return objectMapper.readValue(response.getBody(), LinkResponse.class);
+                                }
+                            }),
+                    context -> {
+                        if (context.getLastThrowable() instanceof ApiErrorException e) {
+                            throw e;
                         }
+                        return null;
                     });
 
             if (linkResponse == null) {

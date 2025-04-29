@@ -7,8 +7,19 @@ app:
     thread-count: 1
     auto-startup: true
   stability:
-      read-timeout: 6000
-      connect-timeout: 5000
+      timeout:
+        read-timeout: 6000
+        connect-timeout: 3000
+      retry:
+        max-attempts: 4
+        backoff: 2000
+        http-codes:
+          - 429 #Too Many Requests
+          - 500 #Internal Server Error
+          - 502 #Bad Gateway
+          - 503 #Service Unavailable
+          - 504 #Gateway Timeout
+          - 507 #Insufficient Storage
 
 
 scrapper:

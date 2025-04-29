@@ -17,20 +17,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("CPD-START")
 public class RemoveTagMessageHandler implements Handler {
     private final MessageCrawler crawler;
     private final RedisCacheService redisCacheService;
+    private final RetryTemplate retryTemplate;
 
     @Autowired
     public RemoveTagMessageHandler(
-            @Qualifier("eraseTagCrawler") MessageCrawler crawler, RedisCacheService redisCacheService) {
+            @Qualifier("eraseTagCrawler") MessageCrawler crawler,
+            RedisCacheService redisCacheService,
+            RetryTemplate retryTemplate) {
         this.crawler = crawler;
         this.redisCacheService = redisCacheService;
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
@@ -58,20 +65,28 @@ public class RemoveTagMessageHandler implements Handler {
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            LinkResponse linkResponse = restClient
-                    .method(HttpMethod.DELETE)
-                    .uri("/removetag")
-                    .header("Tg-Chat-Id", String.valueOf(chatId))
-                    .header("Remove-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
-                    .body(crawlerReport)
-                    .exchange((request, response) -> {
-                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                            ApiErrorResponse apiErrorResponse =
-                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                            throw new ApiErrorException(apiErrorResponse);
-                        } else {
-                            return objectMapper.readValue(response.getBody(), LinkResponse.class);
+            LinkResponse linkResponse = retryTemplate.execute(
+                    context -> restClient
+                            .method(HttpMethod.DELETE)
+                            .uri("/removetag")
+                            .header("Tg-Chat-Id", String.valueOf(chatId))
+                            .header("Remove-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
+                            .body(crawlerReport)
+                            .exchange((request, response) -> {
+                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                                    ApiErrorResponse apiErrorResponse =
+                                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                                    throw new ApiErrorException(apiErrorResponse);
+                                } else if (response.getStatusCode().isError()) {
+                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                                }
+                                return objectMapper.readValue(response.getBody(), LinkResponse.class);
+                            }),
+                    context -> {
+                        if (context.getLastThrowable() instanceof ApiErrorException e) {
+                            throw e;
                         }
+                        return null;
                     });
 
             if (linkResponse == null) {

@@ -2,8 +2,11 @@ package backend.academy.handler.impl;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.crawler.impl.tags.removetag.RemoveTagMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.service.RedisCacheService;
@@ -27,15 +31,25 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@SpringBootTest
 class RemoveTagMessageHandlerTest {
     private int port;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     private RemoveTagMessageCrawler crawler;
 
@@ -62,7 +76,7 @@ class RemoveTagMessageHandlerTest {
     public void setUp() {
         crawler = Mockito.mock(RemoveTagMessageCrawler.class);
         mockedRedisService = Mockito.mock(RedisCacheService.class);
-        removeTagMessageHandler = new RemoveTagMessageHandler(crawler, mockedRedisService);
+        removeTagMessageHandler = new RemoveTagMessageHandler(crawler, mockedRedisService, retryTemplate);
     }
 
     @Test
@@ -87,7 +101,7 @@ class RemoveTagMessageHandlerTest {
     public void handle_WhenHeaderWasNotPassed_ThenReturnError() {
         crawler = Mockito.mock(RemoveTagMessageCrawler.class);
         when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("link", List.of("tag"), new ArrayList<>()));
-        removeTagMessageHandler = new RemoveTagMessageHandler(crawler, mockedRedisService);
+        removeTagMessageHandler = new RemoveTagMessageHandler(crawler, mockedRedisService, retryTemplate);
         String expectedMessage = "Некорректные параметры запроса";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
@@ -190,5 +204,132 @@ class RemoveTagMessageHandlerTest {
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
         verify(mockedRedisService, times(1)).invalidateCache();
+    }
+
+    @Autowired
+    private ApplicationStabilityProperties properties;
+
+    private List<Integer> getAllowedHttpCodes() {
+        return properties.getRetry().getHttpCodes();
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void handle_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
+            throws Exception {
+        setupStubForRetry_AllFailed(httpCode);
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = "Ошибка при ответе на запрос удаления тега";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/removetag tagExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        SendMessage actualMessage = removeTagMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void handle_whenSuccessAfterRetryAndAllowedHttpCode_ThenReturnLinkResponse(Integer httpCode) throws Exception {
+        setupStubForRetry_LastSuccessful(httpCode);
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = "Тег успешно удален!";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/removetag tagExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        SendMessage actualMessage = removeTagMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+    }
+
+    @Test
+    void handle_whenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() throws Exception {
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = "Ошибка при ответе на запрос удаления тега";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/removetag tagExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                .inScenario("RemoveTag_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(404))
+                .willSetStateTo(""));
+
+        SendMessage actualMessage = removeTagMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(1);
+    }
+
+    public void setupStubForRetry_AllFailed(int httpCode) {
+        int maxAttempts = properties.getRetry().getMaxAttempts();
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                .inScenario("RemoveTag_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                    .inScenario("RemoveTag_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                .inScenario("RemoveTag_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(httpCode).withBody(""))
+                .willSetStateTo(""));
+    }
+
+    public void setupStubForRetry_LastSuccessful(int httpCode) {
+        int maxAttempts = properties.getRetry().getMaxAttempts();
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                .inScenario("RemoveTag_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                    .inScenario("RemoveTag_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
+                .inScenario("RemoveTag_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"id\": 1,\"url\":\"linkExample\"}"))
+                .willSetStateTo(""));
+    }
+
+    public void verifyNumberOfCall(Integer numberOfCall) {
+        WireMock.verify(numberOfCall, deleteRequestedFor(urlEqualTo("/removetag")));
     }
 }

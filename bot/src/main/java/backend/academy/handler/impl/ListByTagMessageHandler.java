@@ -16,17 +16,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Order(2)
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("CPD-START")
 public class ListByTagMessageHandler implements Handler {
     public static final String LIST_BY_TAG_CACHE_PREFIX = ListMessageHandler.LIST_CACHE_PREFIX + "tag:";
 
     private final RedisCacheService redisCacheService;
+    private final RetryTemplate retryTemplate;
 
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
@@ -52,22 +56,31 @@ public class ListByTagMessageHandler implements Handler {
             return new SendMessage(chatId, cachedResponse);
         }
         try {
-            ListLinksResponse linksResponse = restClient
-                    .get()
-                    .uri("/linksbytag")
-                    .header("Tg-Chat-Id", String.valueOf(chatId))
-                    .header("Tag-Value", tagValue)
-                    .exchange((request, response) -> {
-                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                            ApiErrorResponse apiErrorResponse =
-                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                            throw new ApiErrorException(apiErrorResponse);
+            ListLinksResponse linksResponse = retryTemplate.execute(
+                    context -> restClient
+                            .get()
+                            .uri("/linksbytag")
+                            .header("Tg-Chat-Id", String.valueOf(chatId))
+                            .header("Tag-Value", tagValue)
+                            .exchange((request, response) -> {
+                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                                    ApiErrorResponse apiErrorResponse =
+                                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                                    throw new ApiErrorException(apiErrorResponse);
+                                } else if (response.getStatusCode().isError()) {
+                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                                }
+                                return objectMapper.readValue(response.getBody(), ListLinksResponse.class);
+                            }),
+                    context -> {
+                        if (context.getLastThrowable() instanceof ApiErrorException e) {
+                            throw e;
                         }
-                        return objectMapper.readValue(response.getBody(), ListLinksResponse.class);
+                        return null;
                     });
 
             if (linksResponse == null) {
-                return new SendMessage(chatId, "Ошибка при получении списка ресурсов");
+                return new SendMessage(chatId, "Ошибка при получении списка ресурсов по тегу");
             }
 
             String trackedLinks = getTrackedLinksAsString(linksResponse, tagValue);

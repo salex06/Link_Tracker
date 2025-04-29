@@ -9,16 +9,23 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Order(2)
 @Component
+@RequiredArgsConstructor
+@SuppressWarnings("CPD-START")
 public class StartMessageHandler implements Handler {
+    private final RetryTemplate retryTemplate;
+
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
         Long chatId = update.message().chat().id();
@@ -32,14 +39,27 @@ public class StartMessageHandler implements Handler {
                 .log();
 
         try {
-            String data = restClient.post().uri(url).exchange((request, response) -> {
-                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                    ApiErrorResponse apiErrorResponse =
-                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                    throw new ApiErrorException(apiErrorResponse);
-                }
-                return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
-            });
+            String data = retryTemplate.execute(
+                    context -> restClient.post().uri(url).exchange((request, response) -> {
+                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                            ApiErrorResponse apiErrorResponse =
+                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                            throw new ApiErrorException(apiErrorResponse);
+                        } else if (response.getStatusCode().isError()) {
+                            throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                        }
+                        return new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    }),
+                    context -> {
+                        if (context.getLastThrowable() instanceof ApiErrorException e) {
+                            throw e;
+                        }
+                        return null;
+                    });
+
+            if (data == null) {
+                return new SendMessage(chatId, "Ошибка при регистрации");
+            }
 
             return new SendMessage(chatId, data);
         } catch (ApiErrorException e) {

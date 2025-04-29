@@ -15,15 +15,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Order(2)
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("CPD-START")
 public class UntrackMessageHandler implements Handler {
     private final RedisCacheService redisCacheService;
+    private final RetryTemplate retryTemplate;
 
     @Override
     public SendMessage handle(Update update, RestClient restClient) {
@@ -53,19 +58,28 @@ public class UntrackMessageHandler implements Handler {
                 .log();
 
         try {
-            LinkResponse linkResponse = restClient
-                    .method(HttpMethod.DELETE)
-                    .uri("/links")
-                    .header("Tg-Chat-Id", String.valueOf(chatId))
-                    .body(new RemoveLinkRequest(linkUrlToUntrack))
-                    .exchange((request, response) -> {
-                        if (response.getStatusCode().is4xxClientError()) {
-                            ApiErrorResponse apiErrorResponse =
-                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                            throw new ApiErrorException(apiErrorResponse);
-                        } else {
-                            return objectMapper.readValue(response.getBody(), LinkResponse.class);
+            LinkResponse linkResponse = retryTemplate.execute(
+                    context -> restClient
+                            .method(HttpMethod.DELETE)
+                            .uri("/links")
+                            .header("Tg-Chat-Id", String.valueOf(chatId))
+                            .body(new RemoveLinkRequest(linkUrlToUntrack))
+                            .exchange((request, response) -> {
+                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)
+                                        || response.getStatusCode().isSameCodeAs(HttpStatus.NOT_FOUND)) {
+                                    ApiErrorResponse apiErrorResponse =
+                                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                                    throw new ApiErrorException(apiErrorResponse);
+                                } else if (response.getStatusCode().isError()) {
+                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                                }
+                                return objectMapper.readValue(response.getBody(), LinkResponse.class);
+                            }),
+                    context -> {
+                        if (context.getLastThrowable() instanceof ApiErrorException e) {
+                            throw e;
                         }
+                        return null;
                     });
 
             if (linkResponse == null) {

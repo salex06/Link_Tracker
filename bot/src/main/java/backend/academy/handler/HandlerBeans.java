@@ -31,8 +31,8 @@ public class HandlerBeans {
 
     private SimpleClientHttpRequestFactory simpleClientHttpRequestFactory() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(properties.getConnectTimeout());
-        requestFactory.setReadTimeout(properties.getReadTimeout());
+        requestFactory.setConnectTimeout(properties.getTimeout().getConnectTimeout());
+        requestFactory.setReadTimeout(properties.getTimeout().getReadTimeout());
         return requestFactory;
     }
 }

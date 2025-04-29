@@ -47,7 +47,7 @@ public class RestClientTest {
     @Test
     void testRestClientConnectTimeout() {
         String url = "http://192.0.2.0:8080/api/data";
-        long expectedTimeoutMillis = properties.getConnectTimeout();
+        long expectedTimeoutMillis = properties.getTimeout().getConnectTimeout();
         long toleranceMillis = 200;
 
         long startTime = System.currentTimeMillis();
@@ -69,7 +69,7 @@ public class RestClientTest {
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody("Hello, world!")
-                        .withFixedDelay(properties.getReadTimeout())));
+                        .withFixedDelay(properties.getTimeout().getReadTimeout())));
 
         String url = "http://localhost:" + wireMockServer.port() + "/api/data";
 
