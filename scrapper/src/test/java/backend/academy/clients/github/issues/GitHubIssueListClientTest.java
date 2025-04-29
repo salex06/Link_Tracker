@@ -16,13 +16,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@SpringBootTest
 class GitHubIssueListClientTest {
     private int port;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     private WireMockServer wireMockServer;
 
@@ -50,7 +56,9 @@ class GitHubIssueListClientTest {
     void getUpdates_WhenNewComment_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubIssueListClient = new GitHubIssueListClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"),
+                restClient,
+                retryTemplate);
 
         String expectedMessage1 = String.format(
                 """
@@ -409,7 +417,9 @@ class GitHubIssueListClientTest {
     void getUpdates_WhenNoNewComments_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubIssueListClient = new GitHubIssueListClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"),
+                restClient,
+                retryTemplate);
 
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
         stubFor(get("/octocat/Hello-World/issues")
@@ -541,7 +551,9 @@ class GitHubIssueListClientTest {
     void getUpdates_WhenBadRequest_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubIssueListClient = new GitHubIssueListClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues"),
+                restClient,
+                retryTemplate);
 
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/issues");
         stubFor(get("/octocat/Hello-World/issues")

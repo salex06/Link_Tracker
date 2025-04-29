@@ -16,13 +16,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@SpringBootTest
 class GitHubPersonalStorageClientTest {
     private int port = 8090;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     private WireMockServer wireMockServer;
 
@@ -49,7 +55,7 @@ class GitHubPersonalStorageClientTest {
     void getUpdates_WhenRepositoryWasUpdated_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient, retryTemplate);
 
         String expectedMessage = "Обновление репозитория Hello-World по ссылке https://github.com/octocat/Hello-World";
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/");
@@ -142,7 +148,7 @@ class GitHubPersonalStorageClientTest {
     void getUpdates_WhenRepositoryWasNotUpdated_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/"), restClient, retryTemplate);
 
         Link link = new Link(1L, "https://github.com/octocat/Hello-World/");
         stubFor(
@@ -267,7 +273,7 @@ class GitHubPersonalStorageClientTest {
     void getUpdates_WhenRepositoryNotFound_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubPersonalStorageClient = new GitHubPersonalStorageClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-Worldd"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-Worldd"), restClient, retryTemplate);
 
         String expectedMessage = "Обновление репозитория Hello-World по ссылке https://github.com/octocat/Hello-Worldd";
         Link link = new Link(1L, "https://github.com/octocat/Hello-Worldd");

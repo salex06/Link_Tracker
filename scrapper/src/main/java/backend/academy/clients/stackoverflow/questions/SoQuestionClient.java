@@ -19,19 +19,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
 public class SoQuestionClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
+    private final RetryTemplate retryTemplate;
 
     @Autowired
     public SoQuestionClient(
             @Qualifier("soQuestionLinkConverter") LinkToApiLinkConverter converter,
-            @Qualifier("stackOverflowClient") RestClient stackoverflowClient) {
+            @Qualifier("stackOverflowClient") RestClient stackoverflowClient,
+            RetryTemplate retryTemplate) {
         super(SUPPORTED_LINK, converter, stackoverflowClient);
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
@@ -83,18 +88,21 @@ public class SoQuestionClient extends Client {
     }
 
     private SoQuestionDTO getQuestions(ObjectMapper mapper, Long postId) {
-        return client.method(HttpMethod.GET)
-                .uri("/questions/" + postId + "?site=stackoverflow")
-                .header("Accept", "application/json")
-                .exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        // System.out.println(new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8));
-                        return mapper.readValue(response.getBody(), SoQuestionsListDTO.class)
-                                .items()
-                                .getFirst();
-                    }
-                    return null;
-                });
+        return retryTemplate.execute(
+                context -> client.method(HttpMethod.GET)
+                        .uri("/questions/" + postId + "?site=stackoverflow")
+                        .header("Accept", "application/json")
+                        .exchange((request, response) -> {
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                return mapper.readValue(response.getBody(), SoQuestionsListDTO.class)
+                                        .items()
+                                        .getFirst();
+                            } else if (response.getStatusCode().isError()) {
+                                throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                            }
+                            return null;
+                        }),
+                context -> null);
     }
 
     private SoCommentListDTO getCommentsForQuestion(ObjectMapper objectMapper, String baseurl) {
@@ -103,37 +111,49 @@ public class SoQuestionClient extends Client {
                 .setMessage("Обращение к StackOverflow Api для получения комментариев к вопросу")
                 .addKeyValue("url", url)
                 .log();
-        return client.get().uri(url).exchange((request, response) -> {
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return objectMapper.readValue(response.getBody(), SoCommentListDTO.class);
-            }
-            log.atWarn()
-                    .setMessage("Некорректные параметры запроса к StackOverflow API (комментарии к вопросу)")
-                    .addKeyValue("url", url)
-                    .log();
-            return null;
-        });
+        return retryTemplate.execute(
+                context -> client.get().uri(url).exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return objectMapper.readValue(response.getBody(), SoCommentListDTO.class);
+                    } else if (response.getStatusCode().isError()) {
+                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                    }
+                    log.atWarn()
+                            .setMessage("Некорректные параметры запроса к StackOverflow API (комментарии к вопросу)")
+                            .addKeyValue("url", url)
+                            .log();
+                    return null;
+                }),
+                context -> null);
     }
 
     private SoAnswersListDTO getAnswers(ObjectMapper objectMapper, String baseurl) {
         String url = baseurl + "/answers?site=stackoverflow&filter=!nNPvSNe7D9";
-        return client.get().uri(url).exchange((request, response) -> {
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return objectMapper.readValue(response.getBody(), SoAnswersListDTO.class);
-            }
-            return null;
-        });
+        return retryTemplate.execute(
+                context -> client.get().uri(url).exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return objectMapper.readValue(response.getBody(), SoAnswersListDTO.class);
+                    } else if (response.getStatusCode().isError()) {
+                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                    }
+                    return null;
+                }),
+                context -> null);
     }
 
     private SoCommentListDTO getCommentsForAnswers(ObjectMapper mapper, Long answerId) {
-        return client.get()
-                .uri("/answers/" + answerId + "/comments?site=stackoverflow&filter=!nNPvSN_LEO")
-                .exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        return mapper.readValue(response.getBody(), SoCommentListDTO.class);
-                    }
-                    return null;
-                });
+        return retryTemplate.execute(
+                context -> client.get()
+                        .uri("/answers/" + answerId + "/comments?site=stackoverflow&filter=!nNPvSN_LEO")
+                        .exchange((request, response) -> {
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                return mapper.readValue(response.getBody(), SoCommentListDTO.class);
+                            } else if (response.getStatusCode().isError()) {
+                                throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                            }
+                            return null;
+                        }),
+                context -> null);
     }
 
     private List<LinkUpdateInfo> generateUpdateTextForComments(

@@ -14,7 +14,9 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
@@ -23,10 +25,14 @@ public class GitHubSingleIssueClient extends Client {
     private static final Pattern SUPPORTED_URL =
             Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 
+    private final RetryTemplate retryTemplate;
+
     public GitHubSingleIssueClient(
             @Qualifier("gitHubSingleIssueConverter") LinkToApiLinkConverter converter,
-            @Qualifier("gitHubClient") RestClient gitHubRestClient) {
+            @Qualifier("gitHubClient") RestClient gitHubRestClient,
+            RetryTemplate retryTemplate) {
         super(SUPPORTED_URL, converter, gitHubRestClient);
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
@@ -42,21 +48,25 @@ public class GitHubSingleIssueClient extends Client {
                 .addKeyValue("url", url)
                 .log();
 
-        GitHubIssue issuesList = client.method(HttpMethod.GET)
-                .uri(url)
-                .header("Accept", "application/vnd.github+json")
-                .exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        return objectMapper.readValue(response.getBody(), GitHubIssue.class);
-                    }
+        GitHubIssue issuesList = retryTemplate.execute(
+                context -> client.method(HttpMethod.GET)
+                        .uri(url)
+                        .header("Accept", "application/vnd.github+json")
+                        .exchange((request, response) -> {
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                return objectMapper.readValue(response.getBody(), GitHubIssue.class);
+                            } else if (response.getStatusCode().isError()) {
+                                throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                            }
 
-                    log.atError()
-                            .setMessage("Некорректные параметры запроса к GitHub API")
-                            .addKeyValue("url", url)
-                            .log();
+                            log.atError()
+                                    .setMessage("Некорректные параметры запроса к GitHub API")
+                                    .addKeyValue("url", url)
+                                    .log();
 
-                    return null;
-                });
+                            return null;
+                        }),
+                context -> null);
 
         link.setLastUpdateTime(Instant.now());
         return createUpdatesList(issuesList, link);

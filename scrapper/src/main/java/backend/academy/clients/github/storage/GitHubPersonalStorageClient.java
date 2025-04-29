@@ -14,7 +14,9 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
@@ -23,10 +25,14 @@ public class GitHubPersonalStorageClient extends Client {
     private static final Pattern supportedUrl =
             Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 
+    private final RetryTemplate retryTemplate;
+
     public GitHubPersonalStorageClient(
             @Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter,
-            @Qualifier("gitHubClient") RestClient gitHubClient) {
+            @Qualifier("gitHubClient") RestClient gitHubClient,
+            RetryTemplate retryTemplate) {
         super(supportedUrl, converter, gitHubClient);
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
@@ -44,21 +50,25 @@ public class GitHubPersonalStorageClient extends Client {
                 .addKeyValue("url", url)
                 .log();
 
-        GitHubRepositoryDTO data = client.method(HttpMethod.GET)
-                .uri(url)
-                .header("Accept", "application/vnd.github+json")
-                .exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        return objectMapper.readValue(response.getBody(), GitHubRepositoryDTO.class);
-                    }
+        GitHubRepositoryDTO data = retryTemplate.execute(
+                context -> client.method(HttpMethod.GET)
+                        .uri(url)
+                        .header("Accept", "application/vnd.github+json")
+                        .exchange((request, response) -> {
+                            if (response.getStatusCode().is2xxSuccessful()) {
+                                return objectMapper.readValue(response.getBody(), GitHubRepositoryDTO.class);
+                            } else if (response.getStatusCode().isError()) {
+                                throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                            }
 
-                    log.atError()
-                            .setMessage("Некорректные параметры запроса к GitHub API")
-                            .addKeyValue("url", url)
-                            .log();
+                            log.atError()
+                                    .setMessage("Некорректные параметры запроса к GitHub API")
+                                    .addKeyValue("url", url)
+                                    .log();
 
-                    return null;
-                });
+                            return null;
+                        }),
+                context -> null);
 
         if (data != null) {
             return generateUpdateText(data, link);

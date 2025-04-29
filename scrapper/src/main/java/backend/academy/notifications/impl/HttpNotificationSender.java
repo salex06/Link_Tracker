@@ -9,7 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
@@ -17,9 +19,11 @@ import org.springframework.web.client.RestClient;
 @ConditionalOnProperty(prefix = "app", name = "message-transport", havingValue = "HTTP")
 public class HttpNotificationSender implements NotificationSender {
     private final RestClient botUpdatesClient;
+    private final RetryTemplate retryTemplate;
 
-    public HttpNotificationSender(@Qualifier("botConnectionClient") RestClient client) {
+    public HttpNotificationSender(@Qualifier("botConnectionClient") RestClient client, RetryTemplate retryTemplate) {
         this.botUpdatesClient = client;
+        this.retryTemplate = retryTemplate;
     }
 
     public void send(LinkUpdate update) {
@@ -30,14 +34,38 @@ public class HttpNotificationSender implements NotificationSender {
                     .addKeyValue("description", update.description())
                     .addKeyValue("tg-chat-ids", update.tgChatIds())
                     .log();
-            botUpdatesClient.post().uri("/updates").body(update).exchange((request, response) -> {
-                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                    ApiErrorResponse apiErrorResponse =
-                            new ObjectMapper().readValue(response.getBody(), ApiErrorResponse.class);
-                    throw new ApiErrorException(apiErrorResponse);
-                }
-                return null;
-            });
+
+            retryTemplate.execute(
+                    context -> botUpdatesClient
+                            .post()
+                            .uri("/updates")
+                            .body(update)
+                            .exchange((request, response) -> {
+                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                                    ApiErrorResponse apiErrorResponse =
+                                            new ObjectMapper().readValue(response.getBody(), ApiErrorResponse.class);
+                                    throw new ApiErrorException(apiErrorResponse);
+                                } else if (response.getStatusCode().isError()) {
+                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                                }
+                                return null;
+                            }),
+                    context -> {
+                        Throwable exception = context.getLastThrowable();
+                        if (exception != null)
+                            log.atError()
+                                    .setMessage("Ошибка сервера при отправке уведомления")
+                                    .addKeyValue("exception-message", exception.getMessage())
+                                    .addKeyValue("stacktrace", exception.getStackTrace())
+                                    .log();
+
+                        if (exception instanceof ApiErrorException e) {
+                            throw e;
+                        }
+
+                        return null;
+                    });
+
         } catch (ApiErrorException e) {
             ApiErrorResponse response = e.getApiErrorResponse();
             log.atError()

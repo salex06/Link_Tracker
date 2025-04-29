@@ -16,13 +16,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@SpringBootTest
 class GitHubSingleIssueClientTest {
     private int port = 8090;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     private WireMockServer wireMockServer;
 
@@ -49,7 +55,9 @@ class GitHubSingleIssueClientTest {
     void getUpdates_WhenIssueWasUpdated_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubSingleIssueClient = new GitHubSingleIssueClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3"),
+                restClient,
+                retryTemplate);
 
         String expectedMessage =
                 "Обновление issue #Edited README via GitHub по ссылке https://github.com/octocat/Hello-World/pull/3";
@@ -122,7 +130,9 @@ class GitHubSingleIssueClientTest {
     void getUpdates_WhenIssueWasNotUpdated_ThenReturnEmpty() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubSingleIssueClient = new GitHubSingleIssueClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3"),
+                restClient,
+                retryTemplate);
 
         String expectedMessage =
                 "Обновление issue #Edited README via GitHub по ссылке https://github.com/octocat/Hello-World/pull/3";
@@ -240,7 +250,9 @@ class GitHubSingleIssueClientTest {
     void getUpdates_WhenWrongRequest_ThenReturnEmpty() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         gitHubSingleIssueClient = new GitHubSingleIssueClient(
-                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3000"), restClient);
+                x -> String.format("http://localhost:" + port + "/octocat/Hello-World/issues/3000"),
+                restClient,
+                retryTemplate);
 
         String expectedMessage =
                 "Обновление issue #Edited README via GitHub по ссылке https://github.com/octocat/Hello-World/pull/3000";

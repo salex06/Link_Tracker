@@ -17,7 +17,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
@@ -26,10 +28,14 @@ public class GitHubIssueListClient extends Client {
     private static final Pattern SUPPORTED_URL =
             Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(issues|pulls)$");
 
+    private final RetryTemplate retryTemplate;
+
     public GitHubIssueListClient(
             @Qualifier("gitHubIssueListClientConverter") LinkToApiLinkConverter linkConverter,
-            @Qualifier("gitHubClient") RestClient restClient) {
+            @Qualifier("gitHubClient") RestClient restClient,
+            RetryTemplate retryTemplate) {
         super(SUPPORTED_URL, linkConverter, restClient);
+        this.retryTemplate = retryTemplate;
     }
 
     @Override
@@ -67,17 +73,22 @@ public class GitHubIssueListClient extends Client {
                 .setMessage("Обращение к GitHub API для получения issues/pull requests")
                 .addKeyValue("url", url)
                 .log();
-        return client.get().uri(url).exchange((request, response) -> {
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return objectMapper.readValue(response.getBody(), new TypeReference<>() {});
-            }
-            log.atWarn()
-                    .setMessage("Неудачный запрос на получение issues/pull requests")
-                    .addKeyValue("url", url)
-                    .addKeyValue("code", response.getStatusCode())
-                    .log();
-            return null;
-        });
+        return retryTemplate.execute(
+                context -> client.get().uri(url).exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return objectMapper.readValue(response.getBody(), new TypeReference<>() {});
+                    } else if (response.getStatusCode().isError()) {
+                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                    }
+
+                    log.atWarn()
+                            .setMessage("Неудачный запрос на получение issues/pull requests")
+                            .addKeyValue("url", url)
+                            .addKeyValue("code", response.getStatusCode())
+                            .log();
+                    return null;
+                }),
+                context -> null);
     }
 
     private List<List<GitHubComment>> getCommentsForEachIssue(ObjectMapper objectMapper, List<GitHubIssue> issues) {
@@ -94,17 +105,21 @@ public class GitHubIssueListClient extends Client {
                 .setMessage("Обращение к GitHub API для получения комментариев")
                 .addKeyValue("url", url)
                 .log();
-        return client.get().uri(url).exchange((request, response) -> {
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return mapper.readValue(response.getBody(), new TypeReference<>() {});
-            }
-            log.atWarn()
-                    .setMessage("Неудачный запрос на получение комментариев")
-                    .addKeyValue("url", url)
-                    .addKeyValue("code", response.getStatusCode())
-                    .log();
-            return null;
-        });
+        return retryTemplate.execute(
+                context -> client.get().uri(url).exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return mapper.readValue(response.getBody(), new TypeReference<>() {});
+                    } else if (response.getStatusCode().isError()) {
+                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                    }
+                    log.atWarn()
+                            .setMessage("Неудачный запрос на получение комментариев")
+                            .addKeyValue("url", url)
+                            .addKeyValue("code", response.getStatusCode())
+                            .log();
+                    return null;
+                }),
+                context -> null);
     }
 
     private List<LinkUpdateInfo> createListOfCommentUpdates(
@@ -140,17 +155,22 @@ public class GitHubIssueListClient extends Client {
                 .setMessage("Обращение к GitHub API для получения issue")
                 .addKeyValue("url", issueUrl)
                 .log();
-        return client.get().uri(issueUrl).exchange((request, response) -> {
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return mapper.readValue(response.getBody(), GitHubIssue.class);
-            }
-            log.atWarn()
-                    .setMessage("Неудачный запрос на получение issue")
-                    .addKeyValue("url", issueUrl)
-                    .addKeyValue("code", response.getStatusCode())
-                    .log();
-            return null;
-        });
+        return retryTemplate.execute(
+                context -> client.get().uri(issueUrl).exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return mapper.readValue(response.getBody(), GitHubIssue.class);
+                    } else if (response.getStatusCode().isError()) {
+                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                    }
+
+                    log.atWarn()
+                            .setMessage("Неудачный запрос на получение issue")
+                            .addKeyValue("url", issueUrl)
+                            .addKeyValue("code", response.getStatusCode())
+                            .log();
+                    return null;
+                }),
+                context -> null);
     }
 
     private boolean issueWasUpdated(Instant lastUpdateTime, Instant commentCreateDateTime) {

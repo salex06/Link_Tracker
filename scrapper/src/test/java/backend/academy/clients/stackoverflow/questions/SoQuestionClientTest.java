@@ -16,13 +16,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@SpringBootTest
 class SoQuestionClientTest {
     private int port = 8090;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate retryTemplate;
 
     private WireMockServer wireMockServer;
 
@@ -48,8 +54,8 @@ class SoQuestionClientTest {
     @Test
     void getUpdates_WhenQuestionWasUpdated_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        soQuestionClient =
-                new SoQuestionClient(x -> String.format("http://localhost:" + port + "/questions/6031003"), restClient);
+        soQuestionClient = new SoQuestionClient(
+                x -> String.format("http://localhost:" + port + "/questions/6031003"), restClient, retryTemplate);
 
         String expectedMessage1 = String.format(
                 """
@@ -342,7 +348,7 @@ class SoQuestionClientTest {
     void getUpdates_WhenRequestError_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         soQuestionClient = new SoQuestionClient(
-                x -> String.format("http://localhost:" + port + "/questions/79461427"), restClient);
+                x -> String.format("http://localhost:" + port + "/questions/79461427"), restClient, retryTemplate);
 
         Link link = new Link(1L, "https://stackoverflow.com/questions/79461427");
         stubFor(

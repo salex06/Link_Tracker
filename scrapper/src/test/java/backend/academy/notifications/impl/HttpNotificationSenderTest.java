@@ -6,8 +6,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdate;
 import backend.academy.notifications.NotificationSender;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -18,14 +20,24 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@SpringBootTest
 class HttpNotificationSenderTest {
     private final int port = 8090;
 
     @Autowired
     private static RestClient restClient;
+
+    @Autowired
+    private RetryTemplate template;
 
     private WireMockServer wireMockServer;
 
@@ -51,7 +63,7 @@ class HttpNotificationSenderTest {
     @Test
     public void sendWorksCorrectly_When400Response() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient);
+        notificationSender = new HttpNotificationSender(restClient, template);
         stubFor(
                 post("/updates")
                         .willReturn(
@@ -131,7 +143,7 @@ class HttpNotificationSenderTest {
     @Test
     public void sendWorksCorrectly_When200Response() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient);
+        notificationSender = new HttpNotificationSender(restClient, template);
         stubFor(post("/updates")
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -141,5 +153,95 @@ class HttpNotificationSenderTest {
         assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
 
         WireMock.verify(1, postRequestedFor(urlEqualTo("/updates")));
+    }
+
+    @Autowired
+    private ApplicationStabilityProperties properties;
+
+    private List<Integer> getAllowedHttpCodes() {
+        return properties.getRetry().getHttpCodes();
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void send_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
+            throws Exception {
+        setupStubForRetry_AllFailed(httpCode);
+
+        assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
+
+        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void send_whenSuccessAfterRetryAndAllowedHttpCode_ThenReturnSuccess(Integer httpCode) throws Exception {
+        setupStubForRetry_LastSuccessful(httpCode);
+
+        assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
+
+        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+    }
+
+    @Test
+    public void send_WhenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() {
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+        notificationSender = new HttpNotificationSender(restClient, template);
+
+        assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
+
+        verifyNumberOfCall(1);
+    }
+
+    public void setupStubForRetry_AllFailed(int httpCode) {
+        int maxAttempts = properties.getRetry().getMaxAttempts();
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                .inScenario("Updates_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                    .inScenario("Updates_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                .inScenario("Updates_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(httpCode).withBody(""))
+                .willSetStateTo(""));
+    }
+
+    public void setupStubForRetry_LastSuccessful(int httpCode) {
+        int maxAttempts = properties.getRetry().getMaxAttempts();
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                .inScenario("Updates_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                    .inScenario("Updates_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                .inScenario("Updates_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("OK"))
+                .willSetStateTo(""));
+    }
+
+    public void verifyNumberOfCall(Integer numberOfCall) {
+        WireMock.verify(numberOfCall, postRequestedFor(urlEqualTo("/updates")));
     }
 }
