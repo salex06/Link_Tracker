@@ -3,6 +3,7 @@ package backend.academy;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -14,6 +15,7 @@ import org.springframework.kafka.annotation.EnableKafkaRetryTopic;
 @EnableConfigurationProperties({ScrapperConfig.class})
 @EnableJdbcRepositories
 @EnableJpaRepositories
+@EnableAspectJAutoProxy
 public class ScrapperApplication {
     public static void main(String[] args) {
         SpringApplication.run(ScrapperApplication.class, args);

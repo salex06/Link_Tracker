@@ -2,6 +2,7 @@ package backend.academy.api.advice;
 
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.exceptions.ApiErrorException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -63,6 +65,10 @@ public class BotControllerAdvice {
             @NotNull HttpMessageNotReadableException ex) {
         return handleIncorrectRequest("Не переданы необходимые данные", ex, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public void handleRequestNotPermitted() {}
 
     private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(
             String message, Exception ex, HttpStatusCode status) {

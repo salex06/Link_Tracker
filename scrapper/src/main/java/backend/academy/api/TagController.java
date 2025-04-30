@@ -8,6 +8,7 @@ import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,7 @@ public class TagController {
         this.chatService = chatService;
     }
 
+    @RateLimiter(name = "default")
     @GetMapping("/linksbytag")
     public ResponseEntity<?> getLinksByTag(
             @RequestHeader("Tg-Chat-Id") Long id, @RequestHeader("Tag-Value") String tag) {
@@ -45,6 +47,7 @@ public class TagController {
         return new ResponseEntity<>(new ListLinksResponse(links, links.size()), HttpStatus.OK);
     }
 
+    @RateLimiter(name = "default")
     @PostMapping("/addtag")
     public ResponseEntity<?> addTag(
             @RequestHeader("Add-To-All") Boolean isMulticast,
@@ -82,6 +85,7 @@ public class TagController {
                 HttpStatus.OK);
     }
 
+    @RateLimiter(name = "default")
     @DeleteMapping("/removetag")
     public ResponseEntity<?> removeTag(
             @RequestHeader("Remove-To-All") Boolean isMulticast,

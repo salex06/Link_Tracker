@@ -1,6 +1,7 @@
 package backend.academy.api.advice;
 
 import backend.academy.dto.ApiErrorResponse;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -76,6 +78,10 @@ public class ApplicationExceptionHandler {
             @NotNull MissingRequestHeaderException ex) {
         return handleIncorrectRequest("Ошибка передачи заголовков", ex, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public void handleRequestNotPermitted() {}
 
     private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(
             String errorMessage, Exception ex, HttpStatusCode status) {

@@ -3,6 +3,7 @@ package backend.academy.api;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.model.plain.TgChat;
 import backend.academy.service.ChatService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,7 @@ public class ChatController {
      * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
      *     {@code ResponseEntity<ApiErrorResponse>}
      */
+    @RateLimiter(name = "default")
     @PostMapping("/tg-chat/{id}")
     ResponseEntity<?> registerChat(@PathVariable Long id) {
         if (chatService.saveChat(id) != null) {
@@ -60,6 +62,7 @@ public class ChatController {
      * @param id идентификатор чата
      * @return NOT_FOUND, если чат не найден в БД, OK, если чат успешно удален
      */
+    @RateLimiter(name = "default")
     @DeleteMapping("/tg-chat/{id}")
     ResponseEntity<?> deleteChat(@PathVariable Long id) {
         if (chatService.getPlainTgChatByChatId(id).isEmpty()) {
@@ -84,6 +87,7 @@ public class ChatController {
      * @param timeConfig конфигурация времени
      * @return BAD_REQUEST, если чат не найден или не удалось обновить настройки, иначе - OK
      */
+    @RateLimiter(name = "default")
     @PatchMapping("/timeconfig")
     ResponseEntity<?> updateTimeConfiguration(
             @RequestHeader("Tg-Chat-Id") Long tgChatId, @RequestHeader("Time-Config") String timeConfig) {

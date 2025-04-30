@@ -5,6 +5,7 @@ import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkUpdate;
 import backend.academy.exceptions.ApiErrorException;
 import com.pengrad.telegrambot.request.SendMessage;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,7 @@ public class BotController {
      * @return {@code ResponseEntity<?>} - ответ на команду (ApiErrorResponse с кодом 400 при ошибке, иначе - OK с
      *     пустым телом ответа)
      */
+    @RateLimiter(name = "default")
     @PostMapping("/updates")
     public ResponseEntity<?> update(@RequestBody LinkUpdate linkUpdate) {
         List<Long> tgChatIds = linkUpdate.tgChatIds();
