@@ -10,6 +10,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
+import backend.academy.config.properties.CircuitBreakerDefaultProperties;
 import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -24,6 +26,8 @@ import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +38,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -46,28 +51,32 @@ class ListMessageHandlerTest {
     private static RestClient restClient;
 
     @Autowired
-    private RetryTemplate retryTemplate;
+    private ListMessageHandler listMessageHandler;
+
+    @MockitoBean
+    private RedisCacheService redisCacheService;
+
+    @Autowired
+    private ApplicationStabilityProperties stabilityProperties;
 
     private WireMockServer wireMockServer;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @BeforeEach
     void setupBeforeEach() {
         wireMockServer = new WireMockServer(options().port(port));
         wireMockServer.start();
         WireMock.configureFor("localhost", port);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     @AfterEach
     void shutdown() {
         wireMockServer.stop();
-    }
-
-    private static ListMessageHandler listMessageHandler;
-
-    @BeforeEach
-    public void setUp() {
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
     }
 
     @Test
@@ -86,9 +95,7 @@ class ListMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        when(mock.getValue(any())).thenReturn(null);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
+        when(redisCacheService.getValue(any())).thenReturn(null);
         stubFor(
                 get("/links")
                         .withHeader("Tg-Chat-Id", equalTo("1"))
@@ -132,9 +139,7 @@ class ListMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        when(mock.getValue(any())).thenReturn(null);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
+        when(redisCacheService.getValue(any())).thenReturn(null);
         stubFor(
                 get("/links")
                         .withHeader("Tg-Chat-Id", equalTo("1"))
@@ -166,9 +171,7 @@ class ListMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(null);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        when(mock.getValue(any())).thenReturn(null);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
+        when(redisCacheService.getValue(any())).thenReturn(null);
         stubFor(
                 get("/links")
                         .willReturn(
@@ -201,9 +204,7 @@ class ListMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        when(mock.getValue(any())).thenReturn(null);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
+        when(redisCacheService.getValue(any())).thenReturn(null);
         stubFor(
                 get("/links")
                         .willReturn(
@@ -243,16 +244,14 @@ class ListMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        when(mock.getValue(any())).thenReturn(expectedMessage);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
+        when(redisCacheService.getValue(any())).thenReturn(expectedMessage);
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         restClient = Mockito.spy();
 
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
-        verify(mock, times(0)).putValue(any(), any());
+        verify(redisCacheService, times(0)).putValue(any(), any());
         verify(restClient, times(0)).get();
     }
 
@@ -267,16 +266,14 @@ class ListMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(1L);
-        RedisCacheService mock = Mockito.mock(RedisCacheService.class);
-        when(mock.getValue(any())).thenReturn(expectedMessage);
-        listMessageHandler = new ListMessageHandler(mock, retryTemplate);
+        when(redisCacheService.getValue(any())).thenReturn(expectedMessage);
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         restClient = Mockito.spy();
 
         SendMessage actualSendMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualSendMessage.getParameters().get("text"));
-        verify(mock, times(0)).putValue(any(), any());
+        verify(redisCacheService, times(0)).putValue(any(), any());
         verify(restClient, times(0)).get();
     }
 
@@ -310,7 +307,7 @@ class ListMessageHandlerTest {
     void handle_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
             throws Exception {
         setupStubForRetry_AllFailed(httpCode);
-        String expectedMessage = "Ошибка при получении списка ресурсов";
+        String expectedMessage = "Ошибка. Не удалось выполнить запрос :(";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -355,7 +352,7 @@ class ListMessageHandlerTest {
 
     @Test
     void handle_whenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() throws Exception {
-        String expectedMessage = "Ошибка при получении списка ресурсов";
+        String expectedMessage = "Ошибка. Не удалось выполнить запрос :(";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -448,5 +445,41 @@ class ListMessageHandlerTest {
 
     public void verifyNumberOfCall(Integer numberOfCall) {
         WireMock.verify(numberOfCall, getRequestedFor(urlEqualTo("/links")));
+    }
+
+    @Autowired
+    private SimpleClientHttpRequestFactory requestFactory;
+
+    @Autowired
+    private CircuitBreakerDefaultProperties circuitBreakerProperties;
+
+    @Test
+    public void handle_WhenTheNumberOfFailAttemptsExceededTheLimit_ThenReturnErrorSendMessage()
+            throws InterruptedException {
+        int numberOfCalls = circuitBreakerProperties.getMinimumNumberOfCalls();
+        int timeout = stabilityProperties.getTimeout().getConnectTimeout()
+                + stabilityProperties.getTimeout().getReadTimeout();
+        WireMock.stubFor(WireMock.get(urlEqualTo("/links"))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody(" ").withFixedDelay(timeout + 200)));
+        String expectedMessage = "Ошибка. Сервис недоступен, попробуйте позже :(";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/links");
+        restClient = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .requestFactory(requestFactory)
+                .build();
+
+        for (int i = 0; i < numberOfCalls; ++i) {
+            SendMessage actualMessage = listMessageHandler.handle(update, restClient);
+            assertNotEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        }
+
+        SendMessage actualMessage = listMessageHandler.handle(update, restClient);
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
     }
 }

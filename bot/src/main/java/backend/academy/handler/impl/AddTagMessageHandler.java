@@ -1,23 +1,27 @@
 package backend.academy.handler.impl;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.crawler.MessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.dto.LinkResponse;
 import backend.academy.exceptions.ApiErrorException;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.handler.Handler;
 import backend.academy.service.RedisCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
@@ -29,19 +33,21 @@ import org.springframework.web.client.RestClient;
 public class AddTagMessageHandler implements Handler {
     private final MessageCrawler crawler;
     private final RedisCacheService redisCacheService;
-    private final RetryTemplate retryTemplate;
+    private final ApplicationStabilityProperties stabilityProperties;
 
     @Autowired
     public AddTagMessageHandler(
             @Qualifier("addTagCrawler") MessageCrawler crawler,
             RedisCacheService redisCachedService,
-            RetryTemplate retryTemplate) {
+            ApplicationStabilityProperties stabilityProperties) {
         this.crawler = crawler;
         this.redisCacheService = redisCachedService;
-        this.retryTemplate = retryTemplate;
+        this.stabilityProperties = stabilityProperties;
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onError")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBError")
     public SendMessage handle(Update update, RestClient restClient) {
         redisCacheService.invalidateCache();
 
@@ -67,29 +73,25 @@ public class AddTagMessageHandler implements Handler {
                 .log();
 
         try {
-            LinkResponse linkResponse = retryTemplate.execute(
-                    context -> restClient
-                            .post()
-                            .uri("/addtag")
-                            .header("Add-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
-                            .header("Tg-Chat-Id", String.valueOf(chatId))
-                            .body(crawlerReport)
-                            .exchange((request, response) -> {
-                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                                    ApiErrorResponse apiErrorResponse =
-                                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                                    throw new ApiErrorException(apiErrorResponse);
-                                } else if (response.getStatusCode().isError()) {
-                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
-                                } else {
-                                    return objectMapper.readValue(response.getBody(), LinkResponse.class);
-                                }
-                            }),
-                    context -> {
-                        if (context.getLastThrowable() instanceof ApiErrorException e) {
-                            throw e;
+            List<Integer> retryableHttpCodes = stabilityProperties.getRetry().getHttpCodes();
+            LinkResponse linkResponse = restClient
+                    .post()
+                    .uri("/addtag")
+                    .header("Add-To-All", Objects.equals(crawlerReport.link(), "ALL") ? "true" : "false")
+                    .header("Tg-Chat-Id", String.valueOf(chatId))
+                    .body(crawlerReport)
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                            ApiErrorResponse apiErrorResponse =
+                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                            throw new ApiErrorException(apiErrorResponse);
+                        } else if (retryableHttpCodes.contains(
+                                response.getStatusCode().value())) {
+                            throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                        } else if (response.getStatusCode().isError()) {
+                            throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
                         }
-                        return null;
+                        return objectMapper.readValue(response.getBody(), LinkResponse.class);
                     });
 
             if (linkResponse == null) {

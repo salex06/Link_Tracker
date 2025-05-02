@@ -1,19 +1,23 @@
 package backend.academy.handler.impl;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.exceptions.ApiErrorException;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.handler.Handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
@@ -24,9 +28,11 @@ import org.springframework.web.client.RestClient;
 @RequiredArgsConstructor
 @SuppressWarnings("CPD-START")
 public class TimeConfigurationSettingsHandler implements Handler {
-    private final RetryTemplate retryTemplate;
+    private final ApplicationStabilityProperties stabilityProperties;
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onError")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBError")
     public SendMessage handle(Update update, RestClient restClient) {
         Message message = update.message();
         Long chatId = message.chat().id();
@@ -50,28 +56,25 @@ public class TimeConfigurationSettingsHandler implements Handler {
 
         String timeConfig = splittedMessage[1];
         try {
+            List<Integer> retryableHttpCodes = stabilityProperties.getRetry().getHttpCodes();
             ObjectMapper objectMapper = new ObjectMapper();
-            String linkResponse = retryTemplate.execute(
-                    context -> restClient
-                            .patch()
-                            .uri("/timeconfig")
-                            .header("Tg-Chat-Id", String.valueOf(chatId))
-                            .header("Time-Config", String.valueOf(timeConfig))
-                            .exchange((request, response) -> {
-                                if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
-                                    ApiErrorResponse apiErrorResponse =
-                                            objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
-                                    throw new ApiErrorException(apiErrorResponse);
-                                } else if (response.getStatusCode().isError()) {
-                                    throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
-                                }
-                                return "";
-                            }),
-                    context -> {
-                        if (context.getLastThrowable() instanceof ApiErrorException e) {
-                            throw e;
+            String linkResponse = restClient
+                    .patch()
+                    .uri("/timeconfig")
+                    .header("Tg-Chat-Id", String.valueOf(chatId))
+                    .header("Time-Config", String.valueOf(timeConfig))
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST)) {
+                            ApiErrorResponse apiErrorResponse =
+                                    objectMapper.readValue(response.getBody(), ApiErrorResponse.class);
+                            throw new ApiErrorException(apiErrorResponse);
+                        } else if (retryableHttpCodes.contains(
+                                response.getStatusCode().value())) {
+                            throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                        } else if (response.getStatusCode().isError()) {
+                            throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
                         }
-                        return null;
+                        return "";
                     });
 
             if (linkResponse == null) {

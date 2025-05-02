@@ -9,17 +9,21 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
+import backend.academy.config.properties.CircuitBreakerDefaultProperties;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -42,11 +46,15 @@ class TimeConfigurationSettingsHandlerTest {
     private static RestClient restClient;
 
     @Autowired
-    private RetryTemplate retryTemplate;
-
     private TimeConfigurationSettingsHandler timeConfigurationSettingsHandler;
 
+    @Autowired
+    private ApplicationStabilityProperties stabilityProperties;
+
     private WireMockServer wireMockServer;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @BeforeEach
     public void setupBeforeEach() {
@@ -54,16 +62,14 @@ class TimeConfigurationSettingsHandlerTest {
         wireMockServer.start();
         port = wireMockServer.port();
         WireMock.configureFor("localhost", port);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     @AfterEach
     public void shutdown() {
         wireMockServer.stop();
-    }
-
-    @BeforeEach
-    public void setUp() {
-        timeConfigurationSettingsHandler = new TimeConfigurationSettingsHandler(retryTemplate);
     }
 
     @Test
@@ -163,7 +169,7 @@ class TimeConfigurationSettingsHandlerTest {
     void handle_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
             throws Exception {
         setupStubForRetry_AllFailed(httpCode);
-        String expectedMessage = "Ошибка при ответе на запрос настройки конфигурации времени";
+        String expectedMessage = "Ошибка. Не удалось выполнить запрос :(";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -201,7 +207,7 @@ class TimeConfigurationSettingsHandlerTest {
 
     @Test
     void handle_whenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() throws Exception {
-        String expectedMessage = "Ошибка при ответе на запрос настройки конфигурации времени";
+        String expectedMessage = "Ошибка. Не удалось выполнить запрос :(";
         Update update = Mockito.mock(Update.class);
         Message message = Mockito.mock(Message.class);
         Chat chat = Mockito.mock(Chat.class);
@@ -275,5 +281,41 @@ class TimeConfigurationSettingsHandlerTest {
 
     public void verifyNumberOfCall(Integer numberOfCall) {
         WireMock.verify(numberOfCall, patchRequestedFor(urlEqualTo("/timeconfig")));
+    }
+
+    @Autowired
+    private SimpleClientHttpRequestFactory requestFactory;
+
+    @Autowired
+    private CircuitBreakerDefaultProperties circuitBreakerProperties;
+
+    @Test
+    public void handle_WhenTheNumberOfFailAttemptsExceededTheLimit_ThenReturnErrorSendMessage()
+            throws InterruptedException {
+        int numberOfCalls = circuitBreakerProperties.getMinimumNumberOfCalls();
+        int timeout = stabilityProperties.getTimeout().getConnectTimeout()
+                + stabilityProperties.getTimeout().getReadTimeout();
+        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+                .willReturn(WireMock.aResponse().withStatus(200).withFixedDelay(timeout + 200)));
+        String expectedMessage = "Ошибка. Сервис недоступен, попробуйте позже :(";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/timeconfig 10:30");
+        restClient = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .requestFactory(requestFactory)
+                .build();
+
+        for (int i = 0; i < numberOfCalls; ++i) {
+            SendMessage actualMessage = timeConfigurationSettingsHandler.handle(update, restClient);
+            assertNotEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        }
+
+        SendMessage actualMessage = timeConfigurationSettingsHandler.handle(update, restClient);
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
     }
 }

@@ -29,7 +29,8 @@ public class HandlerBeans {
         return new HelpMessageHandler(BotCommandsStorage.getCommandDescription());
     }
 
-    private SimpleClientHttpRequestFactory simpleClientHttpRequestFactory() {
+    @Bean
+    public SimpleClientHttpRequestFactory simpleClientHttpRequestFactory() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getTimeout().getConnectTimeout());
         requestFactory.setReadTimeout(properties.getTimeout().getReadTimeout());
