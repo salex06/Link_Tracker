@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.client.RestClient;
 
 @SpringBootTest
@@ -28,7 +28,7 @@ class SoQuestionClientTest {
     private static RestClient restClient;
 
     @Autowired
-    private RetryTemplate retryTemplate;
+    private ApplicationStabilityProperties stabilityProperties;
 
     private WireMockServer wireMockServer;
 
@@ -55,7 +55,7 @@ class SoQuestionClientTest {
     void getUpdates_WhenQuestionWasUpdated_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         soQuestionClient = new SoQuestionClient(
-                x -> String.format("http://localhost:" + port + "/questions/6031003"), restClient, retryTemplate);
+                x -> String.format("http://localhost:" + port + "/questions/6031003"), restClient, stabilityProperties);
 
         String expectedMessage1 = String.format(
                 """
@@ -348,7 +348,9 @@ class SoQuestionClientTest {
     void getUpdates_WhenRequestError_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         soQuestionClient = new SoQuestionClient(
-                x -> String.format("http://localhost:" + port + "/questions/79461427"), restClient, retryTemplate);
+                x -> String.format("http://localhost:" + port + "/questions/79461427"),
+                restClient,
+                stabilityProperties);
 
         Link link = new Link(1L, "https://stackoverflow.com/questions/79461427");
         stubFor(

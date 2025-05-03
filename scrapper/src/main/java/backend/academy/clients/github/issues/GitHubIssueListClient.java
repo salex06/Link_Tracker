@@ -2,12 +2,17 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -17,25 +22,24 @@ import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("PMD")
 public class GitHubIssueListClient extends Client {
     private static final Pattern SUPPORTED_URL =
             Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(issues|pulls)$");
 
-    private final RetryTemplate retryTemplate;
+    private final ApplicationStabilityProperties stabilityProperties;
 
     public GitHubIssueListClient(
             @Qualifier("gitHubIssueListClientConverter") LinkToApiLinkConverter linkConverter,
             @Qualifier("gitHubClient") RestClient restClient,
-            RetryTemplate retryTemplate) {
+            ApplicationStabilityProperties stabilityProperties) {
         super(SUPPORTED_URL, linkConverter, restClient);
-        this.retryTemplate = retryTemplate;
+        this.stabilityProperties = stabilityProperties;
     }
 
     @Override
@@ -68,27 +72,30 @@ public class GitHubIssueListClient extends Client {
         return resultList;
     }
 
+    @Retry(name = "default", fallbackMethod = "onErrorIssuesList")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorIssuesList")
     private List<GitHubIssue> getIssues(ObjectMapper objectMapper, String url) {
         log.atInfo()
                 .setMessage("Обращение к GitHub API для получения issues/pull requests")
                 .addKeyValue("url", url)
                 .log();
-        return retryTemplate.execute(
-                context -> client.get().uri(url).exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        return objectMapper.readValue(response.getBody(), new TypeReference<>() {});
-                    } else if (response.getStatusCode().isError()) {
-                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
-                    }
+        return client.get().uri(url).exchange((request, response) -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return objectMapper.readValue(response.getBody(), new TypeReference<>() {});
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+            }
 
-                    log.atWarn()
-                            .setMessage("Неудачный запрос на получение issues/pull requests")
-                            .addKeyValue("url", url)
-                            .addKeyValue("code", response.getStatusCode())
-                            .log();
-                    return null;
-                }),
-                context -> null);
+            log.atWarn()
+                    .setMessage("Неудачный запрос на получение issues/pull requests")
+                    .addKeyValue("url", url)
+                    .addKeyValue("code", response.getStatusCode())
+                    .log();
+            return null;
+        });
     }
 
     private List<List<GitHubComment>> getCommentsForEachIssue(ObjectMapper objectMapper, List<GitHubIssue> issues) {
@@ -100,26 +107,29 @@ public class GitHubIssueListClient extends Client {
         return commentsMatrix;
     }
 
+    @Retry(name = "default", fallbackMethod = "onErrorCommentList")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorCommentList")
     private List<GitHubComment> getComments(ObjectMapper mapper, String url) {
         log.atInfo()
                 .setMessage("Обращение к GitHub API для получения комментариев")
                 .addKeyValue("url", url)
                 .log();
-        return retryTemplate.execute(
-                context -> client.get().uri(url).exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        return mapper.readValue(response.getBody(), new TypeReference<>() {});
-                    } else if (response.getStatusCode().isError()) {
-                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
-                    }
-                    log.atWarn()
-                            .setMessage("Неудачный запрос на получение комментариев")
-                            .addKeyValue("url", url)
-                            .addKeyValue("code", response.getStatusCode())
-                            .log();
-                    return null;
-                }),
-                context -> null);
+        return client.get().uri(url).exchange((request, response) -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return mapper.readValue(response.getBody(), new TypeReference<>() {});
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+            }
+            log.atWarn()
+                    .setMessage("Неудачный запрос на получение комментариев")
+                    .addKeyValue("url", url)
+                    .addKeyValue("code", response.getStatusCode())
+                    .log();
+            return null;
+        });
     }
 
     private List<LinkUpdateInfo> createListOfCommentUpdates(
@@ -150,27 +160,30 @@ public class GitHubIssueListClient extends Client {
         return lastUpdateTime.isBefore(issueCreationDate);
     }
 
+    @Retry(name = "default", fallbackMethod = "onErrorGitHubIssue")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorGitHubIssue")
     private GitHubIssue getIssue(ObjectMapper mapper, String issueUrl) {
         log.atInfo()
                 .setMessage("Обращение к GitHub API для получения issue")
                 .addKeyValue("url", issueUrl)
                 .log();
-        return retryTemplate.execute(
-                context -> client.get().uri(issueUrl).exchange((request, response) -> {
-                    if (response.getStatusCode().is2xxSuccessful()) {
-                        return mapper.readValue(response.getBody(), GitHubIssue.class);
-                    } else if (response.getStatusCode().isError()) {
-                        throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
-                    }
+        return client.get().uri(issueUrl).exchange((request, response) -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return mapper.readValue(response.getBody(), GitHubIssue.class);
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+            }
 
-                    log.atWarn()
-                            .setMessage("Неудачный запрос на получение issue")
-                            .addKeyValue("url", issueUrl)
-                            .addKeyValue("code", response.getStatusCode())
-                            .log();
-                    return null;
-                }),
-                context -> null);
+            log.atWarn()
+                    .setMessage("Неудачный запрос на получение issue")
+                    .addKeyValue("url", issueUrl)
+                    .addKeyValue("code", response.getStatusCode())
+                    .log();
+            return null;
+        });
     }
 
     private boolean issueWasUpdated(Instant lastUpdateTime, Instant commentCreateDateTime) {
@@ -207,5 +220,63 @@ public class GitHubIssueListClient extends Client {
                         issue.author().ownerName(),
                         formatter.format(LocalDateTime.ofInstant(issue.createdAt(), ZoneId.of("UTC"))),
                         issue.description()));
+    }
+
+    private List<GitHubIssue> onErrorIssuesList(ObjectMapper objectMapper, String url, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка issue. Неудачный запрос")
+                .addKeyValue("url", url)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    private List<GitHubIssue> onCBErrorIssuesList(ObjectMapper objectMapper, String url, CallNotPermittedException t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка issue. Сервис недоступен")
+                .addKeyValue("url", url)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    private List<GitHubComment> onErrorCommentList(ObjectMapper mapper, String url, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка комментариев. Неудачный запрос")
+                .addKeyValue("url", url)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    private List<GitHubComment> onCBErrorCommentList(ObjectMapper mapper, String url, CallNotPermittedException t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка комментариев. Сервис недоступен")
+                .addKeyValue("url", url)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    private GitHubIssue onErrorGitHubIssue(ObjectMapper mapper, String issueUrl, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении isssue. Неудачный запрос")
+                .addKeyValue("url", issueUrl)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return null;
+    }
+
+    private GitHubIssue onErrorCBGitHubIssue(ObjectMapper mapper, String issueUrl, CallNotPermittedException e) {
+        log.atWarn()
+                .setMessage("Ошибка при получении isssue. Сервис недоступен")
+                .addKeyValue("url", issueUrl)
+                .log();
+        return null;
     }
 }

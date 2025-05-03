@@ -18,7 +18,8 @@ public class KafkaNotificationSender implements NotificationSender {
     private String topic;
 
     @Override
-    public void send(LinkUpdate update) {
+    public String send(LinkUpdate update) {
         template.send(topic, update);
+        return "OK";
     }
 }

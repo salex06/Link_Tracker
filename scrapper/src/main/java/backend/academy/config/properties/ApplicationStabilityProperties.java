@@ -15,10 +15,10 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties("app.stability")
 public class ApplicationStabilityProperties {
     @NestedConfigurationProperty
-    private Timeout timeout = new Timeout();
+    private Timeout timeout;
 
     @NestedConfigurationProperty
-    private Retry retry = new Retry();
+    private Retry retry;
 
     @Getter
     @Setter
@@ -30,8 +30,6 @@ public class ApplicationStabilityProperties {
     @Setter
     @Getter
     public static class Retry {
-        private int maxAttempts;
-        private int backoff;
         private List<Integer> httpCodes;
     }
 }

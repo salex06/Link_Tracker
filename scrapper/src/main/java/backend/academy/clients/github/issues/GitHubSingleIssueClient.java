@@ -2,11 +2,16 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,28 +19,29 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("PMD")
 public class GitHubSingleIssueClient extends Client {
     private static final Pattern SUPPORTED_URL =
             Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 
-    private final RetryTemplate retryTemplate;
+    private final ApplicationStabilityProperties stabilityProperties;
 
     public GitHubSingleIssueClient(
             @Qualifier("gitHubSingleIssueConverter") LinkToApiLinkConverter converter,
             @Qualifier("gitHubClient") RestClient gitHubRestClient,
-            RetryTemplate retryTemplate) {
+            ApplicationStabilityProperties stabilityProperties) {
         super(SUPPORTED_URL, converter, gitHubRestClient);
-        this.retryTemplate = retryTemplate;
+        this.stabilityProperties = stabilityProperties;
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onError")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBError")
     public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
@@ -48,25 +54,26 @@ public class GitHubSingleIssueClient extends Client {
                 .addKeyValue("url", url)
                 .log();
 
-        GitHubIssue issuesList = retryTemplate.execute(
-                context -> client.method(HttpMethod.GET)
-                        .uri(url)
-                        .header("Accept", "application/vnd.github+json")
-                        .exchange((request, response) -> {
-                            if (response.getStatusCode().is2xxSuccessful()) {
-                                return objectMapper.readValue(response.getBody(), GitHubIssue.class);
-                            } else if (response.getStatusCode().isError()) {
-                                throw new HttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
-                            }
+        GitHubIssue issuesList = client.method(HttpMethod.GET)
+                .uri(url)
+                .header("Accept", "application/vnd.github+json")
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().is2xxSuccessful()) {
+                        return objectMapper.readValue(response.getBody(), GitHubIssue.class);
+                    } else if (stabilityProperties
+                            .getRetry()
+                            .getHttpCodes()
+                            .contains(response.getStatusCode().value())) {
+                        throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
+                    }
 
-                            log.atError()
-                                    .setMessage("Некорректные параметры запроса к GitHub API")
-                                    .addKeyValue("url", url)
-                                    .log();
+                    log.atError()
+                            .setMessage("Некорректные параметры запроса к GitHub API")
+                            .addKeyValue("url", url)
+                            .log();
 
-                            return null;
-                        }),
-                context -> null);
+                    return null;
+                });
 
         link.setLastUpdateTime(Instant.now());
         return createUpdatesList(issuesList, link);
@@ -95,5 +102,25 @@ public class GitHubSingleIssueClient extends Client {
 
     private boolean wasUpdated(Instant previousUpdateTime, Instant currentUpdateTime) {
         return previousUpdateTime == null || previousUpdateTime.isBefore(currentUpdateTime);
+    }
+
+    public List<LinkUpdateInfo> onError(Link link, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка обновлений. Неудачный запрос")
+                .addKeyValue("url", link.getUrl())
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    public List<LinkUpdateInfo> onCBError(Link link, Throwable t, CallNotPermittedException e) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка обновлений. Сервис недоступен")
+                .addKeyValue("url", link.getUrl())
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
     }
 }

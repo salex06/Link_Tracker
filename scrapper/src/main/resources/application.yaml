@@ -13,11 +13,9 @@ app:
     cron: "0 * * * * *"
   stability:
     timeout:
-      read-timeout: 6000
-      connect-timeout: 3000
+      read-timeout: 500
+      connect-timeout: 1000
     retry:
-      max-attempts: 4
-      backoff: 2000
       http-codes:
         - 429 #Too Many Requests
         - 500 #Internal Server Error
@@ -25,6 +23,29 @@ app:
         - 503 #Service Unavailable
         - 504 #Gateway Timeout
         - 507 #Insufficient Storage
+
+resilience4j.retry:
+  instances:
+    default:
+      maxAttempts: 4
+      waitDuration: 500
+      retryExceptions:
+        backend.academy.exceptions.RetryableHttpServerErrorException
+      ignoreExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 5
+        slidingWindowSize: 10
+        failureRateThreshold: 90
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 2
+        recordExceptions:
+          - org.springframework.web.client.ResourceAccessException
 
 resilience4j.ratelimiter:
   instances:
@@ -35,6 +56,9 @@ resilience4j.ratelimiter:
 
 service:
   access-type: SQL
+
+bot:
+  base-url: "http://localhost:8080"
 
 spring:
   application:

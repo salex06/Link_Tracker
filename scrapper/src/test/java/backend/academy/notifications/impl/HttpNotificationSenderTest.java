@@ -7,47 +7,77 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import backend.academy.config.properties.ApplicationStabilityProperties;
+import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.dto.LinkUpdate;
 import backend.academy.notifications.NotificationSender;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.retry.support.RetryTemplate;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest
 class HttpNotificationSenderTest {
-    private final int port = 8090;
-
-    @Autowired
-    private static RestClient restClient;
-
-    @Autowired
-    private RetryTemplate template;
+    private static final int port = 8090;
 
     private WireMockServer wireMockServer;
 
-    private static NotificationSender notificationSender;
+    @Autowired
+    private NotificationSender notificationSender;
+
+    @Autowired
+    @Qualifier("botConnectionClient")
+    private RestClient restClient;
+
+    @Autowired
+    private ApplicationStabilityProperties stabilityProperties;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
+
+    @Autowired
+    private SimpleClientHttpRequestFactory requestFactory;
+
+    @DynamicPropertySource
+    static void dynamicProperties(DynamicPropertyRegistry registry) {
+        registry.add("app.message-transport", () -> "HTTP");
+        registry.add("bot.base-url", () -> "http://localhost:" + port);
+    }
 
     @BeforeEach
     public void setupBeforeEach() {
         wireMockServer = new WireMockServer(options().port(port));
         wireMockServer.start();
         WireMock.configureFor("localhost", port);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     @AfterEach
@@ -55,15 +85,9 @@ class HttpNotificationSenderTest {
         wireMockServer.stop();
     }
 
-    @BeforeAll
-    public static void setUp() {
-        restClient = RestClient.create();
-    }
-
     @Test
     public void sendWorksCorrectly_When400Response() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient, template);
         stubFor(
                 post("/updates")
                         .willReturn(
@@ -143,7 +167,7 @@ class HttpNotificationSenderTest {
     @Test
     public void sendWorksCorrectly_When200Response() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient, template);
+        notificationSender = new HttpNotificationSender(restClient, stabilityProperties);
         stubFor(post("/updates")
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -155,11 +179,8 @@ class HttpNotificationSenderTest {
         WireMock.verify(1, postRequestedFor(urlEqualTo("/updates")));
     }
 
-    @Autowired
-    private ApplicationStabilityProperties properties;
-
     private List<Integer> getAllowedHttpCodes() {
-        return properties.getRetry().getHttpCodes();
+        return stabilityProperties.getRetry().getHttpCodes();
     }
 
     @ParameterizedTest
@@ -167,34 +188,40 @@ class HttpNotificationSenderTest {
     void send_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
             throws Exception {
         setupStubForRetry_AllFailed(httpCode);
+        String expected = "Retry fallback";
 
-        assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
+        String actual = notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L)));
 
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        assertEquals(expected, actual);
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @ParameterizedTest
     @MethodSource("getAllowedHttpCodes")
     void send_whenSuccessAfterRetryAndAllowedHttpCode_ThenReturnSuccess(Integer httpCode) throws Exception {
         setupStubForRetry_LastSuccessful(httpCode);
+        String expected = "OK";
 
-        assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
+        String actual = notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L)));
 
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        assertEquals(expected, actual);
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @Test
     public void send_WhenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient, template);
+        notificationSender = new HttpNotificationSender(restClient, stabilityProperties);
 
-        assertDoesNotThrow(() -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
+        assertThrows(
+                HttpServerErrorException.class,
+                () -> notificationSender.send(new LinkUpdate(1L, "url", "descr", List.of(1L, 2L))));
 
         verifyNumberOfCall(1);
     }
 
     public void setupStubForRetry_AllFailed(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
                 .inScenario("Updates_Retry")
@@ -218,7 +245,7 @@ class HttpNotificationSenderTest {
     }
 
     public void setupStubForRetry_LastSuccessful(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
                 .inScenario("Updates_Retry")
@@ -243,5 +270,31 @@ class HttpNotificationSenderTest {
 
     public void verifyNumberOfCall(Integer numberOfCall) {
         WireMock.verify(numberOfCall, postRequestedFor(urlEqualTo("/updates")));
+    }
+
+    @Autowired
+    private CircuitBreakerDefaultProperties circuitBreakerProperties;
+
+    @Test
+    public void handle_WhenTheNumberOfFailAttemptsExceededTheLimit_ThenReturnErrorSendMessage()
+            throws InterruptedException {
+        int numberOfCalls = circuitBreakerProperties.getMinimumNumberOfCalls();
+        int timeout = stabilityProperties.getTimeout().getConnectTimeout()
+                + stabilityProperties.getTimeout().getReadTimeout();
+        WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("").withFixedDelay(timeout + 200)));
+        String expectedMessage = "CircuitBreaker fallback";
+        restClient = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .requestFactory(requestFactory)
+                .build();
+
+        for (int i = 0; i < numberOfCalls; ++i) {
+            String result = notificationSender.send(new LinkUpdate(1L, "1", "123", new ArrayList<>()));
+            assertNotEquals(expectedMessage, result);
+        }
+
+        String result = notificationSender.send(new LinkUpdate(1L, "1", "123", new ArrayList<>()));
+        assertEquals(expectedMessage, result);
     }
 }
