@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.crawler.impl.tags.removetag.RemoveTagMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.service.RedisCacheService;
@@ -65,6 +66,9 @@ class RemoveTagMessageHandlerTest {
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
 
     @BeforeEach
     public void setupBeforeEach() {
@@ -233,7 +237,7 @@ class RemoveTagMessageHandlerTest {
         SendMessage actualMessage = removeTagMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @ParameterizedTest
@@ -254,7 +258,7 @@ class RemoveTagMessageHandlerTest {
         SendMessage actualMessage = removeTagMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @Test
@@ -283,7 +287,7 @@ class RemoveTagMessageHandlerTest {
     }
 
     public void setupStubForRetry_AllFailed(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
                 .inScenario("RemoveTag_Retry")
@@ -307,7 +311,7 @@ class RemoveTagMessageHandlerTest {
     }
 
     public void setupStubForRetry_LastSuccessful(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.delete(urlEqualTo("/removetag"))
                 .inScenario("RemoveTag_Retry")

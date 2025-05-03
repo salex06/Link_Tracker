@@ -30,8 +30,6 @@ public class ApplicationStabilityProperties {
     @Setter
     @Getter
     public static class Retry {
-        private Integer maxAttempts;
-        private Integer backoff;
         private List<Integer> httpCodes;
     }
 }

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -60,6 +61,9 @@ class UntrackMessageHandlerTest {
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
 
     @BeforeEach
     public void setupBeforeEach() {
@@ -233,7 +237,7 @@ class UntrackMessageHandlerTest {
         SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @ParameterizedTest
@@ -253,7 +257,7 @@ class UntrackMessageHandlerTest {
         SendMessage actualMessage = untrackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @Test
@@ -281,7 +285,7 @@ class UntrackMessageHandlerTest {
     }
 
     public void setupStubForRetry_AllFailed(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
                 .inScenario("DeleteLink_Retry")
@@ -305,7 +309,7 @@ class UntrackMessageHandlerTest {
     }
 
     public void setupStubForRetry_LastSuccessful(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.delete(urlEqualTo("/links"))
                 .inScenario("DeleteLink_Retry")

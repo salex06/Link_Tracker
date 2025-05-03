@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.crawler.impl.TrackMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.service.RedisCacheService;
@@ -67,6 +68,9 @@ class TrackMessageHandlerTest {
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
 
     @BeforeEach
     public void setupBeforeEach() {
@@ -201,7 +205,7 @@ class TrackMessageHandlerTest {
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @ParameterizedTest
@@ -222,7 +226,7 @@ class TrackMessageHandlerTest {
         SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @Test
@@ -251,7 +255,7 @@ class TrackMessageHandlerTest {
     }
 
     public void setupStubForRetry_AllFailed(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
                 .inScenario("AddLink_Retry")
@@ -275,7 +279,7 @@ class TrackMessageHandlerTest {
     }
 
     public void setupStubForRetry_LastSuccessful(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
                 .inScenario("AddLink_Retry")

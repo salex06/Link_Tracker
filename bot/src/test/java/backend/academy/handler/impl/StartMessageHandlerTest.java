@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.pengrad.telegrambot.model.Chat;
@@ -54,6 +55,9 @@ class StartMessageHandlerTest {
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
 
     @BeforeEach
     public void setupBeforeEach() {
@@ -157,7 +161,7 @@ class StartMessageHandlerTest {
         SendMessage actualMessage = startMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @ParameterizedTest
@@ -177,7 +181,7 @@ class StartMessageHandlerTest {
         SendMessage actualMessage = startMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @Test
@@ -205,7 +209,7 @@ class StartMessageHandlerTest {
     }
 
     public void setupStubForRetry_AllFailed(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.post(urlEqualTo("/tg-chat/1"))
                 .inScenario("Start_Retry")
@@ -229,7 +233,7 @@ class StartMessageHandlerTest {
     }
 
     public void setupStubForRetry_LastSuccessful(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.post(urlEqualTo("/tg-chat/1"))
                 .inScenario("Start_Retry")

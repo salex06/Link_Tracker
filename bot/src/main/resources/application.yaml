@@ -11,8 +11,6 @@ app:
         read-timeout: 500
         connect-timeout: 1000
       retry:
-        max-attempts: 4
-        backoff: 2000
         http-codes:
           - 429 #Too Many Requests
           - 500 #Internal Server Error

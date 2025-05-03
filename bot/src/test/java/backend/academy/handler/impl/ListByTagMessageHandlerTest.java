@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.bot.commands.Command;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.service.RedisCacheService;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -64,6 +65,9 @@ class ListByTagMessageHandlerTest {
 
     @Autowired
     private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
 
     @BeforeEach
     void setupBeforeEach() {
@@ -318,7 +322,7 @@ class ListByTagMessageHandlerTest {
     private ApplicationStabilityProperties properties;
 
     private List<Integer> getAllowedHttpCodes() {
-        return properties.getRetry().getHttpCodes();
+        return stabilityProperties.getRetry().getHttpCodes();
     }
 
     @ParameterizedTest
@@ -339,7 +343,7 @@ class ListByTagMessageHandlerTest {
         SendMessage actualMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @ParameterizedTest
@@ -364,7 +368,7 @@ class ListByTagMessageHandlerTest {
         SendMessage actualMessage = listMessageHandler.handle(update, restClient);
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
-        verifyNumberOfCall(properties.getRetry().getMaxAttempts());
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
     }
 
     @Test
@@ -392,7 +396,7 @@ class ListByTagMessageHandlerTest {
     }
 
     public void setupStubForRetry_AllFailed(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.get(urlEqualTo("/linksbytag"))
                 .inScenario("ListByTag_Retry")
@@ -416,7 +420,7 @@ class ListByTagMessageHandlerTest {
     }
 
     public void setupStubForRetry_LastSuccessful(int httpCode) {
-        int maxAttempts = properties.getRetry().getMaxAttempts();
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
         WireMock.stubFor(WireMock.get(urlEqualTo("/linksbytag"))
                 .inScenario("ListByTag_Retry")
