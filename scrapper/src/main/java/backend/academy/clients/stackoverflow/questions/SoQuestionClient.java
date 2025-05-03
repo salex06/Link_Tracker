@@ -9,7 +9,6 @@ import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
@@ -45,6 +44,8 @@ public class SoQuestionClient extends Client {
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onErrorQuestionList")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorQuestionList")
     public List<LinkUpdateInfo> getUpdates(Link link) {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
@@ -92,8 +93,6 @@ public class SoQuestionClient extends Client {
         return allUpdates;
     }
 
-    @Retry(name = "default", fallbackMethod = "onErrorQuestionList")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorQuestionList")
     private SoQuestionDTO getQuestions(ObjectMapper mapper, Long postId) {
         return client.method(HttpMethod.GET)
                 .uri("/questions/" + postId + "?site=stackoverflow")
@@ -113,8 +112,6 @@ public class SoQuestionClient extends Client {
                 });
     }
 
-    @Retry(name = "default", fallbackMethod = "onError")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBError")
     private SoCommentListDTO getCommentsForQuestion(ObjectMapper objectMapper, String baseurl) {
         String url = baseurl + "/comments?site=stackoverflow&filter=!nNPvSN_LI9";
         log.atInfo()
@@ -138,8 +135,6 @@ public class SoQuestionClient extends Client {
         });
     }
 
-    @Retry(name = "default", fallbackMethod = "onErrorAnswerList")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorAnswerList")
     private SoAnswersListDTO getAnswers(ObjectMapper objectMapper, String baseurl) {
         String url = baseurl + "/answers?site=stackoverflow&filter=!nNPvSNe7D9";
         return client.get().uri(url).exchange((request, response) -> {
@@ -155,8 +150,6 @@ public class SoQuestionClient extends Client {
         });
     }
 
-    @Retry(name = "default", fallbackMethod = "onErrorCommentList")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorCommentList")
     private SoCommentListDTO getCommentsForAnswers(ObjectMapper mapper, Long answerId) {
         return client.get()
                 .uri("/answers/" + answerId + "/comments?site=stackoverflow&filter=!nNPvSN_LEO")
@@ -235,64 +228,23 @@ public class SoQuestionClient extends Client {
                         answer.text()));
     }
 
-    private SoQuestionDTO onErrorQuestionList(ObjectMapper mapper, Long postId, Throwable t) {
+    public List<LinkUpdateInfo> onErrorQuestionList(ObjectMapper mapper, Long postId, Throwable t) {
         log.atWarn()
                 .setMessage("Ошибка при получении вопроса SO. Неудачный запрос")
                 .addKeyValue("post-id", postId)
                 .addKeyValue("exception", t.getMessage())
                 .addKeyValue("stacktrace", t.getStackTrace())
                 .log();
-        return null;
+        return List.of();
     }
 
-    private SoQuestionDTO onCBErrorQuestionList(ObjectMapper mapper, Long postId, Throwable t) {
+    public List<LinkUpdateInfo> onCBErrorQuestionList(ObjectMapper mapper, Long postId, Throwable t) {
         log.atWarn()
                 .setMessage("Ошибка при получении вопроса SO. Сервис недоступен")
                 .addKeyValue("post-id", postId)
                 .addKeyValue("exception", t.getMessage())
                 .addKeyValue("stacktrace", t.getStackTrace())
                 .log();
-        return null;
-    }
-
-    private SoAnswersListDTO onErrorAnswerList(ObjectMapper objectMapper, String baseurl, Throwable t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении ответов SO. Неудачный запрос")
-                .addKeyValue("baseurl", baseurl)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return null;
-    }
-
-    private SoAnswersListDTO onCBErrorAnswerList(
-            ObjectMapper objectMapper, String baseurl, CallNotPermittedException t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении ответов SO. Сервис недоступен")
-                .addKeyValue("baseurl", baseurl)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return null;
-    }
-
-    private SoCommentListDTO onErrorCommentList(ObjectMapper mapper, Long answerId, Throwable t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении комментариев. Неудачный запрос")
-                .addKeyValue("answer-id", answerId)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return null;
-    }
-
-    private SoCommentListDTO onErrorCBCommentList(ObjectMapper mapper, Long answerId, CallNotPermittedException t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении комментариев. Сервис недоступен")
-                .addKeyValue("answer-id", answerId)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return null;
+        return List.of();
     }
 }

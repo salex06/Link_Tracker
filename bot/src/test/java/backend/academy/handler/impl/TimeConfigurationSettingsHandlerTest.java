@@ -1,8 +1,8 @@
 package backend.academy.handler.impl;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.patch;
-import static com.github.tomakehurst.wiremock.client.WireMock.patchRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
@@ -105,7 +105,7 @@ class TimeConfigurationSettingsHandlerTest {
         when(chat.id()).thenReturn(5L);
         when(message.text()).thenReturn("/timeconfig 10:00");
         stubFor(
-                patch("/timeconfig")
+                post("/timeconfig")
                         .willReturn(
                                 aResponse()
                                         .withStatus(400)
@@ -147,7 +147,7 @@ class TimeConfigurationSettingsHandlerTest {
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
         when(message.text()).thenReturn("/timeconfig 10:00");
-        stubFor(patch("/timeconfig")
+        stubFor(post("/timeconfig")
                 .willReturn(aResponse()
                         .withHeader("Tg-Chat-Id", chat.id().toString())
                         .withHeader("Time-Config", "10:00")
@@ -221,7 +221,7 @@ class TimeConfigurationSettingsHandlerTest {
         when(message.text()).thenReturn("/timeconfig 10:35");
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
 
-        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+        WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                 .inScenario("Timeconfig_Retry")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(WireMock.aResponse().withStatus(404))
@@ -236,21 +236,21 @@ class TimeConfigurationSettingsHandlerTest {
     public void setupStubForRetry_AllFailed(int httpCode) {
         int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
-        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+        WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                 .inScenario("Timeconfig_Retry")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(WireMock.aResponse().withStatus(httpCode))
                 .willSetStateTo("Attempt 1"));
 
         for (int i = 0; i < maxAttempts - 2; ++i) {
-            WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+            WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                     .inScenario("Timeconfig_Retry")
                     .whenScenarioStateIs("Attempt " + (i + 1))
                     .willReturn(WireMock.aResponse().withStatus(httpCode))
                     .willSetStateTo("Attempt " + (i + 2)));
         }
 
-        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+        WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                 .inScenario("Timeconfig_Retry")
                 .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
                 .willReturn(WireMock.aResponse().withStatus(httpCode).withBody(""))
@@ -260,21 +260,21 @@ class TimeConfigurationSettingsHandlerTest {
     public void setupStubForRetry_LastSuccessful(int httpCode) {
         int maxAttempts = retryDefaultProperties.getMaxAttempts();
 
-        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+        WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                 .inScenario("Timeconfig_Retry")
                 .whenScenarioStateIs(STARTED)
                 .willReturn(WireMock.aResponse().withStatus(httpCode))
                 .willSetStateTo("Attempt 1"));
 
         for (int i = 0; i < maxAttempts - 2; ++i) {
-            WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+            WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                     .inScenario("Timeconfig_Retry")
                     .whenScenarioStateIs("Attempt " + (i + 1))
                     .willReturn(WireMock.aResponse().withStatus(httpCode))
                     .willSetStateTo("Attempt " + (i + 2)));
         }
 
-        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+        WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                 .inScenario("Timeconfig_Retry")
                 .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
                 .willReturn(WireMock.aResponse()
@@ -284,7 +284,7 @@ class TimeConfigurationSettingsHandlerTest {
     }
 
     public void verifyNumberOfCall(Integer numberOfCall) {
-        WireMock.verify(numberOfCall, patchRequestedFor(urlEqualTo("/timeconfig")));
+        WireMock.verify(numberOfCall, postRequestedFor(urlEqualTo("/timeconfig")));
     }
 
     @Autowired
@@ -299,7 +299,7 @@ class TimeConfigurationSettingsHandlerTest {
         int numberOfCalls = circuitBreakerProperties.getMinimumNumberOfCalls();
         int timeout = stabilityProperties.getTimeout().getConnectTimeout()
                 + stabilityProperties.getTimeout().getReadTimeout();
-        WireMock.stubFor(WireMock.patch(urlEqualTo("/timeconfig"))
+        WireMock.stubFor(WireMock.post(urlEqualTo("/timeconfig"))
                 .willReturn(WireMock.aResponse().withStatus(200).withFixedDelay(timeout + 200)));
         String expectedMessage = "Ошибка. Сервис недоступен, попробуйте позже :(";
         Update update = Mockito.mock(Update.class);

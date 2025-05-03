@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
@@ -43,6 +42,8 @@ public class GitHubIssueListClient extends Client {
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onErrorIssuesList")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorIssuesList")
     public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
@@ -72,8 +73,6 @@ public class GitHubIssueListClient extends Client {
         return resultList;
     }
 
-    @Retry(name = "default", fallbackMethod = "onErrorIssuesList")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorIssuesList")
     private List<GitHubIssue> getIssues(ObjectMapper objectMapper, String url) {
         log.atInfo()
                 .setMessage("Обращение к GitHub API для получения issues/pull requests")
@@ -107,8 +106,6 @@ public class GitHubIssueListClient extends Client {
         return commentsMatrix;
     }
 
-    @Retry(name = "default", fallbackMethod = "onErrorCommentList")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorCommentList")
     private List<GitHubComment> getComments(ObjectMapper mapper, String url) {
         log.atInfo()
                 .setMessage("Обращение к GitHub API для получения комментариев")
@@ -160,8 +157,6 @@ public class GitHubIssueListClient extends Client {
         return lastUpdateTime.isBefore(issueCreationDate);
     }
 
-    @Retry(name = "default", fallbackMethod = "onErrorGitHubIssue")
-    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorGitHubIssue")
     private GitHubIssue getIssue(ObjectMapper mapper, String issueUrl) {
         log.atInfo()
                 .setMessage("Обращение к GitHub API для получения issue")
@@ -222,61 +217,21 @@ public class GitHubIssueListClient extends Client {
                         issue.description()));
     }
 
-    private List<GitHubIssue> onErrorIssuesList(ObjectMapper objectMapper, String url, Throwable t) {
+    public List<LinkUpdateInfo> onErrorIssuesList(Link link, Throwable t) {
         log.atWarn()
-                .setMessage("Ошибка при получении списка issue. Неудачный запрос")
-                .addKeyValue("url", url)
+                .setMessage("Ошибка при получении обновлений isssue. Неудачный запрос")
+                .addKeyValue("url", link.getUrl())
                 .addKeyValue("exception", t.getMessage())
                 .addKeyValue("stacktrace", t.getStackTrace())
                 .log();
         return List.of();
     }
 
-    private List<GitHubIssue> onCBErrorIssuesList(ObjectMapper objectMapper, String url, CallNotPermittedException t) {
+    public List<LinkUpdateInfo> onCBErrorIssuesList(Link link, Throwable e) {
         log.atWarn()
-                .setMessage("Ошибка при получении списка issue. Сервис недоступен")
-                .addKeyValue("url", url)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
+                .setMessage("Ошибка при получении обновлений isssue. Сервис недоступен")
+                .addKeyValue("url", link.getUrl())
                 .log();
         return List.of();
-    }
-
-    private List<GitHubComment> onErrorCommentList(ObjectMapper mapper, String url, Throwable t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении списка комментариев. Неудачный запрос")
-                .addKeyValue("url", url)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return List.of();
-    }
-
-    private List<GitHubComment> onCBErrorCommentList(ObjectMapper mapper, String url, CallNotPermittedException t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении списка комментариев. Сервис недоступен")
-                .addKeyValue("url", url)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return List.of();
-    }
-
-    private GitHubIssue onErrorGitHubIssue(ObjectMapper mapper, String issueUrl, Throwable t) {
-        log.atWarn()
-                .setMessage("Ошибка при получении isssue. Неудачный запрос")
-                .addKeyValue("url", issueUrl)
-                .addKeyValue("exception", t.getMessage())
-                .addKeyValue("stacktrace", t.getStackTrace())
-                .log();
-        return null;
-    }
-
-    private GitHubIssue onErrorCBGitHubIssue(ObjectMapper mapper, String issueUrl, CallNotPermittedException e) {
-        log.atWarn()
-                .setMessage("Ошибка при получении isssue. Сервис недоступен")
-                .addKeyValue("url", issueUrl)
-                .log();
-        return null;
     }
 }

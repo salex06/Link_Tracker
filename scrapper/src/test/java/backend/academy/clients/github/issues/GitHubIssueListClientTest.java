@@ -11,6 +11,8 @@ import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,12 +36,18 @@ class GitHubIssueListClientTest {
     @Autowired
     private ApplicationStabilityProperties stabilityProperties;
 
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
     @BeforeEach
     public void setupBeforeEach() {
         wireMockServer = new WireMockServer(options().dynamicPort());
         wireMockServer.start();
         port = wireMockServer.port();
         WireMock.configureFor("localhost", port);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     @AfterEach

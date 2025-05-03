@@ -59,7 +59,7 @@ public class TimeConfigurationSettingsHandler implements Handler {
             List<Integer> retryableHttpCodes = stabilityProperties.getRetry().getHttpCodes();
             ObjectMapper objectMapper = new ObjectMapper();
             String linkResponse = restClient
-                    .patch()
+                    .post()
                     .uri("/timeconfig")
                     .header("Tg-Chat-Id", String.valueOf(chatId))
                     .header("Time-Config", String.valueOf(timeConfig))

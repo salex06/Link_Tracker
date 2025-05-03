@@ -1,7 +1,6 @@
-package backend.academy.notifications.impl;
+package backend.academy.notifications.fallback.impl;
 
 import backend.academy.dto.LinkUpdate;
-import backend.academy.notifications.NotificationSender;
 import backend.academy.notifications.fallback.FallbackSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,35 +11,31 @@ import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component
-@ConditionalOnProperty(prefix = "app", name = "message-transport", havingValue = "Kafka")
+@ConditionalOnProperty(prefix = "app", name = "message-transport-fallback", havingValue = "Kafka")
 @Slf4j
-public class KafkaNotificationSender implements NotificationSender {
+public class KafkaFallbackSender implements FallbackSender {
     private final KafkaTemplate<Long, LinkUpdate> template;
-    private final FallbackSender fallbackSender;
 
     @Value("${app.user-events.topic}")
     private String topic;
 
     @Override
-    public String send(LinkUpdate update) {
+    public void send(LinkUpdate update) {
         log.atInfo()
-                .setMessage("Отправка уведомления об обновлении в Kafka")
+                .setMessage("Отправка уведомления об обновлении в Kafka через KafkaFallbackSender")
                 .addKeyValue("url", update.url())
                 .addKeyValue("description", update.description())
                 .addKeyValue("tg-chat-ids", update.tgChatIds())
                 .log();
         try {
             template.send(topic, update);
-            return "OK";
         } catch (Exception e) {
             log.atInfo()
-                    .setMessage("Ошибка отправка уведомления об обновлении в Kafka. Переключение на резервный sender")
+                    .setMessage("Ошибка отправка уведомления об обновлении в Kafka через KafkaFallbackSender")
                     .addKeyValue("url", update.url())
                     .addKeyValue("description", update.description())
                     .addKeyValue("tg-chat-ids", update.tgChatIds())
                     .log();
-            fallbackSender.send(update);
-            return "Kafka exception";
         }
     }
 }

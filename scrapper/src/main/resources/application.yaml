@@ -5,6 +5,7 @@ app:
     access-token: ${SO_ACCESS_TOKEN}
   page-size: 50
   message-transport: Kafka
+  message-transport-fallback: HTTP
   user-events:
     topic: notifications-from-resources
     partitions: 3
@@ -28,7 +29,7 @@ resilience4j.retry:
   instances:
     default:
       maxAttempts: 4
-      waitDuration: 500
+      waitDuration: 1000
       retryExceptions:
         backend.academy.exceptions.RetryableHttpServerErrorException
       ignoreExceptions:

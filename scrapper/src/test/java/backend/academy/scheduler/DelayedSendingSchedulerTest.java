@@ -7,9 +7,12 @@ import static org.mockito.Mockito.verify;
 
 import backend.academy.dto.LinkUpdate;
 import backend.academy.notifications.NotificationSender;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +42,15 @@ class DelayedSendingSchedulerTest {
     private NotificationSender sender = Mockito.mock(NotificationSender.class);
 
     private DelayedSendingScheduler delayedSendingScheduler;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @BeforeEach
+    public void setUp() {
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
+    }
 
     @DynamicPropertySource
     public static void overrideProperties(DynamicPropertyRegistry registry) {

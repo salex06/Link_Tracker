@@ -11,12 +11,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.config.properties.CircuitBreakerDefaultProperties;
 import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.dto.LinkUpdate;
 import backend.academy.notifications.NotificationSender;
+import backend.academy.notifications.fallback.FallbackSender;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -29,12 +32,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
@@ -63,6 +68,9 @@ class HttpNotificationSenderTest {
 
     @Autowired
     private SimpleClientHttpRequestFactory requestFactory;
+
+    @MockitoBean
+    private FallbackSender fallbackSender;
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
@@ -167,7 +175,7 @@ class HttpNotificationSenderTest {
     @Test
     public void sendWorksCorrectly_When200Response() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient, stabilityProperties);
+        notificationSender = new HttpNotificationSender(restClient, stabilityProperties, fallbackSender);
         stubFor(post("/updates")
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -211,7 +219,7 @@ class HttpNotificationSenderTest {
     @Test
     public void send_WhenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        notificationSender = new HttpNotificationSender(restClient, stabilityProperties);
+        notificationSender = new HttpNotificationSender(restClient, stabilityProperties, fallbackSender);
 
         assertThrows(
                 HttpServerErrorException.class,
@@ -282,7 +290,7 @@ class HttpNotificationSenderTest {
         int timeout = stabilityProperties.getTimeout().getConnectTimeout()
                 + stabilityProperties.getTimeout().getReadTimeout();
         WireMock.stubFor(WireMock.post(urlEqualTo("/updates"))
-                .willReturn(WireMock.aResponse().withStatus(200).withBody("").withFixedDelay(timeout + 200)));
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("").withFixedDelay(timeout + 1000)));
         String expectedMessage = "CircuitBreaker fallback";
         restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
@@ -296,5 +304,6 @@ class HttpNotificationSenderTest {
 
         String result = notificationSender.send(new LinkUpdate(1L, "1", "123", new ArrayList<>()));
         assertEquals(expectedMessage, result);
+        Mockito.verify(fallbackSender, times(1)).send(any());
     }
 }
