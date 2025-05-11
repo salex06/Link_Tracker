@@ -2,11 +2,15 @@ package backend.academy.clients.github.storage;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,17 +23,24 @@ import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("PMD")
 public class GitHubPersonalStorageClient extends Client {
     private static final Pattern supportedUrl =
             Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 
+    private final ApplicationStabilityProperties stabilityProperties;
+
     public GitHubPersonalStorageClient(
             @Qualifier("gitHubRepositoryConverter") LinkToApiLinkConverter converter,
-            @Qualifier("gitHubClient") RestClient gitHubClient) {
+            @Qualifier("gitHubClient") RestClient gitHubClient,
+            ApplicationStabilityProperties stabilityProperties) {
         super(supportedUrl, converter, gitHubClient);
+        this.stabilityProperties = stabilityProperties;
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onError")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBError")
     public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
@@ -50,6 +61,11 @@ public class GitHubPersonalStorageClient extends Client {
                 .exchange((request, response) -> {
                     if (response.getStatusCode().is2xxSuccessful()) {
                         return objectMapper.readValue(response.getBody(), GitHubRepositoryDTO.class);
+                    } else if (stabilityProperties
+                            .getRetry()
+                            .getHttpCodes()
+                            .contains(response.getStatusCode().value())) {
+                        throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
                     }
 
                     log.atError()
@@ -90,5 +106,25 @@ public class GitHubPersonalStorageClient extends Client {
 
     private boolean wasUpdated(Instant previousUpdateTime, Instant currentUpdateTime) {
         return previousUpdateTime == null || previousUpdateTime.isBefore(currentUpdateTime);
+    }
+
+    public List<LinkUpdateInfo> onError(Link link, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка обновлений репозитория. Неудачный запрос")
+                .addKeyValue("url", link.getUrl())
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    public List<LinkUpdateInfo> onCBError(Link link, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении списка обновлений репозитория. Сервис недоступен")
+                .addKeyValue("url", link.getUrl())
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
     }
 }

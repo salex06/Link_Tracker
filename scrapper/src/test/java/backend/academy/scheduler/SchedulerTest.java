@@ -21,6 +21,8 @@ import backend.academy.notifications.NotificationSender;
 import backend.academy.notifications.impl.HttpNotificationSender;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,10 +32,13 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 
+@SpringBootTest
 class SchedulerTest {
     private static final String CLIENT1_SUPPORTED_URL = "client1";
     private static final Long CLIENT1_NO_UPDATES_INDICATOR = 1L;
@@ -51,6 +56,9 @@ class SchedulerTest {
     private static List<Client> clients;
     private static Client client1;
     private static Client client2;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @BeforeEach
     public void setUp() {
@@ -73,6 +81,9 @@ class SchedulerTest {
 
         scheduler = new Scheduler(
                 linkFilter, linkService, chatService, clientManager, notificationSender, scrapperConfig, redisTemplate);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     private static void setUpClients() {

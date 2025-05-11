@@ -2,8 +2,12 @@ package backend.academy.notifications.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import backend.academy.dto.LinkUpdate;
+import backend.academy.notifications.fallback.FallbackSender;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -16,15 +20,16 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
 @SpringBootTest
-@DirtiesContext
 @Testcontainers
 public class KafkaNotificationSenderTest {
     @Container
@@ -33,6 +38,12 @@ public class KafkaNotificationSenderTest {
 
     @Autowired
     private KafkaNotificationSender kafkaSender;
+
+    @MockitoSpyBean
+    private KafkaTemplate<Long, LinkUpdate> kafkaTemplate;
+
+    @MockitoBean
+    private FallbackSender fallbackSender;
 
     private static KafkaConsumer<Long, LinkUpdate> consumer;
     private static final String topicName = "notifications-from-resources";
@@ -69,6 +80,7 @@ public class KafkaNotificationSenderTest {
         String expectedDescription = "description";
         List<Long> expectedTgChatIds = List.of(1L, 2L);
         LinkUpdate expectedLinkUpdate = new LinkUpdate(expectedId, expectedUrl, expectedDescription, expectedTgChatIds);
+        // when(kafkaTemplate.send(any(), any())).thenCallRealMethod();
 
         kafkaSender.send(expectedLinkUpdate);
 
@@ -78,5 +90,19 @@ public class KafkaNotificationSenderTest {
         LinkUpdate actualLinkUpdate = record.value();
         assertEquals(expectedLinkUpdate, actualLinkUpdate);
         consumer.commitSync();
+    }
+
+    @Test
+    public void send_WhenKafkaTemplateThrowsException_ThenSwitchToFallbackSender() {
+        Long expectedId = 1L;
+        String expectedUrl = "url";
+        String expectedDescription = "description";
+        List<Long> expectedTgChatIds = List.of(1L, 2L);
+        LinkUpdate linkUpdate = new LinkUpdate(expectedId, expectedUrl, expectedDescription, expectedTgChatIds);
+        when(kafkaTemplate.send(topicName, linkUpdate)).thenThrow(RuntimeException.class);
+
+        kafkaSender.send(linkUpdate);
+
+        verify(fallbackSender, times(1)).send(linkUpdate);
     }
 }

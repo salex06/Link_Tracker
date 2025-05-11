@@ -2,12 +2,16 @@ package backend.academy.clients.github.issues;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -22,17 +26,24 @@ import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("PMD")
 public class GitHubIssueListClient extends Client {
     private static final Pattern SUPPORTED_URL =
             Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(issues|pulls)$");
 
+    private final ApplicationStabilityProperties stabilityProperties;
+
     public GitHubIssueListClient(
             @Qualifier("gitHubIssueListClientConverter") LinkToApiLinkConverter linkConverter,
-            @Qualifier("gitHubClient") RestClient restClient) {
+            @Qualifier("gitHubClient") RestClient restClient,
+            ApplicationStabilityProperties stabilityProperties) {
         super(SUPPORTED_URL, linkConverter, restClient);
+        this.stabilityProperties = stabilityProperties;
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onErrorIssuesList")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorIssuesList")
     public List<LinkUpdateInfo> getUpdates(Link link) {
         ObjectMapper objectMapper =
                 JsonMapper.builder().addModule(new JavaTimeModule()).build();
@@ -70,7 +81,13 @@ public class GitHubIssueListClient extends Client {
         return client.get().uri(url).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return objectMapper.readValue(response.getBody(), new TypeReference<>() {});
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
             }
+
             log.atWarn()
                     .setMessage("Неудачный запрос на получение issues/pull requests")
                     .addKeyValue("url", url)
@@ -97,6 +114,11 @@ public class GitHubIssueListClient extends Client {
         return client.get().uri(url).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return mapper.readValue(response.getBody(), new TypeReference<>() {});
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
             }
             log.atWarn()
                     .setMessage("Неудачный запрос на получение комментариев")
@@ -143,7 +165,13 @@ public class GitHubIssueListClient extends Client {
         return client.get().uri(issueUrl).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return mapper.readValue(response.getBody(), GitHubIssue.class);
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
             }
+
             log.atWarn()
                     .setMessage("Неудачный запрос на получение issue")
                     .addKeyValue("url", issueUrl)
@@ -187,5 +215,23 @@ public class GitHubIssueListClient extends Client {
                         issue.author().ownerName(),
                         formatter.format(LocalDateTime.ofInstant(issue.createdAt(), ZoneId.of("UTC"))),
                         issue.description()));
+    }
+
+    public List<LinkUpdateInfo> onErrorIssuesList(Link link, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении обновлений isssue. Неудачный запрос")
+                .addKeyValue("url", link.getUrl())
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    public List<LinkUpdateInfo> onCBErrorIssuesList(Link link, Throwable e) {
+        log.atWarn()
+                .setMessage("Ошибка при получении обновлений isssue. Сервис недоступен")
+                .addKeyValue("url", link.getUrl())
+                .log();
+        return List.of();
     }
 }

@@ -2,11 +2,15 @@ package backend.academy.clients.stackoverflow.questions;
 
 import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
+import backend.academy.exceptions.RetryableHttpServerErrorException;
 import backend.academy.model.plain.Link;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -24,17 +28,24 @@ import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Component
+@SuppressWarnings("PMD")
 public class SoQuestionClient extends Client {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
+
+    private final ApplicationStabilityProperties stabilityProperties;
 
     @Autowired
     public SoQuestionClient(
             @Qualifier("soQuestionLinkConverter") LinkToApiLinkConverter converter,
-            @Qualifier("stackOverflowClient") RestClient stackoverflowClient) {
+            @Qualifier("stackOverflowClient") RestClient stackoverflowClient,
+            ApplicationStabilityProperties stabilityProperties) {
         super(SUPPORTED_LINK, converter, stackoverflowClient);
+        this.stabilityProperties = stabilityProperties;
     }
 
     @Override
+    @Retry(name = "default", fallbackMethod = "onErrorQuestionList")
+    @CircuitBreaker(name = "default", fallbackMethod = "onCBErrorQuestionList")
     public List<LinkUpdateInfo> getUpdates(Link link) {
         String url = linkConverter.convert(link.getUrl());
         if (url == null) {
@@ -88,10 +99,14 @@ public class SoQuestionClient extends Client {
                 .header("Accept", "application/json")
                 .exchange((request, response) -> {
                     if (response.getStatusCode().is2xxSuccessful()) {
-                        // System.out.println(new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8));
                         return mapper.readValue(response.getBody(), SoQuestionsListDTO.class)
                                 .items()
                                 .getFirst();
+                    } else if (stabilityProperties
+                            .getRetry()
+                            .getHttpCodes()
+                            .contains(response.getStatusCode().value())) {
+                        throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
                     }
                     return null;
                 });
@@ -106,6 +121,11 @@ public class SoQuestionClient extends Client {
         return client.get().uri(url).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return objectMapper.readValue(response.getBody(), SoCommentListDTO.class);
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
             }
             log.atWarn()
                     .setMessage("Некорректные параметры запроса к StackOverflow API (комментарии к вопросу)")
@@ -120,6 +140,11 @@ public class SoQuestionClient extends Client {
         return client.get().uri(url).exchange((request, response) -> {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return objectMapper.readValue(response.getBody(), SoAnswersListDTO.class);
+            } else if (stabilityProperties
+                    .getRetry()
+                    .getHttpCodes()
+                    .contains(response.getStatusCode().value())) {
+                throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
             }
             return null;
         });
@@ -131,6 +156,11 @@ public class SoQuestionClient extends Client {
                 .exchange((request, response) -> {
                     if (response.getStatusCode().is2xxSuccessful()) {
                         return mapper.readValue(response.getBody(), SoCommentListDTO.class);
+                    } else if (stabilityProperties
+                            .getRetry()
+                            .getHttpCodes()
+                            .contains(response.getStatusCode().value())) {
+                        throw new RetryableHttpServerErrorException(response.getStatusCode(), "Ошибка сервера");
                     }
                     return null;
                 });
@@ -196,5 +226,25 @@ public class SoQuestionClient extends Client {
                         answer.owner().name(),
                         formatter.format(LocalDateTime.ofInstant(answer.creationDate(), ZoneId.of("UTC"))),
                         answer.text()));
+    }
+
+    public List<LinkUpdateInfo> onErrorQuestionList(ObjectMapper mapper, Long postId, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении вопроса SO. Неудачный запрос")
+                .addKeyValue("post-id", postId)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
+    }
+
+    public List<LinkUpdateInfo> onCBErrorQuestionList(ObjectMapper mapper, Long postId, Throwable t) {
+        log.atWarn()
+                .setMessage("Ошибка при получении вопроса SO. Сервис недоступен")
+                .addKeyValue("post-id", postId)
+                .addKeyValue("exception", t.getMessage())
+                .addKeyValue("stacktrace", t.getStackTrace())
+                .log();
+        return List.of();
     }
 }

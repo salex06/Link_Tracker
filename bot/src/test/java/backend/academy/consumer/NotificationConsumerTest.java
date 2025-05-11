@@ -19,7 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.SendResult;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -28,7 +27,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
 @SpringBootTest
-@DirtiesContext
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
 class NotificationConsumerTest {
@@ -97,7 +95,6 @@ class NotificationConsumerTest {
     }
 
     @Test
-    @DirtiesContext
     public void consume_WhenParseError_ThenSendToDlt() throws InterruptedException, ExecutionException {
         String expectedMessage = "123";
         CompletableFuture<SendResult<Long, String>> future =

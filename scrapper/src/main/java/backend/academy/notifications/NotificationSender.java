@@ -8,5 +8,5 @@ public interface NotificationSender {
      *
      * @param update DTO, хранящий информацию об обновлении
      */
-    void send(LinkUpdate update);
+    String send(LinkUpdate update);
 }

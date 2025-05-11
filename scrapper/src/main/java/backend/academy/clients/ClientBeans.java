@@ -4,12 +4,17 @@ import backend.academy.clients.converter.LinkToApiLinkConverter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @Configuration
+@RequiredArgsConstructor
 public class ClientBeans {
+    private final SimpleClientHttpRequestFactory factory;
+
     @Bean
     public ClientManager clientManager(List<Client> clientList) {
         return new ClientManager(clientList);
@@ -100,11 +105,17 @@ public class ClientBeans {
      */
     @Bean
     RestClient gitHubClient() {
-        return RestClient.builder().baseUrl("https://api.github.com").build();
+        return RestClient.builder()
+                .requestFactory(factory)
+                .baseUrl("https://api.github.com")
+                .build();
     }
 
     @Bean
     RestClient stackOverflowClient() {
-        return RestClient.builder().baseUrl("https://api.stackexchange.com").build();
+        return RestClient.builder()
+                .requestFactory(factory)
+                .baseUrl("https://api.stackexchange.com")
+                .build();
     }
 }

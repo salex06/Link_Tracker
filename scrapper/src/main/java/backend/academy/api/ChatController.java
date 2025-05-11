@@ -3,6 +3,7 @@ package backend.academy.api;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.model.plain.TgChat;
 import backend.academy.service.ChatService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -34,6 +34,7 @@ public class ChatController {
      * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
      *     {@code ResponseEntity<ApiErrorResponse>}
      */
+    @RateLimiter(name = "default")
     @PostMapping("/tg-chat/{id}")
     ResponseEntity<?> registerChat(@PathVariable Long id) {
         if (chatService.saveChat(id) != null) {
@@ -60,6 +61,7 @@ public class ChatController {
      * @param id идентификатор чата
      * @return NOT_FOUND, если чат не найден в БД, OK, если чат успешно удален
      */
+    @RateLimiter(name = "default")
     @DeleteMapping("/tg-chat/{id}")
     ResponseEntity<?> deleteChat(@PathVariable Long id) {
         if (chatService.getPlainTgChatByChatId(id).isEmpty()) {
@@ -84,7 +86,8 @@ public class ChatController {
      * @param timeConfig конфигурация времени
      * @return BAD_REQUEST, если чат не найден или не удалось обновить настройки, иначе - OK
      */
-    @PatchMapping("/timeconfig")
+    @RateLimiter(name = "default")
+    @PostMapping("/timeconfig")
     ResponseEntity<?> updateTimeConfiguration(
             @RequestHeader("Tg-Chat-Id") Long tgChatId, @RequestHeader("Time-Config") String timeConfig) {
         Optional<TgChat> chat = chatService.getPlainTgChatByChatId(tgChatId);

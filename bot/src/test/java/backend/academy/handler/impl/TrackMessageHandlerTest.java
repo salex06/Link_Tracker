@@ -2,16 +2,23 @@ package backend.academy.handler.impl;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.bot.commands.Command;
+import backend.academy.config.properties.ApplicationStabilityProperties;
+import backend.academy.config.properties.CircuitBreakerDefaultProperties;
+import backend.academy.config.properties.RetryDefaultProperties;
 import backend.academy.crawler.impl.TrackMessageCrawler;
 import backend.academy.dto.AddLinkRequest;
 import backend.academy.service.RedisCacheService;
@@ -21,45 +28,63 @@ import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@SpringBootTest
 class TrackMessageHandlerTest {
     private int port = 8089;
+    private WireMockServer wireMockServer;
 
     @Autowired
     private static RestClient restClient;
 
-    private static TrackMessageCrawler crawler;
+    @Autowired
+    private ApplicationStabilityProperties properties;
 
-    private static RedisCacheService redisCacheService;
+    @Autowired
+    private TrackMessageHandler trackMessageHandler;
 
-    private static TrackMessageHandler trackMessageHandler;
+    @MockitoBean
+    private TrackMessageCrawler crawler;
 
-    private WireMockServer wireMockServer;
+    @MockitoBean
+    private RedisCacheService redisCacheService;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
+
+    @Autowired
+    private RetryDefaultProperties retryDefaultProperties;
 
     @BeforeEach
     public void setupBeforeEach() {
         wireMockServer = new WireMockServer(options().port(port));
         wireMockServer.start();
         WireMock.configureFor("localhost", port);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     @AfterEach
     public void shutdown() {
         wireMockServer.stop();
-    }
-
-    @BeforeEach
-    public void setUp() {
-        crawler = Mockito.mock(TrackMessageCrawler.class);
-        redisCacheService = Mockito.mock(RedisCacheService.class);
-        trackMessageHandler = new TrackMessageHandler(crawler, redisCacheService);
     }
 
     @Test
@@ -143,7 +168,7 @@ class TrackMessageHandlerTest {
         when(update.message()).thenReturn(message);
         when(message.chat()).thenReturn(chat);
         when(chat.id()).thenReturn(50L);
-        when(message.text()).thenReturn("/start linkExample");
+        when(message.text()).thenReturn("/track linkExample");
         stubFor(post("/links")
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -155,5 +180,166 @@ class TrackMessageHandlerTest {
 
         assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
         verify(redisCacheService, times(1)).invalidateCache();
+    }
+
+    private List<Integer> getAllowedHttpCodes() {
+        return properties.getRetry().getHttpCodes();
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void handle_whenMaxRetriesExceededAndAllowedHttpCode_ThenRecoveryCalledAfterRetries(Integer httpCode)
+            throws Exception {
+        setupStubForRetry_AllFailed(httpCode);
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = "Ошибка. Не удалось выполнить запрос :(";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/track linkExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getAllowedHttpCodes")
+    void handle_whenSuccessAfterRetryAndAllowedHttpCode_ThenReturnLinkResponse(Integer httpCode) throws Exception {
+        setupStubForRetry_LastSuccessful(httpCode);
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = String.format("Ресурс %s добавлен для отслеживания. ID: %d", "linkExample", 1);
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/track linkExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(retryDefaultProperties.getMaxAttempts());
+    }
+
+    @Test
+    void handle_whenUnexpectedErrorCode_ThenRecoveryCalledWithoutRetrying() throws Exception {
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = "Ошибка. Не удалось выполнить запрос :(";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/track linkExample");
+        restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                .inScenario("AddLink_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(404))
+                .willSetStateTo(""));
+
+        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        verifyNumberOfCall(1);
+    }
+
+    public void setupStubForRetry_AllFailed(int httpCode) {
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                .inScenario("AddLink_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                    .inScenario("AddLink_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                .inScenario("AddLink_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(httpCode).withBody(""))
+                .willSetStateTo(""));
+    }
+
+    public void setupStubForRetry_LastSuccessful(int httpCode) {
+        int maxAttempts = retryDefaultProperties.getMaxAttempts();
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                .inScenario("AddLink_Retry")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(WireMock.aResponse().withStatus(httpCode))
+                .willSetStateTo("Attempt 1"));
+
+        for (int i = 0; i < maxAttempts - 2; ++i) {
+            WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                    .inScenario("AddLink_Retry")
+                    .whenScenarioStateIs("Attempt " + (i + 1))
+                    .willReturn(WireMock.aResponse().withStatus(httpCode))
+                    .willSetStateTo("Attempt " + (i + 2)));
+        }
+
+        WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                .inScenario("AddLink_Retry")
+                .whenScenarioStateIs("Attempt " + (maxAttempts - 1))
+                .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"id\": 1,\"url\":\"linkExample\"}"))
+                .willSetStateTo(""));
+    }
+
+    public void verifyNumberOfCall(Integer numberOfCall) {
+        WireMock.verify(numberOfCall, postRequestedFor(urlEqualTo("/links")));
+    }
+
+    @Autowired
+    private SimpleClientHttpRequestFactory requestFactory;
+
+    @Autowired
+    private CircuitBreakerDefaultProperties circuitBreakerProperties;
+
+    @Test
+    public void handle_WhenTheNumberOfFailAttemptsExceededTheLimit_ThenReturnErrorSendMessage()
+            throws InterruptedException {
+        int numberOfCalls = circuitBreakerProperties.getMinimumNumberOfCalls();
+        int timeout = properties.getTimeout().getConnectTimeout()
+                + properties.getTimeout().getReadTimeout();
+        WireMock.stubFor(WireMock.post(urlEqualTo("/links"))
+                .willReturn(WireMock.aResponse().withStatus(200).withFixedDelay(timeout + 200)));
+        when(crawler.terminate(anyLong())).thenReturn(new AddLinkRequest("linkExample", List.of("tag"), null));
+        String expectedMessage = "Ошибка. Сервис недоступен, попробуйте позже :(";
+        Update update = Mockito.mock(Update.class);
+        Message message = Mockito.mock(Message.class);
+        Chat chat = Mockito.mock(Chat.class);
+        when(update.message()).thenReturn(message);
+        when(message.chat()).thenReturn(chat);
+        when(chat.id()).thenReturn(5L);
+        when(message.text()).thenReturn("/track");
+        restClient = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .requestFactory(requestFactory)
+                .build();
+
+        for (int i = 0; i < numberOfCalls; ++i) {
+            SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+            assertNotEquals(expectedMessage, actualMessage.getParameters().get("text"));
+        }
+
+        SendMessage actualMessage = trackMessageHandler.handle(update, restClient);
+        assertEquals(expectedMessage, actualMessage.getParameters().get("text"));
     }
 }

@@ -6,6 +6,48 @@ app:
     dlt-topic: notifications-from-resources-dlt
     thread-count: 1
     auto-startup: true
+  stability:
+      timeout:
+        read-timeout: 500
+        connect-timeout: 1000
+      retry:
+        http-codes:
+          - 429 #Too Many Requests
+          - 500 #Internal Server Error
+          - 502 #Bad Gateway
+          - 503 #Service Unavailable
+          - 504 #Gateway Timeout
+          - 507 #Insufficient Storage
+
+resilience4j.retry:
+  instances:
+    default:
+      maxAttempts: 4
+      waitDuration: 500
+      retryExceptions:
+        backend.academy.exceptions.RetryableHttpServerErrorException
+      ignoreExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 5
+        slidingWindowSize: 10
+        failureRateThreshold: 90
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 2
+        recordExceptions:
+          - org.springframework.web.client.ResourceAccessException
+
+resilience4j.ratelimiter:
+  instances:
+    default:
+      limitForPeriod: 20
+      timeout-duration: 0s
+      limitRefreshPeriod: 60s
 
 scrapper:
   base-url: "http://localhost:8081"

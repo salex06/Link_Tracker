@@ -6,33 +6,47 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.model.plain.Link;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.client.RestClient;
 
+@SpringBootTest
 class SoQuestionClientTest {
     private int port = 8090;
 
     @Autowired
     private static RestClient restClient;
 
+    @Autowired
+    private ApplicationStabilityProperties stabilityProperties;
+
     private WireMockServer wireMockServer;
 
     private static SoQuestionClient soQuestionClient;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @BeforeEach
     public void setupBeforeEach() {
         wireMockServer = new WireMockServer(options().port(port));
         wireMockServer.start();
         WireMock.configureFor("localhost", port);
+
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("default");
+        circuitBreaker.reset();
     }
 
     @AfterEach
@@ -48,8 +62,8 @@ class SoQuestionClientTest {
     @Test
     void getUpdates_WhenQuestionWasUpdated_ThenReturnUpdateMessage() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
-        soQuestionClient =
-                new SoQuestionClient(x -> String.format("http://localhost:" + port + "/questions/6031003"), restClient);
+        soQuestionClient = new SoQuestionClient(
+                x -> String.format("http://localhost:" + port + "/questions/6031003"), restClient, stabilityProperties);
 
         String expectedMessage1 = String.format(
                 """
@@ -342,7 +356,9 @@ class SoQuestionClientTest {
     void getUpdates_WhenRequestError_ThenReturnEmptyList() {
         restClient = RestClient.builder().baseUrl("http://localhost:" + port).build();
         soQuestionClient = new SoQuestionClient(
-                x -> String.format("http://localhost:" + port + "/questions/79461427"), restClient);
+                x -> String.format("http://localhost:" + port + "/questions/79461427"),
+                restClient,
+                stabilityProperties);
 
         Link link = new Link(1L, "https://stackoverflow.com/questions/79461427");
         stubFor(

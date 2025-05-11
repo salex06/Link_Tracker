@@ -10,6 +10,7 @@ import backend.academy.model.plain.Link;
 import backend.academy.model.plain.TgChat;
 import backend.academy.service.ChatService;
 import backend.academy.service.LinkService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +49,7 @@ public class LinkController {
      * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
      *     {@code ResponseEntity<ApiErrorResponse>}
      */
+    @RateLimiter(name = "default")
     @GetMapping("/links")
     ResponseEntity<?> getLinks(@RequestHeader("Tg-Chat-Id") Long chatId) {
         log.atInfo()
@@ -77,6 +79,7 @@ public class LinkController {
      * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
      *     {@code ResponseEntity<ApiErrorResponse>}
      */
+    @RateLimiter(name = "default")
     @PostMapping("/links")
     ResponseEntity<?> addLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest addLinkRequest) {
         log.atInfo()
@@ -116,6 +119,7 @@ public class LinkController {
      * @return {@code ResponseEntity<>} - ответ в случае успеха. Иначе возвращается
      *     {@code ResponseEntity<ApiErrorResponse>}
      */
+    @RateLimiter(name = "default")
     @DeleteMapping("/links")
     ResponseEntity<?> removeLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
         log.atInfo()
