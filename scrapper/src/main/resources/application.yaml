@@ -105,3 +105,16 @@ logging:
   structured:
     format:
       console: ecs
+
+management:
+  server:
+    port: 8079
+  endpoints:
+    web:
+      exposure:
+        include:
+          - metrics
+          - prometheus
+  endpoint:
+    prometheus:
+      enabled: true

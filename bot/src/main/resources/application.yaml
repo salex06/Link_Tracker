@@ -92,3 +92,16 @@ logging:
   structured:
     format:
       console: ecs
+
+management:
+  server:
+    port: 8078
+  endpoints:
+    web:
+      exposure:
+        include:
+          - metrics
+          - prometheus
+  endpoint:
+    prometheus:
+      enabled: true
