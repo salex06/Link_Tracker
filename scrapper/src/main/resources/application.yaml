@@ -59,9 +59,12 @@ service:
   access-type: SQL
 
 bot:
-  base-url: "http://localhost:8080"
+  base-url: "http://bot:8080"
 
 spring:
+  redis:
+    host: redis
+    port: 6379
   application:
     name: Scrapper
   liquibase:
@@ -76,19 +79,19 @@ spring:
     open-in-view: false
   datasource:
     platform: postgres
-    url: jdbc:postgresql://localhost:5433/link_tracker
+    url: jdbc:postgresql://postgresql:5432/link_tracker
     username: postgres
     password: 123
     driverClassName: org.postgresql.Driver
   kafka:
-    bootstrap-servers: localhost:19092, localhost:29092
+    bootstrap-servers: kafka-1:19092, kafka-2:29092
     producer.properties:
       acks: -1
       batch.size: 1024
       linger.ms: 10000
   cloud.zookeeper:
     config.enabled: false
-    connect-string: localhost:2181
+    connect-string: zookeeper:2181
 
 server:
   port: 8081

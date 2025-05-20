@@ -50,9 +50,12 @@ resilience4j.ratelimiter:
       limitRefreshPeriod: 60s
 
 scrapper:
-  base-url: "http://localhost:8081"
+  base-url: "http://scrapper:8081"
 
 spring:
+  redis:
+    host: redis
+    port: 6379
   application:
     name: Bot
   liquibase:
@@ -62,7 +65,7 @@ spring:
       ddl-auto: validate
     open-in-view: false
   kafka:
-    bootstrap-servers: localhost:19092,localhost:29092
+    bootstrap-servers: kafka-1:19092, kafka-2:29092
     consumer.properties:
       group-id: default-consumer
       enable.auto.commit: false
@@ -75,10 +78,7 @@ spring:
       max.poll.records: 10
     cloud.zookeeper:
       config.enabled: false
-      connect-string: localhost:2181
-  redis:
-    host: redis
-    port: 6379
+      connect-string: zookeeper:2181
 
 server:
   port: 8080

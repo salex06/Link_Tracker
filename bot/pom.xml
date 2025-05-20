@@ -6,6 +6,7 @@
         <groupId>backend.academy</groupId>
         <artifactId>root</artifactId>
         <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>bot</artifactId>
