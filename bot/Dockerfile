@@ -1,5 +1,6 @@
 #Build stage
-FROM maven:3.9.9-eclipse-temurin-23-alpine AS builder
+FROM openjdk:23-jdk-slim AS builder
+
 WORKDIR /app
 
 COPY mvnw .
