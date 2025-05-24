@@ -89,7 +89,8 @@ class OrmLinkServiceTest {
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
         when(linkRepository.findAll(any(Instant.class), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(
-                        new OrmLink(link1Id, link1Url, Instant.now()), new OrmLink(link2Id, link2Url, Instant.now()))));
+                        new OrmLink(link1Id, link1Url, Instant.now(), "undefined"),
+                        new OrmLink(link2Id, link2Url, Instant.now(), "undefined"))));
         when(chatLinkRepository.findAllChatIdByLinkId(link1Id)).thenReturn(expectedLink1PrimaryIds);
         when(chatLinkRepository.findAllChatIdByLinkId(link2Id)).thenReturn(expectedLink2PrimaryIds);
         when(chatRepository.findAllById(expectedLink1PrimaryIds)).thenReturn(new ArrayList<>(expectedLink1TgChats));
@@ -140,7 +141,7 @@ class OrmLinkServiceTest {
         List<OrmChat> expectedChats = List.of(new OrmChat(1L, 5L), new OrmChat(2L, 10L));
         when(chatRepository.findByChatId(anyLong())).thenReturn(Optional.of(new OrmChat(1L, 1L)));
         when(chatLinkRepository.findByChatPrimaryIdAndLinkValue(anyLong(), anyString()))
-                .thenReturn(Optional.of(new OrmLink(expectedLinkId, expectedString, Instant.now())));
+                .thenReturn(Optional.of(new OrmLink(expectedLinkId, expectedString, Instant.now(), "undefined")));
         when(chatLinkRepository.findAllChatIdByLinkId(expectedLinkId)).thenReturn(expectedPrimaryChatIds);
         when(chatRepository.findAllById(expectedPrimaryChatIds)).thenReturn(expectedChats);
 
@@ -199,10 +200,10 @@ class OrmLinkServiceTest {
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new OrmChat(internalChatId, chatId)));
         when(linkRepository.findByLinkValue(expectedUrl)).thenReturn(Optional.empty());
         when(linkRepository.save(any(OrmLink.class)))
-                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now()));
+                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now(), "undefined"));
         when(mapper.toOrmLink(any(Link.class))).thenAnswer(invocationOnMock -> {
             Link link = invocationOnMock.getArgument(0);
-            return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
+            return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime(), "undefined");
         });
         when(chatLinkRepository.existsById(any(OrmChatLinkIdEmbedded.class))).thenReturn(false);
         when(chatLinkTagsRepository.findTagValuesByChatPrimaryIdAndLinkId(internalChatId, expectedLinkId))
@@ -236,12 +237,12 @@ class OrmLinkServiceTest {
         when(chatRepository.existsById(internalChatId)).thenReturn(true);
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new OrmChat(internalChatId, chatId)));
         when(linkRepository.findByLinkValue(expectedUrl))
-                .thenReturn(Optional.of(new OrmLink(1L, expectedUrl, expectedLink.getLastUpdateTime())));
+                .thenReturn(Optional.of(new OrmLink(1L, expectedUrl, expectedLink.getLastUpdateTime(), "undefined")));
         when(linkRepository.save(any(OrmLink.class)))
-                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now()));
+                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now(), "undefined"));
         when(mapper.toOrmLink(any(Link.class))).thenAnswer(invocationOnMock -> {
             Link link = invocationOnMock.getArgument(0);
-            return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
+            return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime(), "undefined");
         });
         when(chatLinkRepository.existsById(any(OrmChatLinkIdEmbedded.class))).thenReturn(false);
         when(chatLinkTagsRepository.findTagValuesByChatPrimaryIdAndLinkId(internalChatId, expectedLinkId))
@@ -275,12 +276,12 @@ class OrmLinkServiceTest {
         when(chatRepository.existsById(internalChatId)).thenReturn(true);
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new OrmChat(internalChatId, chatId)));
         when(linkRepository.findByLinkValue(expectedUrl))
-                .thenReturn(Optional.of(new OrmLink(1L, expectedUrl, expectedLink.getLastUpdateTime())));
+                .thenReturn(Optional.of(new OrmLink(1L, expectedUrl, expectedLink.getLastUpdateTime(), "undefined")));
         when(linkRepository.save(any(OrmLink.class)))
-                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now()));
+                .thenReturn(new OrmLink(expectedLinkId, expectedUrl, Instant.now(), "undefined"));
         when(mapper.toOrmLink(any(Link.class))).thenAnswer(invocationOnMock -> {
             Link link = invocationOnMock.getArgument(0);
-            return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
+            return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime(), "undefined");
         });
         when(chatLinkRepository.existsById(any(OrmChatLinkIdEmbedded.class))).thenReturn(true);
         when(chatLinkTagsRepository.findTagValuesByChatPrimaryIdAndLinkId(internalChatId, expectedLinkId))
@@ -315,8 +316,8 @@ class OrmLinkServiceTest {
         Long chatId = 1L;
         Long internalId = 5L;
         OrmChat chat = new OrmChat(internalId, chatId);
-        OrmLink link1 = new OrmLink(1L, "link1", Instant.now());
-        OrmLink link2 = new OrmLink(2L, "link2", Instant.now());
+        OrmLink link1 = new OrmLink(1L, "link1", Instant.now(), "undefined");
+        OrmLink link2 = new OrmLink(2L, "link2", Instant.now(), "undefined");
         List<String> expectedTagsLink1 = List.of("tag1", "tag2");
         List<String> expectedTagsLink2 = List.of("tag3", "tag4");
         List<String> expectedFiltersLink1 = List.of("filter1", "filter2");
@@ -381,7 +382,7 @@ class OrmLinkServiceTest {
 
     @Test
     public void getChatIdsListeningToLink_WhenLinkInDB_ThenReturnListOfChatIds() {
-        OrmLink link = new OrmLink(1L, "test_link", Instant.now());
+        OrmLink link = new OrmLink(1L, "test_link", Instant.now(), "undefined");
         Set<Long> primaryChatIds = Set.of(1L, 2L);
         OrmChat chat1 = new OrmChat(1L, 5L);
         OrmChat chat2 = new OrmChat(2L, 10L);
@@ -405,7 +406,7 @@ class OrmLinkServiceTest {
 
         linkService.updateLastUpdateTime(link, updateTime);
 
-        verify(linkRepository, times(0)).updateLink(anyLong(), anyString(), any(Instant.class));
+        verify(linkRepository, times(0)).updateLink(anyLong(), anyString(), any(Instant.class), anyString());
     }
 
     @Test
@@ -413,12 +414,12 @@ class OrmLinkServiceTest {
         String linkValue = "test";
         Instant updateTime = Instant.now();
         Link link = new Link(1L, linkValue);
-        OrmLink ormLink = new OrmLink(1L, linkValue, Instant.MIN);
+        OrmLink ormLink = new OrmLink(1L, linkValue, Instant.MIN, "undefined");
         when(linkRepository.findByLinkValue(linkValue)).thenReturn(Optional.of(ormLink));
 
         linkService.updateLastUpdateTime(link, updateTime);
 
-        verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class));
+        verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class), anyString());
     }
 
     @Test
@@ -426,8 +427,9 @@ class OrmLinkServiceTest {
         Long primaryChatId = 1L;
         String tag = "tag";
         List<Long> linkIds = List.of(1L, 2L);
-        List<OrmLink> ormLinks =
-                List.of(new OrmLink(1L, "link1", Instant.now()), new OrmLink(2L, "link2", Instant.now()));
+        List<OrmLink> ormLinks = List.of(
+                new OrmLink(1L, "link1", Instant.now(), "undefined"),
+                new OrmLink(2L, "link2", Instant.now(), "undefined"));
         List<String> tagsLink1 = List.of("tag1", "tag");
         List<String> tagsLink2 = List.of("tag", "tag2");
         List<Link> expectedLinks = List.of(

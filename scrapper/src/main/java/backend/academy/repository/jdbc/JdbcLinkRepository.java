@@ -34,7 +34,8 @@ public class JdbcLinkRepository {
     private final RowMapper<JdbcLink> jdbcLinkRowMapper = (rs, rn) -> new JdbcLink(
             rs.getLong("id"),
             rs.getString("link_value"),
-            rs.getTimestamp("last_update").toInstant());
+            rs.getTimestamp("last_update").toInstant(),
+            rs.getString("type"));
 
     /**
      * Сохранить ссылку в БД. Если ссылка уже записана в БД - обновляет запись
@@ -52,11 +53,12 @@ public class JdbcLinkRepository {
 
     @Transactional
     private JdbcLink insertEntity(JdbcLink jdbcLink) {
-        String sql = "INSERT INTO link(link_value) VALUES (:linkValue)";
+        String sql = "INSERT INTO link(link_value, type) VALUES (:linkValue, :type)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkValue", jdbcLink.getUrl());
+        params.addValue("type", jdbcLink.getType());
 
         namedJdbcTemplate.update(sql, params, keyHolder);
 
@@ -72,12 +74,13 @@ public class JdbcLinkRepository {
     @Modifying
     @Transactional
     private JdbcLink updateEntity(JdbcLink jdbcLink) {
-        String sql = "UPDATE link SET link_value = :linkValue, last_update = :lastUpdate WHERE id = :id";
+        String sql = "UPDATE link SET link_value = :linkValue, last_update = :lastUpdate, type = :type WHERE id = :id";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkValue", jdbcLink.getUrl());
         params.addValue("lastUpdate", Timestamp.from(jdbcLink.getLastUpdateTime()));
         params.addValue("id", jdbcLink.getId());
+        params.addValue("type", jdbcLink.getType());
 
         namedJdbcTemplate.update(sql, params);
 
@@ -200,7 +203,7 @@ public class JdbcLinkRepository {
      * @return список ссылок, которые отслеживает чат
      */
     public List<JdbcLink> getAllLinksByChatId(Long chatId) {
-        String sql = "SELECT link.id, link.link_value, link.last_update FROM link "
+        String sql = "SELECT link.id, link.link_value, link.last_update, link.type FROM link "
                 + "INNER JOIN tg_chat_link ON link.id = tg_chat_link.link_id "
                 + "WHERE tg_chat_link.tg_chat_id = :chatId";
 
@@ -219,13 +222,14 @@ public class JdbcLinkRepository {
      */
     @Modifying
     @Transactional
-    public void updateLink(Long id, String url, Instant lastUpdateTime) {
-        String sql = "UPDATE link SET link_value = :linkValue, last_update = :lastUpdate WHERE id = :id";
+    public void updateLink(Long id, String url, Instant lastUpdateTime, String type) {
+        String sql = "UPDATE link SET link_value = :linkValue, last_update = :lastUpdate, type = :type WHERE id = :id";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("linkValue", url);
         params.addValue("id", id);
         params.addValue("lastUpdate", Timestamp.from(lastUpdateTime));
+        params.addValue("type", type);
 
         namedJdbcTemplate.update(sql, params);
     }
@@ -245,5 +249,18 @@ public class JdbcLinkRepository {
         params.addValue("tagValue", tag);
 
         return namedJdbcTemplate.queryForList(sql, params, Long.class);
+    }
+
+    public Integer getActiveGitHubLinkCount() {
+        String sql = "SELECT COUNT(*) FROM tg_chat_link WHERE link_id IN (SELECT id FROM link WHERE type = 'github')";
+
+        return namedJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
+    }
+
+    public Integer getActiveStackoverflowLinkCount() {
+        String sql =
+                "SELECT COUNT(*) FROM tg_chat_link WHERE link_id IN (SELECT id FROM link WHERE type = 'stackoverflow')";
+
+        return namedJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
     }
 }

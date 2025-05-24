@@ -40,7 +40,7 @@ class StandardLinkMapperTest {
         List<String> expectedTags = List.of("tag1", "tag2");
         List<String> expectedFilters = List.of("filter1", "filter2");
         Set<Long> expectedChatIds = Set.of(1L, 2L);
-        OrmLink jdbcLink = new OrmLink(expectedId, expectedUrl, Instant.now());
+        OrmLink jdbcLink = new OrmLink(expectedId, expectedUrl, Instant.now(), "undefined");
 
         Link actualLink = standardLinkMapper.toPlainLink(jdbcLink, expectedTags, expectedFilters, expectedChatIds);
 

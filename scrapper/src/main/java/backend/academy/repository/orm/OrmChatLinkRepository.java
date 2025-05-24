@@ -22,4 +22,10 @@ public interface OrmChatLinkRepository extends JpaRepository<OrmChatLink, OrmCha
     @Query("SELECT cl.link FROM OrmChatLink cl WHERE cl.chat.id = :chatId AND cl.link.linkValue = :linkValue")
     Optional<OrmLink> findByChatPrimaryIdAndLinkValue(
             @Param("chatId") Long chatId, @Param("linkValue") String linkValue);
+
+    @Query("SELECT COUNT(*) FROM OrmChatLink l WHERE l.link.type = 'github'")
+    Integer getActiveGitHubLinkCount();
+
+    @Query("SELECT COUNT(*) FROM OrmChatLink l WHERE l.link.type = 'stackoverflow'")
+    Integer getActiveStackoverflowLinkCount();
 }

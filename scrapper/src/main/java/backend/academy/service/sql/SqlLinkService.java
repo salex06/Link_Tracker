@@ -162,7 +162,7 @@ public class SqlLinkService implements LinkService {
             return;
         }
         JdbcLink jdbcLink = optJdbcLink.orElseThrow();
-        linkRepository.updateLink(jdbcLink.getId(), link.getUrl(), link.getLastUpdateTime());
+        linkRepository.updateLink(jdbcLink.getId(), link.getUrl(), link.getLastUpdateTime(), jdbcLink.getType());
     }
 
     @Override
@@ -188,5 +188,15 @@ public class SqlLinkService implements LinkService {
         }
 
         return plainLinks;
+    }
+
+    @Override
+    public Integer getActiveGitHubLinkCount() {
+        return linkRepository.getActiveGitHubLinkCount();
+    }
+
+    @Override
+    public Integer getActiveStackoverflowLinkCount() {
+        return linkRepository.getActiveStackoverflowLinkCount();
     }
 }

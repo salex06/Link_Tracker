@@ -1,7 +1,7 @@
 package backend.academy.clients.github.issues;
 
-import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.clients.github.GitHubClient;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.exceptions.RetryableHttpServerErrorException;
@@ -25,7 +25,7 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 @SuppressWarnings("PMD")
-public class GitHubSingleIssueClient extends Client {
+public class GitHubSingleIssueClient extends GitHubClient {
     private static final Pattern SUPPORTED_URL =
             Pattern.compile("^https://github.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/issues/(\\d+)$");
 

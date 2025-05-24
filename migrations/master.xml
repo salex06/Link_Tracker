@@ -31,4 +31,5 @@
     <include relativeToChangelogFile="true" file="005-changeForeignKeysRevert-schema.sql"/>
     <include relativeToChangelogFile="true" file="006-addLinkValueUniqueConstraint-schema.sql"/>
     <include relativeToChangelogFile="true" file="007-addSendNotificationAtColumn-schema.sql"/>
+    <include relativeToChangelogFile="true" file="008-addLinkType-schema.sql"/>
 </databaseChangeLog>

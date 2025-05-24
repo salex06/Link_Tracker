@@ -96,8 +96,9 @@ class OrmChatLinkRepositoryTest {
 
     @Test
     public void findAllByChatPrimaryIdWorksCorrectly() {
-        List<OrmLink> expectedLinks =
-                List.of(new OrmLink(1L, "url1", Instant.now()), new OrmLink(2L, "url2", Instant.now()));
+        List<OrmLink> expectedLinks = List.of(
+                new OrmLink(1L, "url1", Instant.now(), "undefined"),
+                new OrmLink(2L, "url2", Instant.now(), "undefined"));
         Long chatId = 1L;
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('url1'), ('url2')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1)");
@@ -112,7 +113,7 @@ class OrmChatLinkRepositoryTest {
     public void findByChatPrimaryIdAndLinkValueWorksCorrectly() {
         Long chatId = 1L;
         String linkValue = "url1";
-        OrmLink expectedLink = new OrmLink(1L, linkValue, Instant.now());
+        OrmLink expectedLink = new OrmLink(1L, linkValue, Instant.now(), "undefined");
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('url1'), ('url2')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (1)");
         jdbcTemplate.update("INSERT INTO tg_chat_link(tg_chat_id, link_id) VALUES (1, 1), (1, 2)");

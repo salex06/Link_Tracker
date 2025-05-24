@@ -41,4 +41,8 @@ public interface LinkService {
     void updateLastUpdateTime(Link link, Instant updateTime);
 
     List<Link> getAllLinksByChatIdAndTag(Long id, String tag);
+
+    Integer getActiveGitHubLinkCount();
+
+    Integer getActiveStackoverflowLinkCount();
 }

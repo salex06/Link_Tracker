@@ -21,6 +21,9 @@ public class Link {
     private Set<Long> tgChatIds;
 
     @JsonIgnore
+    private String type;
+
+    @JsonIgnore
     private Instant lastUpdateTime;
 
     public Link(
@@ -67,5 +70,23 @@ public class Link {
         this.tags = new ArrayList<>();
         this.filters = new ArrayList<>();
         this.lastUpdateTime = Instant.now();
+    }
+
+    // После стольких конструкторов, кажется, нужно делать Builder
+    public Link(
+            Long id,
+            String url,
+            List<String> tags,
+            List<String> filters,
+            Set<Long> tgChatIds,
+            String type,
+            Instant lastUpdateTime) {
+        this.id = id;
+        this.url = url;
+        this.tags = tags;
+        this.filters = filters;
+        this.tgChatIds = tgChatIds;
+        this.type = type;
+        this.lastUpdateTime = lastUpdateTime;
     }
 }

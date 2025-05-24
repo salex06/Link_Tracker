@@ -149,14 +149,15 @@ class OrmLinkRepositoryTest {
         Instant expectedNewInstant = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('test_link3')");
 
-        linkRepository.updateLink(linkId, expectedValue, expectedNewInstant);
+        linkRepository.updateLink(linkId, expectedValue, expectedNewInstant, "undefined");
 
         OrmLink link = jdbcTemplate.queryForObject(
                 "SELECT * FROM link WHERE id = 1",
                 (rs, rn) -> new OrmLink(
                         rs.getLong("id"),
                         rs.getString("link_value"),
-                        rs.getTimestamp("last_update").toInstant()));
+                        rs.getTimestamp("last_update").toInstant(),
+                        rs.getString("type")));
 
         assertThat(link).isNotNull();
         assertThat(link.getLinkValue()).isEqualTo(expectedValue);

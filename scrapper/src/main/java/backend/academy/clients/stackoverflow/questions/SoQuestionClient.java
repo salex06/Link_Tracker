@@ -1,7 +1,7 @@
 package backend.academy.clients.stackoverflow.questions;
 
-import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.clients.stackoverflow.StackoverflowClient;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.exceptions.RetryableHttpServerErrorException;
@@ -29,7 +29,7 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 @SuppressWarnings("PMD")
-public class SoQuestionClient extends Client {
+public class SoQuestionClient extends StackoverflowClient {
     private static final Pattern SUPPORTED_LINK = Pattern.compile("^https://stackoverflow\\.com/questions/(\\w+)$");
 
     private final ApplicationStabilityProperties stabilityProperties;

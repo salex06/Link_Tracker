@@ -184,7 +184,8 @@ public class OrmLinkService implements LinkService {
         if (ormLink.isEmpty()) {
             return;
         }
-        linkRepository.updateLink(ormLink.orElseThrow().getId(), link.getUrl(), link.getLastUpdateTime());
+        linkRepository.updateLink(
+                ormLink.orElseThrow().getId(), link.getUrl(), link.getLastUpdateTime(), link.getType());
     }
 
     @Override
@@ -210,5 +211,15 @@ public class OrmLinkService implements LinkService {
         }
 
         return plainLinks;
+    }
+
+    @Override
+    public Integer getActiveGitHubLinkCount() {
+        return chatLinkRepository.getActiveGitHubLinkCount();
+    }
+
+    @Override
+    public Integer getActiveStackoverflowLinkCount() {
+        return chatLinkRepository.getActiveStackoverflowLinkCount();
     }
 }

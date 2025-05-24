@@ -22,6 +22,9 @@ public class JdbcLink {
     @Column("last_update")
     private Instant lastUpdateTime = Instant.now();
 
+    @Column("type")
+    private String type;
+
     public JdbcLink() {}
 
     public JdbcLink(Long id, String url) {
@@ -33,5 +36,12 @@ public class JdbcLink {
         this.id = id;
         this.url = url;
         this.lastUpdateTime = lastUpdateTime;
+    }
+
+    public JdbcLink(Long id, String url, Instant lastUpdateTime, String type) {
+        this.id = id;
+        this.url = url;
+        this.lastUpdateTime = lastUpdateTime;
+        this.type = type;
     }
 }
