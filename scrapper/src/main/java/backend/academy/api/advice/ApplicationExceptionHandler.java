@@ -2,6 +2,8 @@ package backend.academy.api.advice;
 
 import backend.academy.dto.ApiErrorResponse;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
@@ -13,13 +15,21 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @ControllerAdvice
 public class ApplicationExceptionHandler {
+    private final Counter errorCounter;
+
+    public ApplicationExceptionHandler(MeterRegistry meterRegistry) {
+        errorCounter = Counter.builder("http.requests.failed")
+                .description("Number of HTTP requests that resulted in an error")
+                .tags("service", "scrapper")
+                .register(meterRegistry);
+    }
+
     /**
      * Обрабатывает ошибки чтения тела запроса (код 400)
      *
@@ -80,11 +90,14 @@ public class ApplicationExceptionHandler {
     }
 
     @ExceptionHandler(RequestNotPermitted.class)
-    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
-    public void handleRequestNotPermitted() {}
+    public ResponseEntity<ApiErrorResponse> handleRequestNotPermitted(@NotNull RequestNotPermitted ex) {
+        return handleIncorrectRequest("Ошибка. Превышен лимит запросов", ex, HttpStatus.TOO_MANY_REQUESTS);
+    }
 
     private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(
             String errorMessage, Exception ex, HttpStatusCode status) {
+        errorCounter.increment();
+
         log.atError()
                 .setMessage(errorMessage)
                 .addKeyValue("error-message", ex.getMessage())

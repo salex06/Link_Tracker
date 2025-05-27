@@ -313,7 +313,7 @@ class JdbcLinkRepositoryTest {
         Instant expectedLocalDateTime = Instant.now();
         jdbcTemplate.update("INSERT INTO link(link_value, last_update) VALUES ('old_url', '1970-01-01 00:00:00')");
 
-        linkRepository.updateLink(linkId, expectedUrl, expectedLocalDateTime);
+        linkRepository.updateLink(linkId, expectedUrl, expectedLocalDateTime, "undefined");
 
         JdbcLink actualLink = jdbcTemplate.queryForObject("SELECT * FROM link WHERE id = 1", jdbcLinkRowMapper);
         assertNotNull(actualLink);

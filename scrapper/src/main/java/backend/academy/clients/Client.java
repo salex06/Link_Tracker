@@ -37,4 +37,11 @@ public abstract class Client {
      * @return {@code List<LinkUpdateInfo>} - список описания обновлений
      */
     public abstract List<LinkUpdateInfo> getUpdates(Link link);
+
+    /**
+     * Получить название ресурса, который обрабатывает клиент
+     *
+     * @return String - название ресурса по ссылке
+     */
+    public abstract String getSourceName();
 }

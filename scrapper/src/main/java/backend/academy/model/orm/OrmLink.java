@@ -31,6 +31,9 @@ public class OrmLink {
     @Column(name = "last_update")
     private Instant lastUpdate = Instant.now();
 
+    @Column(name = "type")
+    private String type;
+
     public OrmLink(String linkValue) {
         this.linkValue = linkValue;
     }

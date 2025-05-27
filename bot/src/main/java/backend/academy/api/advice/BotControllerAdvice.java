@@ -3,6 +3,8 @@ package backend.academy.api.advice;
 import backend.academy.dto.ApiErrorResponse;
 import backend.academy.exceptions.ApiErrorException;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
@@ -12,13 +14,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
 public class BotControllerAdvice {
+    private final Counter errorCounter;
+
+    public BotControllerAdvice(MeterRegistry meterRegistry) {
+        errorCounter = Counter.builder("http.requests.failed")
+                .description("Number of HTTP requests that resulted in an error")
+                .tags("service", "bot")
+                .register(meterRegistry);
+    }
+
     /**
      * Обрабатывает генерируемое внутри контроллера исключение, обозначающее, что переданный запрос некорректен (нет
      * необходимых полей, неправильные значения полей и т.д.)
@@ -67,11 +77,13 @@ public class BotControllerAdvice {
     }
 
     @ExceptionHandler(RequestNotPermitted.class)
-    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
-    public void handleRequestNotPermitted() {}
+    public ResponseEntity<ApiErrorResponse> handleRequestNotPermitted(@NotNull RequestNotPermitted ex) {
+        return handleIncorrectRequest("Ошибка. Превышен лимит запросов", ex, HttpStatus.TOO_MANY_REQUESTS);
+    }
 
     private ResponseEntity<ApiErrorResponse> handleIncorrectRequest(
             String message, Exception ex, HttpStatusCode status) {
+        errorCounter.increment();
         log.atError()
                 .setMessage(message)
                 .addKeyValue("status", status.value())

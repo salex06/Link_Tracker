@@ -118,7 +118,7 @@ class OrmChatLinkFiltersRepositoryTest {
     @Test
     public void saveFilter_WhenFilterIsNotInDb_ThenSave() {
         OrmChat chat = new OrmChat(1L, 5L);
-        OrmLink link = new OrmLink(1L, "any", Instant.now());
+        OrmLink link = new OrmLink(1L, "any", Instant.now(), "undefined");
         String expectedFilter = "filter1";
         jdbcTemplate.update("INSERT INTO link(link_value) VALUES ('any')");
         jdbcTemplate.update("INSERT INTO tg_chat(chat_id) VALUES (5)");

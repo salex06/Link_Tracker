@@ -25,7 +25,11 @@ public interface OrmLinkRepository extends JpaRepository<OrmLink, Long> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE OrmLink link SET link.linkValue = :linkValue, link.lastUpdate = :lastUpdate WHERE link.id = :id")
+    @Query(
+            "UPDATE OrmLink link SET link.linkValue = :linkValue, link.lastUpdate = :lastUpdate, type = :type WHERE link.id = :id")
     void updateLink(
-            @Param("id") Long id, @Param("linkValue") String linkValue, @Param("lastUpdate") Instant lastUpdate);
+            @Param("id") Long id,
+            @Param("linkValue") String linkValue,
+            @Param("lastUpdate") Instant lastUpdate,
+            @Param("type") String type);
 }

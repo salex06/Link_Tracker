@@ -1,7 +1,7 @@
 package backend.academy.clients.github.storage;
 
-import backend.academy.clients.Client;
 import backend.academy.clients.converter.LinkToApiLinkConverter;
+import backend.academy.clients.github.GitHubClient;
 import backend.academy.config.properties.ApplicationStabilityProperties;
 import backend.academy.dto.LinkUpdateInfo;
 import backend.academy.exceptions.RetryableHttpServerErrorException;
@@ -24,7 +24,7 @@ import org.springframework.web.client.RestClient;
 @Slf4j
 @Component
 @SuppressWarnings("PMD")
-public class GitHubPersonalStorageClient extends Client {
+public class GitHubPersonalStorageClient extends GitHubClient {
     private static final Pattern supportedUrl =
             Pattern.compile("^https://github\\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)$");
 

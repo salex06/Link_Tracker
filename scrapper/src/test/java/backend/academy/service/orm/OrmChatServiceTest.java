@@ -234,7 +234,7 @@ class OrmChatServiceTest {
         Long id = 1L;
         Long chatId = 2L;
         when(chatRepository.findByChatId(chatId)).thenReturn(Optional.of(new OrmChat(id, chatId)));
-        OrmLink ormLink = new OrmLink(1L, "url", Instant.now());
+        OrmLink ormLink = new OrmLink(1L, "url", Instant.now(), "undefined");
         Link link = new Link(1L, "url");
         when(linkRepository.findByLinkValue(link.getUrl())).thenReturn(Optional.of(ormLink));
         TgChat chat = Mockito.mock(TgChat.class);

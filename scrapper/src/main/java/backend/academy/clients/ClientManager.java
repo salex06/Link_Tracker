@@ -1,5 +1,6 @@
 package backend.academy.clients;
 
+import backend.academy.model.plain.Link;
 import java.util.List;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,5 +14,14 @@ public final class ClientManager {
 
     public ClientManager(List<Client> availableClients) {
         this.availableClients = availableClients;
+    }
+
+    public Client getSuitableClient(Link link) {
+        for (Client client : availableClients) {
+            if (client.supportLink(link.getUrl())) {
+                return client;
+            }
+        }
+        return null;
     }
 }

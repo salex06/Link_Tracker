@@ -363,7 +363,7 @@ class SqlLinkServiceTest {
 
         linkService.updateLastUpdateTime(link, updateTime);
 
-        verify(linkRepository, times(0)).updateLink(anyLong(), anyString(), any(Instant.class));
+        verify(linkRepository, times(0)).updateLink(anyLong(), anyString(), any(Instant.class), anyString());
     }
 
     @Test
@@ -376,7 +376,7 @@ class SqlLinkServiceTest {
 
         linkService.updateLastUpdateTime(link, updateTime);
 
-        verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class));
+        verify(linkRepository, times(1)).updateLink(anyLong(), anyString(), any(Instant.class), anyString());
     }
 
     @Test

@@ -14,6 +14,7 @@ import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -94,8 +95,12 @@ public class LinkController {
             List<String> filters = addLinkRequest.filters();
             TgChat chat = optChat.orElseThrow();
 
-            Link link = linkService.saveLink(new Link(null, linkUrl, tags, filters, new HashSet<>()), chat);
+            Link link = new Link(null, linkUrl, tags, filters, new HashSet<>());
+            String linkType = Objects.requireNonNull(clientManager.getSuitableClient(link))
+                    .getSourceName();
+            link.setType(linkType);
 
+            link = linkService.saveLink(link, chat);
             return new ResponseEntity<>(
                     new LinkResponse(link.getId(), link.getUrl(), link.getTags(), link.getFilters()), HttpStatus.OK);
         }

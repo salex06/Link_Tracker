@@ -12,21 +12,35 @@ import org.springframework.stereotype.Component;
 public class StandardLinkMapper implements LinkMapper {
     @Override
     public Link toPlainLink(JdbcLink jdbcLink, List<String> tags, List<String> filters, Set<Long> tgChatIds) {
-        return new Link(jdbcLink.getId(), jdbcLink.getUrl(), tags, filters, tgChatIds, jdbcLink.getLastUpdateTime());
+        return new Link(
+                jdbcLink.getId(),
+                jdbcLink.getUrl(),
+                tags,
+                filters,
+                tgChatIds,
+                jdbcLink.getType(),
+                jdbcLink.getLastUpdateTime());
     }
 
     @Override
     public JdbcLink toJdbcLink(Link link) {
-        return new JdbcLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
+        return new JdbcLink(link.getId(), link.getUrl(), link.getLastUpdateTime(), link.getType());
     }
 
     @Override
     public Link toPlainLink(OrmLink ormLink, List<String> tags, List<String> filters, Set<Long> tgChatIds) {
-        return new Link(ormLink.getId(), ormLink.getLinkValue(), tags, filters, tgChatIds, ormLink.getLastUpdate());
+        return new Link(
+                ormLink.getId(),
+                ormLink.getLinkValue(),
+                tags,
+                filters,
+                tgChatIds,
+                ormLink.getType(),
+                ormLink.getLastUpdate());
     }
 
     @Override
     public OrmLink toOrmLink(Link link) {
-        return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime());
+        return new OrmLink(link.getId(), link.getUrl(), link.getLastUpdateTime(), link.getType());
     }
 }

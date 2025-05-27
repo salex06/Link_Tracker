@@ -9,7 +9,7 @@ jobs:
     runs-on: edu-self-hosted
     container:
       image: maven:3-eclipse-temurin-24
-    timeout-minutes: 20
+    timeout-minutes: 15
     name: Build
     permissions:
       contents: read
@@ -43,7 +43,7 @@ jobs:
     runs-on: edu-self-hosted
     container:
       image: maven:3-eclipse-temurin-24
-    timeout-minutes: 20
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
