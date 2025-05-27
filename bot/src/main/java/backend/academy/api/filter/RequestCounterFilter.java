@@ -10,7 +10,6 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import java.io.IOException;
 import java.time.Duration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +17,6 @@ public class RequestCounterFilter implements Filter {
     private final Counter totalRequestsCounter;
     private final Timer timer;
 
-    @Autowired
     public RequestCounterFilter(MeterRegistry meterRegistry) {
         this.totalRequestsCounter = Counter.builder("http.requests.total")
                 .description("Total number of HTTP requests")
