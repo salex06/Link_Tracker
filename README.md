@@ -132,11 +132,11 @@ Scrapper поддерживает регистрацию и отслеживан
 1. Склонируйте проект с помощью команды
 
    ```shell
-   git clone git@github.com:central-university-dev/java-salex06.git
+   git clone git@github.com:salex06/Link_Tracker.git
    ```
 2. Откройте проект в любой IDE
 3. Создайте файл application.env и запишите туда токен бота в телеграме и
-   название бота в следующем формате:
+   имя бота в следующем формате:
 
    ```shell
    APP_TELEGRAM_TOKEN={YOUR_BOT_TOKEN}
